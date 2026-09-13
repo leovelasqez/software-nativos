@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nativos:sync-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "operationId",
+    "deviceId",
+    "branchId",
+    "actorId",
+    "sequence",
+    "previousOperationId",
+    "payloadHash",
+    "payloadVersion"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "operationId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "deviceId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "actorId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "previousOperationId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "payloadHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "payloadVersion": {
+      "const": 1
+    }
+  }
+}

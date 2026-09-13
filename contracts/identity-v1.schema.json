@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nativos:identity-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "actorId",
+    "kind",
+    "role",
+    "active",
+    "branchIds",
+    "actions"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "actorId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "kind": {
+      "enum": [
+        "human",
+        "agent"
+      ]
+    },
+    "role": {
+      "enum": [
+        "owner",
+        "manager",
+        "cashier"
+      ]
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "branchIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "data.read",
+          "order.write",
+          "sale.discount",
+          "sale.cancel",
+          "sale.charge",
+          "shift.open",
+          "shift.close",
+          "product.create",
+          "recipe.create",
+          "customer.create",
+          "loyalty.enroll",
+          "loyalty.redeem",
+          "purchase.read",
+          "purchase.write",
+          "inventory.manage",
+          "sale.refund",
+          "cost.read",
+          "cost.write",
+          "loyalty.adjust",
+          "settings.manage"
+        ]
+      }
+    }
+  }
+}
