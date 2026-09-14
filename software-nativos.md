@@ -6,7 +6,7 @@ Metodología de desarrollo: **Spec Driven Development (SDD)**. Este archivo cons
 
 ## 1. Estado y objetivo
 
-Este documento consolida el plan y las modificaciones acordadas con el usuario. La implementación local está autorizada desde el mensaje del usuario del 13-09-2026; no se autoriza desplegar en producción, contratar servicios ni modificar Alegra. Se ha elaborado una maqueta interactiva con datos de ejemplo; sus controles y simulaciones no constituyen funciones de producción.
+Este documento consolida el plan y las modificaciones acordadas con el usuario. La implementación local está autorizada desde el mensaje del usuario del 13-09-2026; no se autoriza desplegar en producción, contratar servicios ni modificar Alegra. Existe una maqueta interactiva de referencia y una implementación local independiente de fundamentos (incrementos 0/1): usuarios, organización y auditoría persistente. Sus evidencias están en docs/evidence/. Ventas, catálogo y operación de caja aún no están implementados; la maqueta no acredita esas capacidades.
 
 El objetivo es reemplazar Alegra para controlar ventas, inventario, ingresos, salidas, caja, clientes, proveedores, recetas, fidelización, usuarios, roles, informes y auditoría. El sistema tendrá administración web online y una aplicación de caja para Windows que pueda continuar operando sin internet.
 

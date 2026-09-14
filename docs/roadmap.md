@@ -1,11 +1,11 @@
 # Secuencia de entrega propuesta
 
-La secuencia organiza el trabajo, sin fechas fijadas. Implementación local autorizada por el usuario el 13-09-2026. Incremento 0 completado en su alcance documental y de dominio; siguiente: incremento 1. Dividir módulos grandes en incrementos con escenarios completos; no construir todas las pantallas antes de comprobar persistencia y sincronización.
+La secuencia organiza el trabajo, sin fechas fijadas. Implementación local autorizada por el usuario el 13-09-2026. Incrementos 0 y 1 completados en sus alcances; siguiente: incremento 2. Ver evidencia de [fundamentos](evidence/increment-1.md). Dividir módulos grandes en incrementos con escenarios completos; no construir todas las pantallas antes de comprobar persistencia y sincronización.
 
 | Incremento | Resultado verificable | Specs / dependencias |
 | --- | --- | --- |
 | 0. Especificación base — completado | Resolver decisiones que bloquean identidad, permisos, datos locales y contratos de cobro/sincronización; preparar plan y tareas. | 001 y diseño inicial de 007; DEC-002/003/004/014 según alcance. |
-| 1. Fundamentos | Usuarios, sucursales, permisos aplicados por servidor, shell accesible claro/oscuro y auditoría. | 001; contrato de autorización offline de 007. |
+| 1. Fundamentos — completado localmente | Usuarios, sucursales, permisos aplicados por servidor, shell accesible claro/oscuro y auditoría. | 001; contrato de autorización offline de 007. |
 | 2. Catálogo y existencia | Alta de producto, receta válida, bodega, movimiento inicial y trazabilidad. | 002, 003 y 001; costo condicionado a DEC-004/005. |
 | 3. Primera venta completa | Abrir turno, agregar producto terminado/preparado, cobrar localmente, descontar, emitir comprobante y sincronizar sin duplicar. | 004, 006, 007; Consumidor final basta para este primer flujo. |
 | 4. Operación de pedidos | Clientes online, mesas, división, pagos combinados, edición, cancelación, propina, desperdicio y devolución. | 004, 005 (clientes), 006; decisiones de cálculo cerradas. |
@@ -28,3 +28,7 @@ Casillas documentales cerradas con planes/contratos 001/007 y [evidencia](eviden
 ## Criterio de paso entre incrementos
 
 Requisitos trazados, contratos coherentes, pruebas y evidencia del alcance completadas y ausencia de bloqueantes que invaliden el siguiente incremento. Permitir trabajo documental o técnico independiente ya autorizado mientras otro componente espera un dato externo.
+
+## Cierre del incremento 1
+
+Usuarios, permisos por sucursal en servidor, auditoría atómica y shell React accesible verificados contra PostgreSQL real y navegador. El alcance online de fundamentos está listo; productos/ventas/exportaciones y firma/custodia offline permanecen en sus incrementos. AC-001-02/03 comerciales no se acreditan integralmente. Evidencia: `docs/evidence/increment-1.md`.

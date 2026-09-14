@@ -1,0 +1,86 @@
+import { test, expect } from '@playwright/test';
+import { randomBytes } from 'node:crypto';
+import { mkdir } from 'node:fs/promises';
+import { AxeBuilder } from '@axe-core/playwright';
+
+test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditoría y temas', async ({ page }) => {
+  const password = randomBytes(24).toString('base64url');
+  const consoleErrors: string[] = [];
+  page.on('pageerror', e => consoleErrors.push(e.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Configura tu acceso' })).toBeVisible();
+  await page.getByLabel('Nombre completo').fill('Equipo de prueba');
+  await page.getByLabel('Usuario', { exact: true }).fill('e2e-owner');
+  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Crear mi acceso' }).click();
+  await expect(page.getByRole('heading', { name: 'Hola, Equipo' })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Usuarios y roles' }).click();
+  await page.getByRole('button', { name: '+ Nuevo usuario', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre completo').fill('Cajero de prueba');
+  await dialog.getByLabel('Usuario de acceso').fill('e2e-cashier');
+  await dialog.getByLabel('Contraseña', { exact: true }).fill(password);
+  await dialog.getByLabel('Centro', { exact: true }).check();
+  await dialog.getByLabel('Motivo del cambio').fill('Alta sintética para verificación E2E');
+  await dialog.getByRole('button', { name: 'Crear usuario', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText('Cajero de prueba', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Editar Cajero de prueba', exact: true }).click();
+  await dialog.getByLabel('Nombre completo').fill('Cajero verificado');
+  await dialog.getByLabel('Motivo del cambio').fill('Cambio sintético de nombre');
+  await dialog.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText('Cajero verificado', { exact: true })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Sucursales y bodegas' }).click();
+  await page.getByLabel('Sucursal', { exact: true }).selectOption('centro');
+  await expect(page.getByText('T82E · Activo', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '+ Agregar bodega' }).click();
+  await dialog.getByLabel('Nombre', { exact: true }).fill('Bodega E2E');
+  await dialog.getByLabel('Motivo del cambio').fill('Bodega sintética de verificación');
+  await dialog.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText('Bodega E2E', { exact: true })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Auditoría', exact: true }).click();
+  await expect(page.getByText('Bodega sintética de verificación', { exact: true })).toBeVisible();
+  await expect(page.getByText('Cambio sintético de nombre', { exact: true })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Resumen', exact: true }).click();
+
+  await mkdir('docs/evidence/increment-1', { recursive: true });
+  for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    for (const dark of [false, true]) {
+      const toggle = page.getByRole('switch', { name: 'Modo oscuro' });
+      if ((await toggle.getAttribute('aria-checked')) !== String(dark)) await toggle.click();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', dark ? 'dark' : 'light');
+      const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+      expect(report.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+      await page.screenshot({ path: `docs/evidence/increment-1/${viewport.name}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
+      await page.reload(); await expect(page.locator('html')).toHaveAttribute('data-theme', dark ? 'dark' : 'light');
+      await expect(page.getByRole('heading', { name: 'Hola, Equipo' })).toBeVisible();
+    }
+  }
+  await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Usuarios y roles' }).click();
+  await page.getByRole('button', { name: '+ Nuevo usuario', exact: true }).click();
+  await expect(dialog.getByLabel('Nombre completo')).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(dialog.getByLabel('Usuario de acceso')).toBeFocused();
+  expect(await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)).not.toBe('none');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  const formReport = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(formReport.violations.map(v => v.id)).toEqual([]);
+  await page.screenshot({ path: 'docs/evidence/increment-1/mobile-form.png', fullPage: true });
+  await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+  await page.getByLabel('Usuario', { exact: true }).fill('e2e-cashier');
+  await page.getByLabel('Contraseña', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Entrar a Nativos' }).click();
+  await expect(page.getByRole('heading', { name: 'Hola, Cajero' })).toBeVisible();
+  await expect(page.getByLabel('Sucursal', { exact: true }).locator('option')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  await expect(page.getByRole('navigation').getByRole('button', { name: 'Usuarios y roles' })).toHaveCount(0);
+  expect(await page.evaluate(async () => (await fetch('/api/branches/milan')).status)).toBe(403);
+  expect(consoleErrors).toEqual([]);
+});

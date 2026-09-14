@@ -32,6 +32,8 @@ Incremento 3: SQLite/PostgreSQL, payload de venta, transacciones, snapshots, sec
 
 ## Identidad del código probado
 
+Registro histórico del commit `7e52a77`. Los hashes siguientes corresponden al incremento 0; cambios posteriores se verifican con su propia evidencia.
+
 SHA-256 de archivos ejecutables y dependencias comprobadas (permite verificar el resultado sin depender de un commit posterior de documentación):
 
 | Archivo | SHA-256 |

@@ -1,6 +1,6 @@
 # Arquitectura propuesta
 
-Estado: base modular aceptada técnicamente para implementación local autorizada (13-09-2026). Adaptadores aún pendientes. Las decisiones adicionales se registran en [decisions.md](./decisions.md).
+Estado: base modular aceptada técnicamente para implementación local autorizada (13-09-2026). API/persistencia/UI de fundamentos implementadas localmente; adaptadores POS e integraciones aún pendientes. Las decisiones adicionales se registran en [decisions.md](./decisions.md).
 
 ## Enfoque inicial
 
@@ -54,3 +54,11 @@ El alojamiento en Render sigue siendo una propuesta. Contratación, presupuesto,
 ## Implementación local del incremento 0
 
 `src/contracts.ts` valida esquemas y restricciones semánticas. `src/authorization.ts` evalúa permisos y proyección pública. `src/sync.ts` verifica acuses y transiciones sin almacenamiento. `tests/` prueba únicamente esos límites. Ninguno autentica, abre sockets, cobra ni persiste datos. Adaptadores de API, caja y exportaciones deberán consumir estas políticas y añadir pruebas de integración.
+
+## Implementación local del incremento 1
+
+Fastify aplica el contrato OpenAPI `contracts/foundation-api-v1.json`, resuelve sesiones en PostgreSQL y reutiliza permisos. UI React/Vite en web/, servida desde el mismo origen. src/server/db.ts contiene migración/tx/auditoría; security.ts contraseñas/sesiones. Migraciones SQL mantienen checksum y lock. Las mutaciones administrativas revalidan sesión dentro del lock transaccional.
+
+El helper scripts/local-postgres.ts usa binarios PostgreSQL reales fijados por npm, loopback y credencial DPAPI. No es motor en memoria ni sustituto de PostgreSQL. Desarrollo en .local/development, pruebas aisladas. scripts/e2e-teardown.ts cierra explícitamente el clúster sintético al finalizar en Windows. No hay instalador ni despliegue central.
+
+El renderizador web solo almacena preferencia de tema en localStorage; sesiones en cookie HttpOnly y datos de respuesta con no-store. No se descargan costos, passwords ni hashes. La información de equipo de sesión web es una identidad generada para auditoría, distinta del equipo físico POS. Las claves/firma de concesiones offline y la custodia del POS siguen pendientes.

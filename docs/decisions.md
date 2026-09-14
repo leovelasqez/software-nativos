@@ -88,3 +88,13 @@ DEC-003: concesión por actor/equipo/local con vencimiento máximo de siete día
 DEC-004: costeo central, sin costos en caché POS, proyecciones por lista permitida y compras online separadas con excepción del encargado en su local. Alternativa descartada: descargar costos y ocultarlos en UI, porque expone el archivo local. Probar frontera de dominio ahora, API/caché/exportaciones en incrementos que los implementan.
 
 REQ-001-01/02/03/04 y REQ-007-02/03/04/05; planes 001/007 y futura evidencia del incremento 0. DEC-002/014 de cálculo no bloquean envolturas: antes del incremento 3 se completa payload y reparto. Las tasas no se inventan; impuesto vacío conserva null y no bloquea venta. Milán T80A y Centro T82E USB 80 mm se conservan para pruebas físicas posteriores.
+
+## DEC-016 — Fundamentos locales (incremento 1)
+
+Autorización: «Ok, continua con incremento 1». Fastify + pg + React/Vite conservan el stack. PostgreSQL no está instalado; usar binarios reales mediante embedded-postgres solo como helper de desarrollo/pruebas, sin servicio Windows ni Docker. Base persistente .local/ excluida, contraseña aleatoria protegida con DPAPI en Windows; pruebas aisladas. Servidor vinculado a loopback, sin publicación. Dependencias exactas en lockfile.
+
+Sesiones opacas con cookie HttpOnly/SameSite Strict, 12 horas, hashes de sesión y scrypt asíncrono para contraseña. Bootstrap por formulario del primer dueño, sin contraseña predeterminada. Bloqueo transaccional de bootstrap/administración, defensa contra CSRF/origen/Host, revocación por cambios. Dueño administra identidades y organización; usuarios se limitan a sucursales explícitas. La firma de concesiones POS y su custodia siguen en incremento 3, no se habilita administración web offline.
+
+Migraciones SQL con checksum/advisory lock, auditoría append-only y mismo commit; índices únicos para una caja activa y bodega de venta por local. No datos comerciales inventados. AC-001-02/03 comerciales siguen pendientes de catálogo/ventas. REQ-001-01/02/04/05 y AC-001-01/04/05 a 10; ver plan 001 y contrato foundation-v1.
+
+Fuentes técnicas consultadas: [Fastify validación](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/), [Node crypto](https://nodejs.org/api/crypto.html), [Vite](https://vite.dev/guide/) y [embedded-postgres](https://github.com/leinelissen/embedded-postgres). Límites de sesión/intentos son decisiones de seguridad técnicas, no tasas ni datos de negocio.

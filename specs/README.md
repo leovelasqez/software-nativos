@@ -1,6 +1,6 @@
 # Índice de especificaciones y trazabilidad
 
-Implementación local autorizada el 13-09-2026. **Incremento 0 verificado**: contratos y políticas parciales de 001/007; ver [evidencia](../docs/evidence/increment-0.md). Ningún módulo completo está verificado o publicado. Resto de especificaciones: borrador, pendientes de sus incrementos. Los escenarios integrales continúan como criterios, no resultados obtenidos.
+Implementación local autorizada el 13-09-2026. **Incrementos 0 y 1 verificados en sus alcances**: políticas de 001/007 y fundamentos online de 001; ver [evidencia 0](../docs/evidence/increment-0.md) y [evidencia 1](../docs/evidence/increment-1.md). Las aceptaciones transversales de productos/ventas/offline siguen pendientes; nada está publicado. Resto de especificaciones: borrador, pendientes de sus incrementos. Los escenarios integrales continúan como criterios, no resultados obtenidos.
 
 | Spec | Capacidad | Secciones del plan | Requisitos |
 | --- | --- | --- | --- |
@@ -50,3 +50,14 @@ Cada especificación enumera datos y fronteras a diseñar; esto no equivale a te
 | REQ-007-03/05; AC-007-03/06 parcial | [Plan 007](007-offline-sync/plan.md), [contrato](007-offline-sync/contracts/sync-v1.md) | [contracts.ts](../src/contracts.ts), authorization.ts y sus pruebas | Política verificada; firma/custodia/reloj persistido pendientes |
 | REQ-007-02/04; AC-007-02 parcial | Contrato sync v1 | [sync.ts](../src/sync.ts), [pruebas](../tests/sync.test.ts) | Validación de acuse; efecto único/persistencia/snapshots no implementados |
 | AC-007-01/04/05 integrales | Protocolo de fallos diseñado | Sin SQLite/PostgreSQL/transporte/impresión | Pendiente de siguientes incrementos |
+
+## Trazabilidad del incremento 1
+
+| Alcance | Código | Prueba / estado |
+| --- | --- | --- |
+| REQ-001-01/02; AC-001-01/05/06/07 | src/server/app.ts, security.ts, permissions.ts | tests/integration/foundation.test.ts: bootstrap concurrente, permisos reales, revocación, sesiones, aislamiento y último dueño |
+| REQ-001-01/04; AC-001-08/09 | migrations/001-foundation.sql, src/server/db.ts | Misma suite: migración repetible/checksum, rollback de auditoría, índices únicos y reinicio real de PostgreSQL |
+| REQ-001-04 | app.ts y db.ts | Auditoría con alcance histórico, paginación y sin secretos; protección append-only probada |
+| REQ-001-05; AC-001-04/10 | web/ | tests/e2e/foundation.spec.ts: flujo completo, temas, móvil, teclado, acceso de cajero y axe |
+| REQ-001-02/03; AC-001-02/03 comerciales | Políticas previas conservadas | Catálogo/ventas/caché/exportación siguen pendientes, no simulados |
+| REQ-007-03 | Contrato offline vigente | Login online no equivale a concesión POS firmada; queda para incremento 3 |

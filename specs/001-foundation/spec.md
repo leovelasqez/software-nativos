@@ -1,6 +1,6 @@
 # 001 — Identidad, sucursales, permisos e interfaz
 
-Estado: incremento 0 verificado en dominio/contratos; capacidad completa pendiente. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, secciones 1–3, 10 y 14.
+Estado: incrementos 0 y 1 verificados en sus alcances; aceptación comercial transversal y caja offline pendientes. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, secciones 1–3, 10 y 14.
 
 ## Alcance
 
@@ -27,8 +27,21 @@ Identidad de usuario y equipo, concesión de permisos, alcance de sucursales, ex
 
 ## Dependencias y pendientes
 
-Contrato offline compartido con 007. DEC-003/004/012 afectan acceso, confidencialidad y operación. Alcance del incremento 0 definido en plan.md. Evidencia parcial disponible; API/UI/persistencia pendientes.
+Contrato offline compartido con 007. DEC-003/004/012 afectan acceso, confidencialidad y operación. Alcances 0/1 definidos en plan.md. API/UI/persistencia de fundamentos verificadas; firma/custodia POS y aceptación comercial permanecen pendientes.
 
 ## Alcance entregado — Incremento 0
 
 Ver [plan](plan.md), [tareas](tasks.md) y [evidencia](../../docs/evidence/increment-0.md). Se ejecutaron pruebas de políticas y esquemas; los AC originales que requieren servidor, almacenamiento, UI o reinicios NO están acreditados integralmente. No hay operación comercial real.
+
+## Incremento 1 — Fundamentos autorizados
+
+Autorización vigente: «Ok, continua con incremento 1». Incluye REQ-001-01/02/04/05 en administración online. REQ-001-03 conserva las políticas existentes; sus altas comerciales se implementan con catálogo/clientes/ventas. AC-001-02/03 completos dependen de esos módulos y no se acreditan mediante pantallas vacías.
+
+- AC-001-05 → REQ-001-01/04: dada una base nueva, el primer dueño se registra una sola vez; se conservan Milán/Centro con bodega y caja iniciales. Dos solicitudes simultáneas no crean dos primeros dueños.
+- AC-001-06 → REQ-001-01/02: login válido crea sesión revocable; contraseña errónea no identifica si existe el usuario; logout, expiración o desactivación impiden reutilizar sesión. No hay hash ni token en respuestas de usuarios/auditoría.
+- AC-001-07 → REQ-001-01/02/04: dueño crea/edita usuario, rol y alcance con motivo; cajero/encargado no administran identidades por defecto. Cambios de permisos revocan sesiones. No desactivar ni quitar privilegios al último administrador activo.
+- AC-001-08 → REQ-001-01/04: dueño crea sucursal/bodega/equipo; existe solo una caja activa por local. Cambios y auditoría se guardan juntos o se revierten juntos.
+- AC-001-09 → REQ-001-04: reiniciar servidor conserva identidades, organización y auditoría; una segunda migración no duplica datos. Auditoría no permite update/delete desde la aplicación.
+- AC-001-10 → REQ-001-02/05: interfaz permite completar creación/edición y navegar en claro/oscuro a escritorio y móvil, con etiquetas, foco visible, mensajes de error y sin desbordamiento horizontal. Los módulos todavía no implementados no simulan operaciones comerciales.
+
+Evidencia del incremento 1: [registro](../../docs/evidence/increment-1.md). AC-001-01/04/05 a 10 cubiertos en alcance online; AC-001-02/03 conservan cobertura parcial del núcleo y esperan módulos comerciales.
