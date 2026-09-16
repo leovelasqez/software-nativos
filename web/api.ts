@@ -15,6 +15,8 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
     if (response.status === 401 && path !== '/login') window.dispatchEvent(new Event('session-expired'));
     throw new Error(result.message ?? 'No se pudo completar la solicitud.');
   }
+  if((path==='/login'||path==='/setup')&&body){const b=body as {login:string;password:string};try{const {useEngine}=await import('./offline/engine.ts');await useEngine(e=>e.login(b.login,b.password,true));}catch{/* Administration access does not depend on browser enrollment. */}}
+  if(path==='/logout'){localStorage.setItem('nativos-session-ended',String(Date.now()));const {useEngine}=await import('./offline/engine.ts');await useEngine(async e=>{e.data.session=null;await e.save();});}
   return result as T;
 }
 export const roles = { owner: 'Dueño', manager: 'Encargado', cashier: 'Cajero' };

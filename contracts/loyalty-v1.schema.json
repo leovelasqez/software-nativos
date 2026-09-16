@@ -1,0 +1,187 @@
+{
+  "rule": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "earnEvery": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "pointValue": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "maxPercent": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "createdAtMs": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "required": [
+      "id",
+      "earnEvery",
+      "pointValue",
+      "maxPercent",
+      "createdAtMs"
+    ]
+  },
+  "enroll": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "branchId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "operationId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "customerId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      }
+    },
+    "required": [
+      "branchId",
+      "operationId",
+      "customerId"
+    ]
+  },
+  "adjust": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "branchId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "operationId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "customerId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "delta": {
+        "type": "string",
+        "pattern": "^-?(0|[1-9][0-9]{0,11})$"
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 500
+      }
+    },
+    "required": [
+      "branchId",
+      "operationId",
+      "customerId",
+      "delta",
+      "reason"
+    ]
+  },
+  "rules": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "branchId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "operationId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "earnEvery": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "pointValue": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "maxPercent": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})$"
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 500
+      }
+    },
+    "required": [
+      "branchId",
+      "operationId",
+      "earnEvery",
+      "pointValue",
+      "maxPercent",
+      "reason"
+    ]
+  },
+  "query": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "branchId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "after": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "customerId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      }
+    },
+    "required": [
+      "branchId"
+    ]
+  },
+  "cancel": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "operationId",
+      "deviceId",
+      "signed"
+    ],
+    "properties": {
+      "operationId": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "deviceId": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "signed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "document",
+          "signature"
+        ],
+        "properties": {
+          "document": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "occurredAtMs": { "type": "integer", "minimum": 0 },
+        "shiftId": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$" },
+        "kind": { "const": "cash.movement" },
+        "movementId": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$" },
+        "class": { "enum": ["income", "expense", "withdrawal", "correction"] },
+        "method": { "enum": ["cash", "card", "transfer", "breb", "daviplata", "nequi"] },
+        "amount": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$" },
+        "reason": { "type": "string", "minLength": 3, "maxLength": 500 },
+        "reversesMovementId": { "type": ["string", "null"], "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$" }
+      },
+      "required": ["occurredAtMs", "shiftId", "kind", "movementId", "class", "method", "amount", "reason", "reversesMovementId"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "occurredAtMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shiftId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        },
+        "kind": {
+          "const": "shift.open"
+        },
+        "openingCash": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+        }
+      },
+      "required": [
+        "occurredAtMs",
+        "shiftId",
+        "kind",
+        "openingCash"
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "occurredAtMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shiftId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        },
+        "kind": {
+          "const": "sale.charge"
+        },
+        "orderId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        },
+        "snapshotId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        },
+        "lines": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "productId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "quantity": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+              },
+              "optionIds": {
+                "type": "array",
+                "maxItems": 100,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                }
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              }
+            },
+            "required": [
+              "id",
+              "productId",
+              "quantity",
+              "optionIds",
+              "snapshotId"
+            ]
+          }
+        },
+        "payment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "cash",
+                "card",
+                "transfer",
+                "breb",
+                "daviplata",
+                "nequi"
+              ]
+            },
+            "received": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+            }
+          },
+          "required": [
+            "method",
+            "received"
+          ]
+        }
+      },
+      "required": [
+        "occurredAtMs",
+        "shiftId",
+        "kind",
+        "orderId",
+        "snapshotId",
+        "lines",
+        "payment"
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "occurredAtMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shiftId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        },
+        "kind": {
+          "const": "shift.close"
+        },
+        "counted": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+        }
+      },
+      "required": [
+        "occurredAtMs",
+        "shiftId",
+        "kind",
+        "counted"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # 003 — Inventario, compras y proveedores
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, sección 5.
+Estado: verificado parcialmente — alcance del incremento 2; escenarios de venta/compras y costeo promedio pendientes. Implementación local autorizada y reiterada el 14-09-2026. Fuente: plan, sección 5.
 
 ## Requisitos
 
@@ -25,4 +25,18 @@ Libro de movimientos, saldo derivado, conversión y relación con compra/venta/d
 
 ## Dependencias y pendientes
 
-001, 002, 004 y 007. DEC-004 resuelve la captura por encargado; queda diseñar la separación de datos locales. DEC-005 sigue pendiente para costeo. Evidencia: pendiente.
+001, 002, 004 y 007. DEC-004 resuelve la captura por encargado; queda diseñar la separación de datos locales. DEC-005 sigue pendiente para costeo. Evidencia del alcance 2: [incremento 2](../../docs/evidence/increment-2.md).
+
+## Alcance verificable del incremento 2
+
+- AC-003-06 → REQ-003-01/02. Encargado registra inicial y mínimo de artículo en su bodega; saldo se deriva del libro y reintentos concurrentes tienen un solo efecto. Segundo inicial vigente se rechaza; corrección revierte con referencia/motivo antes de nueva entrada.
+- AC-003-07 → REQ-003-05. Costo inicial opcional exclusivo del dueño en API; encargado/cajero no lo reciben ni pueden escribirlo. Costo de receta queda pendiente si falta cualquier costo base de esa bodega. Costo cero explícito es válido y distinto de desconocido. Promedios de compras y negativos quedan para incremento 6.
+- AC-003-08 → REQ-003-02 y REQ-001-04. Mutación, versión/movimiento, respuesta idempotente y auditoría comparten transacción. Fallo de auditoría revierte todos; reinicio conserva historia. Cajero sin inventory.manage y usuarios de otra sucursal reciben 403.
+
+## Incremento 6 — alcance preparado
+
+- AC-003-09 → REQ-003-01/02. Dado un encargado de Centro y un proveedor de su sucursal, cuando registra una compra de 1 kg de un artículo en gramos con precio e importe pagado, entonces se agregan 1.000 g una sola vez, se conserva la auditoría y el encargado puede consultar esa compra sin recibir costo de receta o margen.
+- AC-003-10 → REQ-003-02. Dado un traslado despachado, cuando se recibe parcialmente y se reintenta la misma recepción, entonces el destino aumenta solo por las unidades recibidas una vez y no supera las despachadas.
+- AC-003-11 → REQ-003-01/02. Dado un conteo físico diferente al saldo, cuando se confirma con motivo, entonces se conserva conteo y se agrega un ajuste causal sin editar el libro anterior.
+
+Costeo promedio, valoración de salidas y márgenes siguen bloqueados por DEC-005; ver el plan de incremento 6 y `contracts/inventory-operations-v1.md`.

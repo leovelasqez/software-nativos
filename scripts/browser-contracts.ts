@@ -1,0 +1,10 @@
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import standalone from 'ajv/dist/standalone/index.js';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+const ajv=new Ajv2020({strict:true,code:{source:true,esm:true}});
+const schemas={principal:'identity-v1.schema.json',grant:'offline-grant-v1.schema.json',operation:'sync-v1.schema.json',snapshot:'pos-snapshot-v1.schema.json'};
+for(const [name,file] of Object.entries(schemas))ajv.addSchema(JSON.parse(await readFile('contracts/'+file,'utf8')),name);
+const orders=JSON.parse(await readFile('contracts/orders-v3.schema.json','utf8'));ajv.addSchema(orders.commandEvent,'command');
+await mkdir('web/offline/generated',{recursive:true});
+await writeFile('web/offline/generated/validators.js',(standalone as unknown as (a:Ajv2020,n:Record<string,string>)=>string)(ajv,{principal:'principal',grant:'grant',operation:'operation',snapshot:'snapshot',command:'command'}).replaceAll('require("ajv/dist/runtime/ucs2length").default','(s => Array.from(s).length)'));
+await writeFile('web/offline/generated/validators.d.ts',Object.keys({...schemas,command:0}).map(n=>`export function ${n}(value:unknown):boolean;`).join('\n'));

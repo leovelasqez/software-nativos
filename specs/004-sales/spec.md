@@ -49,3 +49,20 @@ Evidencia y contratos de implementación: pendientes.
 El campo de impuesto del catálogo puede permanecer vacío sin bloquear el cobro. Conservar esa ausencia en la versión de la línea y no calcular un impuesto para ella; no clasificarla automáticamente como exenta ni como tasa 0%.
 
 - AC-004-11 → REQ-004-02/05; REQ-002-02/05. Dado un producto válido de precio final sintético $10.000 con impuesto vacío, cuando se cobra una unidad sin descuentos, puntos, propina ni envío, entonces el total es $10.000 y la venta conserva impuesto sin asignar. Si después se configura un impuesto en el catálogo, consultar, reimprimir o sincronizar la venta anterior conserva su estado e importes originales. Aplicar la misma regla online y offline con la versión local disponible.
+
+## Incremento 3
+
+AC-004-12 → REQ-004-01/02/05. Dado un turno propio y pedido persistente a Consumidor final, cobrar terminado/preparado con opciones mediante un medio, conservar comprobante/versiones y un único consumo/pago/caja ante reintento. Sin pedido dividido ni comanda en este incremento.
+
+Alcance: primera venta completa de la hoja de ruta. Ver plan/tareas del incremento 3; restantes escenarios se conservan para incrementos 4/5/6/8.
+
+Verificación del alcance de incremento 3: [evidencia](../../docs/evidence/increment-3.md). Los escenarios anteriores fuera de ese alcance permanecen pendientes.
+
+
+## Incremento 4
+
+Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.md), [tareas](tasks-increment-4.md) y [evidencia](../../docs/evidence/increment-4.md). No acredita puntos, ingresos/gastos/retiros manuales, mensajería, hardware ni la capacidad completa.
+
+## Dirección vigente — sitio web único
+
+La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.

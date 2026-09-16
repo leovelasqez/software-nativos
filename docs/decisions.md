@@ -15,8 +15,8 @@ Dos sucursales, una caja por local; descuento de ingredientes al cobrar; inventa
 | DEC-003 | Diseño base definido; adaptadores pendientes | Al agotar siete días, bloquear nuevos cobros hasta reconectar; conservar consulta, pedidos y cierre de turno. Contrato base de orden, conflictos y reloj en 007; eventos tardíos/costeo, firma y persistencia por implementar. | Sincronización antes del primer flujo persistente de cobro. |
 | DEC-004 | Separación de datos definida; integración pendiente | El encargado registra toda la compra de su local, incluidos precios e importe pagado, y consulta esos importes. No habilita márgenes ni costo de recetas. Separación central/caché definida en contrato 001; falta integración con almacenamiento/API. | Compras, permisos y costeo central/local. |
 | DEC-005 | Pendiente de diseño | Costeo promedio con saldo negativo y entradas tardías: qué se estima, cuándo se reconcilia y qué historia se conserva. | Costos, movimientos y reportes. |
-| DEC-006 | Negocio resuelto; diseño pendiente | Base final con impuestos, después de descuentos y canje; límite de canje antes del propio canje. Cobro dividido por cliente. Revertir puntos generados aunque haya saldo negativo y restituir puntos usados/dinero proporcionalmente a productos devueltos. Falta reparto exacto de puntos enteros y redondeos. | Ventas, fidelización y devolución. |
-| DEC-007 | Pendiente de diseño | Coordinación del canje central con el cobro local ante pérdida de conexión: reserva, confirmación, liberación y reconciliación. | Canje online antes de habilitarlo. |
+| DEC-006 | Verificada localmente; DEC-020 | Base final con impuestos, después de descuentos y canje; límite de canje antes del propio canje. Cobro dividido por cliente. Revertir puntos generados aunque haya saldo negativo y restituir puntos usados/dinero proporcionalmente a productos devueltos. Reparto acumulado proporcional y redondeos definidos en loyalty-v1. | Ventas, fidelización y devolución. |
+| DEC-007 | Verificada localmente; DEC-020 | Confirmación central atómica, intención local durable y recuperación/cancelación serializada ante pérdida de conexión. | Canje online antes de habilitarlo. |
 | DEC-008 | Entorno parcialmente confirmado | Milán: T80A, ESC/POS según etiqueta. Centro: NP / New Print T82E. Ambas USB de 80 mm y compartidas entre comprobantes/comandas en cada local. Faltan controladores, prueba del cajón e impresión, Windows concreto, firma y distribución del instalador. | Prueba de hardware y distribución. |
 | DEC-009 | Pendiente externo | Documentos fiscales aplicables y sistema que los emitirá al abandonar Alegra. | Puesta en marcha real, no impide especificar comprobantes internos. |
 | DEC-010 | Configuración inicial confirmada; entorno/diseño pendientes | Dueño y encargado del local: mínimos diarios a las 8:00 a. m. de Colombia, cierre inmediato tras sincronizar. Faltan números, emisor, plantillas, servicio, costo y tratamiento de entrega incierta. | Diseño final y activación de notificaciones. |
@@ -98,3 +98,42 @@ Sesiones opacas con cookie HttpOnly/SameSite Strict, 12 horas, hashes de sesión
 Migraciones SQL con checksum/advisory lock, auditoría append-only y mismo commit; índices únicos para una caja activa y bodega de venta por local. No datos comerciales inventados. AC-001-02/03 comerciales siguen pendientes de catálogo/ventas. REQ-001-01/02/04/05 y AC-001-01/04/05 a 10; ver plan 001 y contrato foundation-v1.
 
 Fuentes técnicas consultadas: [Fastify validación](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/), [Node crypto](https://nodejs.org/api/crypto.html), [Vite](https://vite.dev/guide/) y [embedded-postgres](https://github.com/leinelissen/embedded-postgres). Límites de sesión/intentos son decisiones de seguridad técnicas, no tasas ni datos de negocio.
+
+## DEC-017 — Catálogo y existencias iniciales (incremento 2)
+
+Implementación local autorizada y reiterada el 14-09-2026. Se conserva el stack y lockfile del incremento 1, sin dependencias nuevas. Contratos 002/003 completados antes de código. Cantidades/dinero viajan como strings decimales; dominio BigInt a seis decimales, persistencia numeric(30,6), rechazo de multiplicaciones que exijan mayor precisión. Unidad comercial: unidad por presentación, terminado enlazado a artículo del mismo ID. Materias primas y consumibles usan g/ml/unit. Conversiones métricas g/kg y ml/l; cualquier otra requiere factor y fuente suministrados. Borradores conservan conversiones parciales y cantidades pendientes, sin habilitar venta.
+
+Versiones inmutables de productos/recetas; control optimista al editar producto o publicar receta. Un borrador no reemplaza la última receta activa. Consumos base y opciones quedan congelados; dominio de consumo previsto compartido con la futura caja, sin cobros ni descuento real por venta aún.
+
+Inicial único vigente por artículo/bodega, con cantidad/costo inicial opcional y conversión de entrada trazada. Reversión relacionada y nueva entrada para corrección, sin borrar movimientos. Saldo derivado y mínimos. Dueño y encargado según inventory.manage; costo inicial solo owner + cost.write, consultas de costos solo owner + cost.read. Proyecciones públicas y auditoría omiten valores de costo; el movimiento protegido conserva su valor histórico. Costos de receta solo base, por bodega; desconocidos quedan pendientes. Costeo promedio, negativos por venta y entradas tardías siguen sujetos a DEC-005/incremento 6, sin estimaciones nuevas.
+
+Cada mutación revalida identidad dentro del lock 7301, comparte transacción con auditoría y respuesta idempotente. La misma clave/actor/ruta/payload devuelve su respuesta; conflicto recibe 409. Clientes mantienen clave al reintentar la misma solicitud en el formulario abierto; el cierre/reapertura no constituye persistencia offline. Sin cliente POS publicado.
+
+Recuperación verificada mediante reinicio PostgreSQL y exportación/importación SQL de un snapshot lógico de datos sintéticos a una segunda base recién migrada. El runtime empaquetado no trae pg_dump: no se presenta este fixture de pruebas como herramienta de respaldo operativo, ni como protección ante pérdida del disco. Respaldo/restauración operativa permanece en incremento 6.
+
+## DEC-018 — Primera venta y caja local (incremento 3)
+
+Autorización: «Continua con el incremento 3», 14-09-2026. Se concreta el redondeo de DEC-002/014: cálculo interno a seis decimales, total al peso más cercano con empate hacia arriba, ajuste de redondeo explícito; impuestos asignados incluidos en precio, división racional redondeada a seis decimales. No se inventan tasas. Cuenta completa y un pago; reparto por devoluciones/división se difiere a 4. Consumidor final, sin puntos.
+
+Electron 44.3.0 consultado en npm; seguridad según https://www.electronjs.org/docs/latest/tutorial/security. Servicio Node 24 con SQLite nativo (https://nodejs.org/api/sqlite.html), proceso distinto del central, custodio DPAPI Windows. No requiere librería SQLite nativa compilada. Electron usa renderer aislado/sandbox y abre únicamente la URL local de caja, sin API general privilegiada. Instalador/Node empaquetado y firma de distribución se reservan a lanzamiento; ejecución local reproducible con runtime existente.
+
+Tokens/grants/verificadores/reloj local cifrados DPAPI; clave privada Ed25519 exclusivamente central. Una instalación activa por caja; no reasignar desde la UI silenciosamente. Cola histórica transmitida por equipo aunque usuario revocado, con revisión central explícita y sin autorización para nuevas ventas. Cadena de secuencias y snapshot verificable impiden reescribir precios/consumos en sincronización. Sin prometer protección contra administrador del equipo/disco.
+
+
+## DEC-019 — Pedidos y división (incremento 4)
+
+Decisión técnica bajo autorización local: máquina de estados compartida, eventos de payload v2, migraciones aditivas, descuentos a seis decimales y reparto por mayores restos al peso de componentes del cobro. El residuo de descuento fijo permanece en el pedido pendiente; selección repetida no se cobra dos veces. Propina/envío separados y cada cobro tiene cliente propio. No se extiende todavía fidelización. Tratamiento de devolución de propina/envío consultado al usuario; resto del alcance continúa.
+
+Respuesta del usuario, 14-09-2026: «Permitir devolver también propina y domicilio». Se habilitan importes seleccionables acotados por el componente pagado y devoluciones anteriores.
+
+
+Complemento técnico DEC-019: la devolución local usa sale.refund en una concesión firmada vigente y turno propio; no se permite tras expiración. Se registra de forma causal después del cobro, con saldo acumulado y sin modificar el comprobante. El resumen del turno separa propina/domicilio efectivamente pagados y sus devoluciones, incluyendo todos sus movimientos. Consulta de historia de cliente por sucursal y solo datos sincronizados, paginados.
+
+
+## DEC-020 — Fidelización y canje confirmado centralmente
+
+Diseño de DEC-006/007 concretado en contracts/loyalty-v1.md y planes increment-5 antes de implementar. Regla inicial confirmada se conserva. Reparto proporcional acumulado de puntos enteros con empate arriba; dinero por paidAmount tras canje, sin convertir puntos a dinero. Intención durable local y commit central de venta+puntos como alternativa a reserva con vencimiento; recuperación idempotente y cancelación con tombstone serializado. Sin pérdida de pendientes ni devolución automática de puntos ante respuesta incierta. La interfaz muestra esta recuperación.
+
+## DEC-021 — Sitio web único (15-09-2026)
+
+Usuario sustituye Administración web + Caja Electron por un sitio web y confirma siete días offline. Nueva dirección: React/PWA, IndexedDB, Web Locks y Web Crypto; servidor modular PostgreSQL existente. El cliente no requiere Node, SQLite ni Electron instalados. La instalación PWA es opcional. La evidencia 0–5 describe la arquitectura anterior; preservar contratos/datos y verificar nuevos adaptadores antes de declararlos equivalentes. Ver specs/012-unified-web. Impresión/cajón y recuperación deben validarse en navegador; no prometer sincronización con todas las pestañas cerradas.

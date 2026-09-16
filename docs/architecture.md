@@ -1,12 +1,16 @@
 # Arquitectura propuesta
 
-Estado: base modular aceptada técnicamente para implementación local autorizada (13-09-2026). API/persistencia/UI de fundamentos implementadas localmente; adaptadores POS e integraciones aún pendientes. Las decisiones adicionales se registran en [decisions.md](./decisions.md).
+Estado: transición al sitio web único autorizada el 15-09-2026 (DEC-021). Los apartados de incrementos 0–5 son historia de la implementación anterior.
 
-## Enfoque inicial
+## Arquitectura vigente
 
-Proponer un servidor modular único y una caja local con almacenamiento propio. Para dos locales, esto permite separar responsabilidades sin asumir el costo operativo de microservicios. Escalar componentes solamente cuando mediciones y necesidades concretas lo justifiquen. Esta elección queda aceptada técnicamente en DEC-001/015.
+Un sitio React/TypeScript y API modular Node/PostgreSQL. Administración en `/`, Caja en `/caja`, misma cookie de sesión y navegación. El navegador guarda Caja en IndexedDB con transacciones estrictas y Web Locks entre pestañas. Web Crypto verifica las concesiones Ed25519 centrales y cifra el agregado con AES-GCM y clave no exportable; verificador offline PBKDF2 con sal por usuario. Esta custodia no equivale a DPAPI ni protege ante control total del perfil o JavaScript del mismo origen.
 
-Tecnologías propuestas en el plan: web React/TypeScript, caja Electron/SQLite y servidor Node.js/TypeScript/PostgreSQL. Versiones y librerías se fijarán después de verificar compatibilidad, especialmente Windows, impresión y almacenamiento local.
+El service worker precarga solamente HTML/JS/CSS públicos; las respuestas API, sesiones y costos no se cachean. Actualizaciones esperan al cierre de clientes; no borran IndexedDB. La cola conserva protocolo v1/v2/v3 y un acuse exacto. Sin conexión se recupera el sitio en el mismo origen/perfil; administración y canje siguen online. El sitio cerrado no garantiza sincronización en segundo plano.
+
+Los dominios `catalog.ts`, `orders-domain.ts`, `loyalty.ts`, las políticas y el servidor central se reutilizan. Validadores de esquema se generan durante build para evitar eval en el navegador. El agregado inicial facilita atomicidad; no se ha dimensionado con volumen comercial real y deberá medirse antes de lanzamiento.
+
+SQLite/DPAPI/Electron permanecen como adaptadores históricos, sin dependencia Electron en el producto. El puente local de desarrollo traslada una instalación a un único navegador preservando IDs, secuencia, pedidos, turnos, comprobantes, outbox y canje incierto. Bloquea otro destino y retira el escritor anterior; no borra la fuente. No existe este puente de archivos en el servidor alojado. Plan y pruebas: [012](../specs/012-unified-web/plan.md).
 
 ## Responsabilidades
 
@@ -62,3 +66,25 @@ Fastify aplica el contrato OpenAPI `contracts/foundation-api-v1.json`, resuelve 
 El helper scripts/local-postgres.ts usa binarios PostgreSQL reales fijados por npm, loopback y credencial DPAPI. No es motor en memoria ni sustituto de PostgreSQL. Desarrollo en .local/development, pruebas aisladas. scripts/e2e-teardown.ts cierra explícitamente el clúster sintético al finalizar en Windows. No hay instalador ni despliegue central.
 
 El renderizador web solo almacena preferencia de tema en localStorage; sesiones en cookie HttpOnly y datos de respuesta con no-store. No se descargan costos, passwords ni hashes. La información de equipo de sesión web es una identidad generada para auditoría, distinta del equipo físico POS. Las claves/firma de concesiones offline y la custodia del POS siguen pendientes.
+
+## Implementación local del incremento 2
+
+src/catalog.ts comparte decimales exactos y reglas de activación/consumo previsto; src/server/catalog-api.ts incorpora catálogo, versiones, artículos, libro de iniciales/reversiones, mínimos y costos aislados al mismo servidor. Migración 002 aditiva; contracts/catalog-inventory-v1.json consumido por validación/serialización y pruebas. web/Catalog.tsx contiene formularios conectados para productos, recetas e inventario. DEC-017 detalla límites y recuperación comprobada. Sin adaptador POS ni ventas todavía.
+
+
+## Implementación local del incremento 3
+
+Servidor central Fastify/PostgreSQL conserva snapshots públicos, concesiones Ed25519 y operaciones confirmadas con acuse único. Migración 003 añade ventas/turnos/instalaciones y consumos al libro existente. SQLite en un servicio Node 24 separado en loopback conserva pedido, turno, venta, efectivo, consumo y outbox atómicos; grantId refiere a la custodia DPAPI. El renderizador React no recibe tokens/verificadores/firmas/costos ni acceso directo al motor.
+
+Electron 44.3.0 carga la interfaz de caja en 4311, con sandbox/contextIsolation y sin nodeIntegration; deniega navegación externa, ventanas nuevas y permisos. El lanzador inicia servidor central (4310), PostgreSQL (54329) y servicio POS (4311) como procesos ocultos persistentes. El servicio POS sigue funcionando si se cierra la ventana; la cola se intenta enviar cada 15 segundos. La primera vinculación requiere dueño online y solo admite una instalación por equipo; un reemplazo no borra pendientes automáticamente.
+
+Consulta de comprobante es de solo lectura. Un acuse incorrecto no limpia el outbox. Error de transporte reintenta; conflicto queda para conciliación. Revocación conocida bloquea nuevas acciones y conserva historia. Ante expiración se permite consulta, guardar pedido y cerrar turno. No hay instalador/actualización automática, impresión física ni restauración operativa del disco: alcances posteriores. Ver contracts/pos-v1.md y evidencia incremento 3.
+
+
+## Evolución de pedidos del incremento 4
+
+Pedidos v2 y clientes se añaden sobre la instalación y la secuencia del POS existente. src/orders-domain.ts comparte reglas puras entre caja/central/interfaz; pos-contract.ts y orders-contract.ts compilan esquemas solo en el servidor/motor local, preservando CSP estricta del navegador. orders-store.ts agrega tablas SQLite con checksum independiente; migración PostgreSQL 004 conserva las anteriores. Un comando confirma pedido, venta/devolución, movimiento, auditoría y outbox en una misma transacción. Datos previos y comprobantes v1 siguen disponibles, y las concesiones antiguas no se amplían implícitamente.
+
+## Fidelización del incremento 5
+
+Dominio puro src/loyalty.ts y orders-domain.ts; esquema orders-v3 compilado fuera del navegador. Migración 005 añade miembros, versiones inmutables de reglas, libro de puntos y cancelaciones. Acumulación offline usa caché explícita sin costos y confirma con la venta al sincronizar. Canje confirma centralmente venta, puntos y movimientos bajo lock compartido, con intención persistida en SQLite antes de enviar. Acuse exacto permite aplicar localmente la misma operación y retirar intención atómicamente. La cancelación central impide mensajes tardíos; si ya confirmó, recupera el comprobante. DEC-020 y contracts/loyalty-v1.md detallan protocolo y límites.

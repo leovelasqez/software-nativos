@@ -1,6 +1,6 @@
 # 002 — Catálogo y recetas
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, secciones 4 y 6.
+Estado: verificado parcialmente — alcance del incremento 2; escenarios de venta/compras y costeo promedio pendientes. Implementación local autorizada y reiterada el 14-09-2026. Fuente: plan, secciones 4 y 6.
 
 ## Requisitos
 
@@ -23,10 +23,16 @@ Receta borrador → activa. Definir transición de un producto preparado sin rec
 
 ## Dependencias y pendientes
 
-001 para permisos; 003/004/007 para contratos compartidos. Conversiones, precios e impuestos reales siguen pendientes; no usar cantidades ilustrativas como recetas de producción. Evidencia: pendiente.
+001 para permisos; 003/004/007 para contratos compartidos. Conversiones, precios e impuestos reales siguen pendientes; no usar cantidades ilustrativas como recetas de producción. Evidencia del alcance 2: [incremento 2](../../docs/evidence/increment-2.md).
 
 ## Aclaración de asignación de impuestos
 
 - AC-002-05 → REQ-002-02. Dado un producto nuevo sin configuración tributaria, cuando se guarda online, entonces conserva sus datos y el campo vacío, muestra «Sin impuesto asignado» y permite vender si cumple los demás requisitos. No convierte el vacío en una tasa cero ni en exención fiscal. Cuando se asigna un impuesto posteriormente, se versiona el cambio según REQ-002-05 sin alterar ventas anteriores.
 
 La indicación del usuario de permitir el campo en blanco sustituye la propuesta de bloqueo. AC-002-01 admite impuesto vacío. Para preparados se mantiene la exigencia de receta y conversiones completas.
+
+## Alcance verificable del incremento 2
+
+- AC-002-06 → REQ-002-01/02/03. Cajero crea online producto completo sin impuesto, edita por nueva versión y guarda receta borrador con campos pendientes. Terminado queda habilitado; preparado solo al activar una receta completa. Formulario administrativo, sin pedido todavía.
+- AC-002-07 → REQ-002-04/05. Publicar v2 conserva v1 consultable. Borrador posterior conserva activa previa. Consumo previsto sustituye únicamente la línea elegida y agrega adicionales; una conversión ausente impide activar con mensaje de línea. Esto es dominio/API, no prueba de cobro.
+- Activación exige precio de cada opción y al menos un ingrediente; empaques consumen también. Ingredientes solo materias primas/consumibles, sin recetas recursivas.

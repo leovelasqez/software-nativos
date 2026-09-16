@@ -65,6 +65,7 @@
           "purchase.write",
           "inventory.manage",
           "sale.refund",
+          "cash.movement",
           "cost.read",
           "cost.write",
           "loyalty.adjust",

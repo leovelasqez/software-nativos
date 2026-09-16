@@ -1,0 +1,42 @@
+import { expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+export async function exerciseInventoryOperations(page: Page) {
+  const nav = page.locator('.sidebar nav');
+  if (!await nav.isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  const dialog = page.getByRole('dialog');
+  await nav.getByRole('button', { name: 'Traslados', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Traslados', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '+ Nuevo traslado', exact: true }).click();
+  await dialog.getByLabel('Origen').selectOption({ label: 'Bodega de venta' });
+  await dialog.getByLabel('Destino').selectOption({ label: 'Bodega E2E' });
+  await dialog.getByLabel('Artículo 1').selectOption({ label: 'Leche de prueba (ml)' });
+  await dialog.getByLabel('Cantidad').fill('100');
+  await dialog.getByLabel('Motivo del cambio').fill('Traslado sintético para verificación');
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: 'Gestionar', exact: true }).click();
+  await dialog.getByLabel('Motivo del cambio').fill('Despacho sintético para verificación');
+  await dialog.getByRole('button', { name: 'Despachar traslado', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: 'Gestionar', exact: true }).click();
+  await dialog.getByLabel('Recibir ahora').fill('40');
+  await dialog.getByLabel('Motivo del cambio').fill('Recepción parcial sintética');
+  await dialog.getByRole('button', { name: 'Registrar recepción', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  if (!await nav.isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  await nav.getByRole('button', { name: 'Conteos y ajustes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Conteos y ajustes', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '+ Registrar conteo', exact: true }).click();
+  await dialog.getByLabel('Artículo 1').selectOption({ label: 'Leche de prueba (ml)' });
+  await dialog.getByLabel('Cantidad contada').fill('0');
+  await dialog.getByLabel('Motivo del cambio').fill('Conteo sintético para verificación');
+  await dialog.getByRole('button', { name: 'Confirmar conteo', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: '+ Consumo interno', exact: true }).click();
+  await dialog.getByLabel('Artículo 1').selectOption({ label: 'Leche de prueba (ml)' });
+  await dialog.getByLabel('Cantidad consumida').fill('1');
+  await dialog.getByLabel('Motivo del cambio').fill('Consumo interno sintético');
+  await dialog.getByRole('button', { name: 'Registrar consumo', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+}

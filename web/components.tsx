@@ -12,7 +12,7 @@ export function ThemeToggle() {
 export function Notice({ children, error = false }: { children: ReactNode; error?: boolean }) {
   return <div className={error ? 'notice error' : 'notice'} role={error ? 'alert' : 'status'}>{children}</div>;
 }
-export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({ title, onClose, children, eyebrow = 'ADMINISTRACIÓN' }: { eyebrow?: string; title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const el = ref.current!; el.showModal();
@@ -21,7 +21,7 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
     return () => el.close();
   }, []);
   return <dialog ref={ref} aria-labelledby="dialog-title" onCancel={onClose} onClose={onClose}>
-    <header className="dialog-header"><div><span className="eyebrow">ADMINISTRACIÓN</span><h2 id="dialog-title">{title}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" onClick={onClose}>×</button></header>{children}</dialog>;
+    <header className="dialog-header"><div><span className="eyebrow">{eyebrow}</span><h2 id="dialog-title">{title}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" onClick={onClose}>×</button></header>{children}</dialog>;
 }
 export function SaveForm({ children, onSave, label = 'Guardar cambios' }: { children: ReactNode; onSave: (data: FormData) => Promise<void>; label?: string }) {
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);

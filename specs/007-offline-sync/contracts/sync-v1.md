@@ -1,3 +1,5 @@
+> Contrato histórico base. DEC-021 y contracts/browser-pos-v1.md sustituyen el adaptador Windows por navegador; las envolturas y reglas centrales se conservan.
+
 # Autorización offline y sincronización v1
 
 REQ-007-01/02/03/04/05; AC-007-01/02/03/04/06. DEC-003/004.

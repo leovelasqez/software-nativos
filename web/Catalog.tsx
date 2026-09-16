@@ -1,0 +1,131 @@
+import { useEffect, useRef, useState } from 'react';
+import { api, date } from './api.ts';
+import type { Me, BranchDetail, Warehouse } from './api.ts';
+import type { Item, Product, Recipe, RecipeLine, RecipeOption } from '../src/catalog.ts';
+import { Dialog, Heading, Notice, Reason, SaveForm } from './components.tsx';
+
+type Page<T> = { items: T[]; nextCursor: string | null };
+export async function allPages<T>(url: string): Promise<T[]> {
+  const items: T[] = []; let after: string | null = null;
+  do { const r: Page<T> = await api(url + '&limit=100' + (after ? '&after=' + encodeURIComponent(after) : '')); items.push(...r.items); after = r.nextCursor; } while (after);
+  return items;
+}
+function useOperation(branchId: string) {
+  const last = useRef({ payload: '', id: '' });
+  return async (url: string, method: string, body: object) => {
+    const payload = JSON.stringify({ url, method, branchId, ...body });
+    if (last.current.payload !== payload) last.current = { payload, id: crypto.randomUUID() };
+    return api(url, method, { ...body, branchId, operationId: last.current.id });
+  };
+}
+const value = (data: FormData, name: string) => String(data.get(name) ?? '');
+const quantityText = (n: string) => { const [whole, fraction = ''] = n.split('.'); const trimmed = fraction.replace(/0+$/, ''); return whole!.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (trimmed ? ',' + trimmed : ''); };
+const money = (n: string) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 2 }).format(Number(n));
+export function DecimalField({ label, name, initial, required = true }: { label: string; name: string; initial?: string; required?: boolean }) {
+  return <label>{label}<input name={name} defaultValue={initial} inputMode="decimal" pattern="(0|[1-9][0-9]{0,8})(\.[0-9]{1,6})?" required={required} title="Número positivo o cero; usa punto para decimales (hasta seis)." /></label>;
+}
+export function Catalog({ me, branchId }: { me: Me; branchId: string }) {
+  const [products, setProducts] = useState<Product[]>([]); const [error, setError] = useState(''); const [loaded, setLoaded] = useState(false);
+  const [edit, setEdit] = useState<Product | 'new' | null>(null); const [search, setSearch] = useState('');
+  async function refresh() { try { setProducts(await allPages<Product>(`/products?branchId=${branchId}`)); setLoaded(true); } catch (e) { setError((e as Error).message); } }
+  useEffect(() => { void refresh(); }, [branchId]);
+  return <><Heading eyebrow="CATÁLOGO COMPARTIDO" title="Productos" action={me.user.actions.includes('product.create') && <button className="primary" onClick={() => setEdit('new')}>+ Nuevo producto</button>}>Productos y presentaciones para Milán y Centro.</Heading>
+    {error && <Notice error>{error}</Notice>}<section className="panel"><div className="panel-toolbar"><label className="search">Buscar producto<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre o referencia" /></label><span className="muted">{products.length} {products.length === 1 ? 'producto' : 'productos'}</span></div>
+      {!loaded && !error && <Notice>Cargando catálogo…</Notice>}{loaded && !products.length && <p className="empty">Crea el primer producto para comenzar.</p>}
+      {products.filter(p => (p.name + ' ' + p.reference).toLowerCase().includes(search.toLowerCase())).map(p => <article className="catalog-row" key={p.id}><div><span className="eyebrow">{p.type === 'finished' ? 'PRODUCTO TERMINADO' : 'PRODUCTO PREPARADO'}</span><h2>{p.name}</h2><p>{p.reference} · {p.presentation} · {p.category}</p><p>{p.tax ? `${p.tax.label} · ${p.tax.exempt ? 'Exento' : p.tax.rate + '%'}` : 'Sin impuesto asignado'}</p></div><div><strong>{money(p.price)}</strong><p className="status-text">{p.sellable ? 'Habilitado' : 'Requiere receta activa'} · v{p.version}</p>{me.user.actions.includes('product.create') && <button className="secondary" onClick={() => setEdit(p)}>Editar {p.name}</button>}</div></article>)}
+    </section>{edit && <ProductForm product={edit === 'new' ? null : edit} branchId={branchId} close={() => setEdit(null)} saved={async () => { setEdit(null); await refresh(); }} />}</>;
+}
+export function ProductForm({ product, branchId, close, saved }: { product: Product | null; branchId: string; close: () => void; saved: () => Promise<void> }) {
+  const send = useOperation(branchId); const [tax, setTax] = useState(Boolean(product?.tax));
+  return <Dialog title={product ? 'Editar producto' : 'Nuevo producto'} onClose={close}><SaveForm label="Guardar producto" onSave={async d => {
+    const body = { name: value(d, 'name'), reference: value(d, 'reference'), category: value(d, 'category'), presentation: value(d, 'presentation'), unit: 'unit', price: value(d, 'price'), description: value(d, 'description'), tax: tax ? { label: value(d, 'taxLabel'), rate: value(d, 'taxRate'), exempt: d.get('exempt') === 'on' } : null, reason: value(d, 'reason'), ...(product ? { expectedVersion: product.version } : { type: value(d, 'type') }) };
+    await send(product ? `/products/${product.id}` : '/products', product ? 'PUT' : 'POST', body); await saved();
+  }}><div className="fields"><label>Nombre<input name="name" defaultValue={product?.name} minLength={2} maxLength={100} required /></label><label>Referencia<input name="reference" defaultValue={product?.reference} minLength={2} maxLength={100} required /></label>
+    {!product && <label>Tipo<select name="type" aria-label="Tipo"><option value="finished">Producto Terminado</option><option value="prepared">Producto Preparado</option></select></label>}<label>Categoría<input name="category" defaultValue={product?.category} minLength={2} maxLength={100} required /></label><label>Presentación<input name="presentation" defaultValue={product?.presentation} minLength={2} maxLength={100} required placeholder="Ej. 12 onzas" /></label><label>Unidad<input value="Unidad" readOnly /></label><DecimalField label="Precio final (COP)" name="price" initial={product?.price} /></div>
+    <label>Descripción<textarea name="description" defaultValue={product?.description} maxLength={2000} /></label><label className="check"><input type="checkbox" checked={tax} onChange={e => setTax(e.target.checked)} />Asignar impuesto</label>{tax ? <div className="fields"><label>Nombre del impuesto<input name="taxLabel" defaultValue={product?.tax?.label} minLength={2} maxLength={100} required /></label><DecimalField label="Tasa (%)" name="taxRate" initial={product?.tax?.rate} /><label className="check"><input name="exempt" type="checkbox" defaultChecked={product?.tax?.exempt} />Exento</label></div> : <p className="muted">Sin impuesto asignado</p>}
+    <p className="muted">Las existencias y su costo inicial se registran por bodega en Inventario. Los preparados requieren una receta activa.</p><Reason /></SaveForm></Dialog>;
+}
+const blankLine = (): RecipeLine => ({ id: crypto.randomUUID(), itemId: '', quantity: null, unit: 'g', conversion: null, kind: 'ingredient' });
+function LineEditor({ line, set, items, prefix }: { line: RecipeLine; set: (v: RecipeLine) => void; items: Item[]; prefix: string }) {
+  const item = items.find(i => i.id === line.itemId); const automatic = line.unit === item?.baseUnit || line.unit === 'kg' && item?.baseUnit === 'g' || line.unit === 'l' && item?.baseUnit === 'ml';
+  return <div className="fields"><label>{prefix} · Artículo<select aria-label={`${prefix} · Artículo`} value={line.itemId} onChange={e => { const i = items.find(i => i.id === e.target.value); set({ ...line, itemId: e.target.value, unit: i?.baseUnit ?? 'g', conversion: null }); }} required><option value="">Selecciona un artículo</option>{items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.baseUnit})</option>)}</select></label><label>{prefix} · Cantidad<input inputMode="decimal" value={line.quantity ?? ''} onChange={e => set({ ...line, quantity: e.target.value || null })} pattern="(0|[1-9][0-9]{0,8})(\.[0-9]{1,6})?" /></label><label>{prefix} · Unidad<input value={line.unit} maxLength={40} required onChange={e => set({ ...line, unit: e.target.value, conversion: null })} /></label><label>{prefix} · Uso<select aria-label={`${prefix} · Uso`} value={line.kind} onChange={e => set({ ...line, kind: e.target.value as RecipeLine['kind'] })}><option value="ingredient">Ingrediente</option><option value="packaging">Empaque</option></select></label>
+    {!automatic && <><label>{prefix} · Factor a unidad base<input inputMode="decimal" value={line.conversion?.factor ?? ''} pattern="(0|[1-9][0-9]{0,8})(\.[0-9]{1,6})?" onChange={e => set({ ...line, conversion: e.target.value ? { factor: e.target.value, source: line.conversion?.source ?? '' } : null })} /></label><label>{prefix} · Fuente de conversión<input value={line.conversion?.source ?? ''} maxLength={100} onChange={e => set({ ...line, conversion: { factor: line.conversion?.factor ?? '', source: e.target.value } })} /></label></>}
+  </div>;
+}
+export function Recipes({ me, branchId }: { me: Me; branchId: string }) {
+  const [products, setProducts] = useState<Product[]>([]); const [items, setItems] = useState<Item[]>([]); const [selected, setSelected] = useState('');
+  const [recipes, setRecipes] = useState<Recipe[]>([]); const [error, setError] = useState(''); const [editing, setEditing] = useState<Recipe | 'new' | null>(null);
+  const [cost, setCost] = useState<{ cost: string | null; recipeVersion: number; warehouse: string } | null>(null);
+  async function refresh() { const p = await allPages<Product>(`/products?branchId=${branchId}`); setProducts(p.filter(p => p.type === 'prepared')); setItems((await allPages<Item>(`/items?branchId=${branchId}`)).filter(i => i.kind !== 'finished')); }
+  useEffect(() => { void refresh().catch(e => setError(e.message)); }, [branchId]);
+  useEffect(() => { let cancelled = false; setRecipes([]); if (selected) void allPages<Recipe>(`/products/${selected}/recipes?branchId=${branchId}`).then(r => { if (!cancelled) setRecipes(r); }).catch(e => { if (!cancelled) setError(e.message); }); return () => { cancelled = true; }; }, [selected, products, branchId]);
+  const product = products.find(p => p.id === selected);
+  useEffect(() => {
+    let cancelled = false; setCost(null);
+    if (product?.activeRecipeVersion && me.user.role === 'owner' && me.user.actions.includes('cost.read')) {
+      void (async () => {
+        const detail = await api<BranchDetail>(`/branches/${branchId}`); const warehouse = detail.warehouses.find(w => w.isDefault);
+        if (!warehouse) return;
+        const result = await api<{ cost: string | null; recipeVersion: number }>(`/warehouses/${warehouse.id}/recipe-cost/${product.id}?branchId=${branchId}`);
+        if (!cancelled) setCost({ ...result, warehouse: warehouse.name });
+      })().catch(e => { if (!cancelled) setError(e.message); });
+    }
+    return () => { cancelled = true; };
+  }, [product, branchId, me]);
+  return <><Heading eyebrow="PREPARACIÓN" title="Recetas" action={me.user.actions.includes('recipe.create') && <button className="primary" disabled={!selected} onClick={() => setEditing('new')}>+ Nueva receta</button>}>Versiones compartidas, ingredientes y opciones por presentación.</Heading>{error && <Notice error>{error}</Notice>}
+    <section className="panel"><div className="panel-toolbar"><label>Producto preparado<select aria-label="Producto preparado" value={selected} onChange={e => setSelected(e.target.value)}><option value="">Selecciona un producto</option>{products.map(p => <option key={p.id} value={p.id}>{p.name} · {p.presentation}</option>)}</select></label></div>{!products.length && <p className="empty">Crea un Producto Preparado en Productos para agregar su receta.</p>}
+      {selected && !recipes.length && <p className="empty">Todavía no hay recetas para esta presentación.</p>}{[...recipes].reverse().map(r => <article className="catalog-row" key={r.id}><div><span className="eyebrow">VERSIÓN {r.version} · {product?.activeRecipeVersion === r.version ? 'ACTIVA VIGENTE' : r.state === 'draft' ? 'BORRADOR' : 'HISTÓRICA'}</span><h2>{r.name}</h2><p>{r.lines.length} {r.lines.length === 1 ? 'línea' : 'líneas'} · {r.options.length} {r.options.length === 1 ? 'opción' : 'opciones'}</p><details><summary>Ver ingredientes e instrucciones</summary>{r.lines.map(l => <p key={l.id}>{items.find(i => i.id === l.itemId)?.name}: {l.quantity ?? 'Pendiente'} {l.unit} · base: {l.baseQuantity ?? 'Pendiente'}</p>)}{r.options.map(o => <p key={o.id}>{o.name}: {o.kind === 'addition' ? 'Adicional' : 'Sustitución'} · {o.price === null ? 'Precio pendiente' : money(o.price)}</p>)}<p>{r.instructions}</p></details></div>{me.user.actions.includes('recipe.create') && <button className="secondary" onClick={() => setEditing(r)}>Crear versión desde v{r.version}</button>}</article>)}</section>
+    {cost && <Notice>Costo de receta v{cost.recipeVersion} · {cost.warehouse}: {cost.cost === null ? 'Pendiente: faltan costos iniciales fiables.' : money(cost.cost)}. Corresponde a la receta base, sin opciones.</Notice>}
+    {editing && product && <RecipeForm product={product} original={editing === 'new' ? null : editing} items={items} branchId={branchId} close={() => setEditing(null)} saved={async () => { setEditing(null); await refresh(); }} />}</>;
+}
+function RecipeForm({ product, original, items, branchId, close, saved }: { product: Product; original: Recipe | null; items: Item[]; branchId: string; close: () => void; saved: () => Promise<void> }) {
+  const [lines, setLines] = useState<RecipeLine[]>(original?.lines ?? [blankLine()]); const [options, setOptions] = useState<RecipeOption[]>(original?.options ?? []); const send = useOperation(branchId);
+  const cleanLine = ({ baseQuantity: _, ...line }: RecipeLine) => line;
+  return <Dialog title="Nueva versión de receta" onClose={close}><SaveForm label="Guardar receta" onSave={async d => {
+    await send(`/products/${product.id}/recipes`, 'POST', { name: value(d, 'name'), instructions: value(d, 'instructions'), state: value(d, 'state'), expectedActiveVersion: product.activeRecipeVersion ?? 0, lines: lines.map(cleanLine), options: options.map(o => ({ ...o, line: cleanLine(o.line) })), reason: value(d, 'reason') }); await saved();
+  }}><label>Nombre de receta<input name="name" defaultValue={original?.name ?? product.name} minLength={2} maxLength={100} required /></label><p className="muted">{product.name} · {product.presentation}. Guarda borrador si faltan cantidades o conversiones.</p>
+    {lines.map((l, i) => <section className="recipe-line" key={l.id}><LineEditor line={l} items={items} prefix={`Línea ${i + 1}`} set={v => setLines(lines.map(x => x.id === l.id ? v : x))} /><button type="button" className="secondary" onClick={() => { setLines(lines.filter(x => x.id !== l.id)); setOptions(options.filter(o => o.replacesLineId !== l.id)); }}>Eliminar línea {i + 1}</button></section>)}
+    <button type="button" className="secondary" onClick={() => setLines([...lines, blankLine()])}>+ Agregar ingrediente o empaque</button><h3>Adicionales y sustituciones</h3>
+    {options.map((o, i) => { const set = (v: RecipeOption) => setOptions(options.map(x => x.id === o.id ? v : x)); return <section className="recipe-line" key={o.id}><label>Opción {i + 1} · Nombre<input value={o.name} minLength={2} maxLength={100} required onChange={e => set({ ...o, name: e.target.value })} /></label><div className="fields"><label>Opción {i + 1} · Tipo<select aria-label={`Opción ${i + 1} · Tipo`} value={o.kind} onChange={e => set({ ...o, kind: e.target.value as RecipeOption['kind'], replacesLineId: e.target.value === 'addition' ? null : lines[0]?.id ?? null })}><option value="addition">Adicional</option><option value="substitution">Sustitución</option></select></label><label>Opción {i + 1} · Precio adicional (COP)<input value={o.price ?? ''} inputMode="decimal" pattern="(0|[1-9][0-9]{0,8})(\.[0-9]{1,6})?" onChange={e => set({ ...o, price: e.target.value || null })} /></label>{o.kind === 'substitution' && <label>Opción {i + 1} · Reemplaza<select aria-label={`Opción ${i + 1} · Reemplaza`} value={o.replacesLineId ?? ''} onChange={e => set({ ...o, replacesLineId: e.target.value })} required>{lines.map((l, j) => <option key={l.id} value={l.id}>Línea {j + 1} · {items.find(i => i.id === l.itemId)?.name}</option>)}</select></label>}</div><LineEditor line={o.line} items={items} prefix={`Opción ${i + 1}`} set={line => set({ ...o, line })} /><button type="button" className="secondary" onClick={() => setOptions(options.filter(x => x.id !== o.id))}>Eliminar opción {i + 1}</button></section>; })}
+    <button type="button" className="secondary" onClick={() => setOptions([...options, { id: crypto.randomUUID(), name: '', kind: 'addition', replacesLineId: null, price: null, line: blankLine() }])}>+ Agregar opción</button><label>Instrucciones<textarea name="instructions" defaultValue={original?.instructions} maxLength={4000} /></label><label>Estado<select aria-label="Estado" name="state" defaultValue="draft"><option value="draft">Guardar borrador</option><option value="active">Activar receta</option></select></label><Reason /></SaveForm></Dialog>;
+}
+interface Stock { itemId: string; name: string; reference: string; baseUnit: string; quantity: string; minimum: string; low: boolean }
+interface Movement { id: string; itemId: string; warehouseId: string; kind: string; quantity: string; reversesId: string | null; reason: string; createdAt: string; entry: { quantity: string; unit: string; conversion: { factor: string; source: string } | null } | null }
+export function Inventory({ me, branchId }: { me: Me; branchId: string }) {
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]); const [selected, setSelected] = useState(''); const [stock, setStock] = useState<Stock[]>([]); const [moves, setMoves] = useState<Movement[]>([]); const [costs, setCosts] = useState<Record<string, string | null>>({}); const [error, setError] = useState('');
+  const [form, setForm] = useState<{ kind: 'item' | 'initial' | 'minimum' | 'reverse'; stock?: Stock; move?: Movement } | null>(null);
+  const manage = me.user.actions.includes('inventory.manage'); const owner = me.user.role === 'owner' && me.user.actions.includes('cost.read');
+  useEffect(() => { void api<BranchDetail>(`/branches/${branchId}`).then(d => { setWarehouses(d.warehouses); setSelected(d.warehouses.find(w => w.isDefault)?.id ?? d.warehouses[0]?.id ?? ''); }).catch(e => setError(e.message)); }, [branchId]);
+  const refreshId = useRef(0);
+  async function refresh() {
+    if (!selected) return; const generation = ++refreshId.current;
+    try {
+      const [s, m] = await Promise.all([allPages<Stock>(`/warehouses/${selected}/stock?branchId=${branchId}`), allPages<Movement>(`/warehouses/${selected}/movements?branchId=${branchId}`)]);
+      if (generation !== refreshId.current) return;
+      setStock(s); setMoves(m); setError('');
+      if (owner) {
+        const values = await allPages<{ itemId: string; unitCost: string | null }>(`/warehouses/${selected}/costs?branchId=${branchId}`);
+        if (generation === refreshId.current) setCosts(Object.fromEntries(values.map(c => [c.itemId, c.unitCost])));
+      }
+    } catch (e) { if (generation === refreshId.current) setError((e as Error).message); }
+  }
+  useEffect(() => { setStock([]); setMoves([]); setCosts({}); void refresh(); return () => { refreshId.current++; }; }, [selected]);
+  return <><Heading eyebrow="EXISTENCIAS POR BODEGA" title="Inventario" action={manage && <button className="primary" onClick={() => setForm({ kind: 'item' })}>+ Nuevo artículo</button>}>Materias primas, consumibles y productos terminados.</Heading>{error && <Notice error>{error}</Notice>}
+    <section className="panel"><div className="panel-toolbar"><label>Bodega<select aria-label="Bodega" value={selected} onChange={e => setSelected(e.target.value)}>{warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label><span className="muted">Saldos registrados en esta bodega</span></div>{!stock.length && <p className="empty">Aún no hay artículos de inventario.</p>}
+      {stock.map(s => <article className="catalog-row" key={s.itemId}><div><h2>{s.name}</h2><p>{s.reference} · Mínimo: {quantityText(s.minimum)} {s.baseUnit}</p>{owner && <p>Costo por {s.baseUnit}: {costs[s.itemId] == null ? 'Pendiente' : money(costs[s.itemId]!)}</p>}</div><div><strong>{quantityText(s.quantity)} {s.baseUnit}</strong><p className="status-text">{s.low ? 'En mínimo o por debajo' : 'Sobre el mínimo'}</p>{manage && <div className="row-actions"><button className="secondary" disabled={moves.some(m => m.itemId === s.itemId && m.kind === 'initial' && !moves.some(r => r.reversesId === m.id))} onClick={() => setForm({ kind: 'initial', stock: s })}>Registrar inicial · {s.name}</button><button className="secondary" onClick={() => setForm({ kind: 'minimum', stock: s })}>Mínimo · {s.name}</button></div>}</div></article>)}</section>
+    <section className="panel movement-panel"><header className="section-heading"><h2>Historial de movimientos</h2></header>{!moves.length && <p className="empty">Sin movimientos registrados.</p>}{[...moves].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(m => <article className="catalog-row" key={m.id}><div><h3>{m.kind === 'initial' ? 'Inventario inicial' : m.kind === 'waste' ? 'Desperdicio' : m.kind === 'refund' ? 'Devolución' : m.kind === 'sale' ? 'Consumo por venta' : 'Reversión'} · {stock.find(s => s.itemId === m.itemId)?.name}</h3><p>{quantityText(m.quantity)} {stock.find(s => s.itemId === m.itemId)?.baseUnit} · {date(m.createdAt)}</p><p>{m.reason}</p>{m.entry && <p>Entrada: {quantityText(m.entry.quantity)} {m.entry.unit}{m.entry.conversion && <> · Factor: {m.entry.conversion.factor} · Fuente: {m.entry.conversion.source}</>}</p>}{m.reversesId && <small>Relacionado con {m.reversesId}</small>}</div>{manage && m.kind === 'initial' && !moves.some(r => r.reversesId === m.id) && <button className="secondary" onClick={() => setForm({ kind: 'reverse', move: m })}>Revertir inicial</button>}</article>)}</section>
+    {form && <InventoryForm key={`${selected}-${form.kind}-${form.stock?.itemId ?? form.move?.id}`} form={form} branchId={branchId} warehouseId={selected} canCost={me.user.role === 'owner' && me.user.actions.includes('cost.write')} close={() => setForm(null)} saved={async () => { setForm(null); await refresh(); }} />}</>;
+}
+function InventoryForm({ form, branchId, warehouseId, canCost, close, saved }: { form: { kind: string; stock?: Stock; move?: Movement }; branchId: string; warehouseId: string; canCost: boolean; close: () => void; saved: () => Promise<void> }) {
+  const send = useOperation(branchId); const title = { item: 'Nuevo artículo', initial: 'Registrar inventario inicial', minimum: 'Configurar mínimo', reverse: 'Revertir inventario inicial' }[form.kind]!;
+  return <Dialog title={title} onClose={close}><SaveForm label="Guardar registro" onSave={async d => {
+    const reason = value(d, 'reason'); const root = `/warehouses/${warehouseId}`;
+    if (form.kind === 'item') await send('/items', 'POST', { name: value(d, 'name'), reference: value(d, 'reference'), kind: value(d, 'kind'), baseUnit: value(d, 'unit'), reason });
+    if (form.kind === 'initial') await send(root + '/initial', 'POST', { itemId: form.stock!.itemId, quantity: value(d, 'quantity'), unit: value(d, 'unit'), conversion: value(d, 'factor') ? { factor: value(d, 'factor'), source: value(d, 'source') } : null, unitCost: canCost && value(d, 'cost') ? value(d, 'cost') : null, reason });
+    if (form.kind === 'minimum') await send(root + '/minimum', 'PUT', { itemId: form.stock!.itemId, minimum: value(d, 'minimum'), reason });
+    if (form.kind === 'reverse') await send(root + '/reversals', 'POST', { movementId: form.move!.id, reason });
+    await saved();
+  }}>{form.stock && <p>{form.stock.name} · Unidad base: {form.stock.baseUnit}</p>}{form.kind === 'item' && <><label>Nombre del artículo<input name="name" minLength={2} maxLength={100} required /></label><label>Referencia<input name="reference" minLength={2} maxLength={100} required /></label><label>Tipo de artículo<select aria-label="Tipo de artículo" name="kind"><option value="raw">Materia prima</option><option value="consumable">Consumible / empaque</option></select></label><label>Unidad base<select aria-label="Unidad base" name="unit"><option value="g">Gramos (g)</option><option value="ml">Mililitros (ml)</option><option value="unit">Unidades</option></select></label></>}
+    {form.kind === 'initial' && <><DecimalField label="Cantidad inicial" name="quantity" /><label>Unidad de entrada<input name="unit" defaultValue={form.stock?.baseUnit} maxLength={40} required /></label><p className="muted">g/kg y ml/l se convierten automáticamente. Para otra unidad, completa el factor y su fuente.</p><DecimalField label="Factor a unidad base (opcional)" name="factor" required={false} /><label>Fuente de conversión<input name="source" minLength={2} maxLength={100} /></label>{canCost && <DecimalField label={`Costo por ${form.stock?.baseUnit} (COP, opcional)`} name="cost" required={false} />}<p className="muted">Solo se admite un inicial vigente por artículo y bodega. Usa una reversión para corregirlo.</p></>}
+    {form.kind === 'minimum' && <DecimalField label="Mínimo en unidad base" name="minimum" initial={form.stock?.minimum.replace(/\.0+$/, '')} />}{form.kind === 'reverse' && <Notice>Se registrará un movimiento inverso de {form.move?.quantity}. El original permanecerá en el historial.</Notice>}<Reason /></SaveForm></Dialog>;
+}

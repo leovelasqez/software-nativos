@@ -27,7 +27,7 @@ Las instrucciones nuevas del usuario prevalecen. Si cambian el alcance, actualiz
 ## Contexto del negocio
 
 - Nativos opera en Milán y Centro, con una caja por local.
-- Administración web y caja Windows con operación offline de hasta siete días.
+- Un único sitio web para Administración y Caja; Caja funciona offline hasta siete días en el navegador (DEC-021, confirmación del 15-09-2026).
 - Catálogo, precios y recetas compartidos; existencias por bodega y sucursal.
 - Español, COP y America/Bogota.
 - Maqueta actual: `C:\Users\pc\.codex\visualizations\2026\09\13\01a099a7-cd22-7ef0-8855-f075079607e8\nativos-interfaz.html`.
@@ -57,7 +57,7 @@ Las instrucciones nuevas del usuario prevalecen. Si cambian el alcance, actualiz
 
 ## Organización e implementación propuesta
 
-La base propuesta es React/TypeScript para web, Electron/SQLite para caja y Node.js/TypeScript/PostgreSQL para servidor. Inspecciona la implementación existente antes de crear estructuras nuevas; no asumas que la maqueta es una aplicación completa.
+La base vigente es React/TypeScript para el sitio único, IndexedDB/Web Crypto/Web Locks y service worker para Caja offline, y Node.js/TypeScript/PostgreSQL para servidor. Electron/SQLite/DPAPI de Caja son adaptadores históricos preservados para transición; no continuar desarrollando una aplicación de escritorio ni exigir servicio POS local en el producto. Inspecciona la implementación existente antes de crear estructuras nuevas; no asumas que la maqueta es una aplicación completa.
 
 - Separar interfaz, reglas de negocio, persistencia y adaptadores de integración.
 - Compartir cálculos y validaciones entre servidor y caja, con representación precisa de dinero y cantidades.
@@ -115,3 +115,7 @@ No asumir que este archivo en minúsculas será descubierto automáticamente por
 ## Aclaración de entorno y catálogo
 
 Impuestos es opcional: permitir guardar y vender con el campo vacío, mostrando «Sin impuesto asignado», sin calcular impuesto ni inventar tasas. Conservar vacío distinto de tasa 0% o exención fiscal; los cambios no recalculan ventas anteriores. Se descarta el bloqueo propuesto por falta de impuesto. Milán usa T80A y Centro NP / New Print T82E, ambas USB de 80 mm, cada una compartida entre comprobantes y comandas. Validar controladores, impresión y cajones con hardware real. Solo hay un computador por local: no presentar copias en su mismo disco como protección ante pérdida total, ni respaldos centrales como cobertura de ventas sin sincronizar. El volumen real aún se desconoce; distinguir mediciones de cargas sintéticas.
+
+## Dirección web vigente — 15-09-2026
+
+La instrucción del usuario sustituye la arquitectura de escritorio. Aplicar specs/012-unified-web y DEC-021 por encima de planes/contratos históricos de 0–5. Mantener siete días offline, pedidos y turnos al cerrar/reabrir navegador. Un mismo origen, navegación y sesión para Administración/Caja. IndexedDB no es un respaldo; no borrar datos del sitio, reemplazar perfiles ni reiniciar instalaciones para resolver fallos. La sincronización se reanuda con el sitio abierto; no prometer ejecución con todas las pestañas cerradas. Impresión/cajón se ensayan desde navegador antes del lanzamiento.

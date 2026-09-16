@@ -1,14 +1,14 @@
 # Software Nativos — Plan funcional y técnico
 
-Última actualización: 13 de septiembre de 2026.
+Última actualización: 15 de septiembre de 2026.
 
 Metodología de desarrollo: **Spec Driven Development (SDD)**. Este archivo conserva el alcance funcional del producto. La ruta de trabajo, especificaciones, trazabilidad y decisiones técnicas se organizan desde [README.md](./README.md). La adopción de SDD no cambia las reglas acordadas ni equivale a aprobar la implementación.
 
 ## 1. Estado y objetivo
 
-Este documento consolida el plan y las modificaciones acordadas con el usuario. La implementación local está autorizada desde el mensaje del usuario del 13-09-2026; no se autoriza desplegar en producción, contratar servicios ni modificar Alegra. Existe una maqueta interactiva de referencia y una implementación local independiente de fundamentos (incrementos 0/1): usuarios, organización y auditoría persistente. Sus evidencias están en docs/evidence/. Ventas, catálogo y operación de caja aún no están implementados; la maqueta no acredita esas capacidades.
+Este documento consolida el plan y las modificaciones acordadas con el usuario. La implementación local está autorizada desde el mensaje del usuario del 13-09-2026; no se autoriza desplegar en producción, contratar servicios ni modificar Alegra. Existe una maqueta interactiva de referencia y una implementación local independiente de fundamentos (incrementos 0/1): usuarios, organización y auditoría persistente. Sus evidencias están en docs/evidence/. El incremento 2 agrega catálogo, recetas y existencias iniciales verificadas localmente. El incremento 3 agrega caja local y cobro offline sincronizable. El incremento 4 implementa pedidos múltiples, clientes, descuentos, división, medios combinados, comandas internas, desperdicio y devoluciones; el alcance y su interfaz están verificados localmente. El incremento 5 implementa fidelización, acumulación offline pendiente, canje central recuperable y devolución de puntos, verificados localmente (docs/evidence/increment-5.md). La maqueta no acredita capacidades implementadas.
 
-El objetivo es reemplazar Alegra para controlar ventas, inventario, ingresos, salidas, caja, clientes, proveedores, recetas, fidelización, usuarios, roles, informes y auditoría. El sistema tendrá administración web online y una aplicación de caja para Windows que pueda continuar operando sin internet.
+El objetivo es reemplazar Alegra para controlar ventas, inventario, ingresos, salidas, caja, clientes, proveedores, recetas, fidelización, usuarios, roles, informes y auditoría. El sistema tendrá un único sitio web que reúne Administración y Caja. Caja continuará operando sin internet hasta siete días y conservará pedidos, turnos y transacciones al cerrar y reabrir el navegador. No requiere aplicación Electron ni servicio POS instalado en los equipos clientes; la instalación del sitio como PWA será opcional. Cambio confirmado por el usuario el 15-09-2026.
 
 Operación inicial:
 
@@ -135,8 +135,8 @@ Resumen, Ventas, Productos e Inventario, Recetas, Compras y Proveedores, Caja e 
 - Apertura con base, un responsable por turno y un único turno activo por caja.
 - Registrar ventas, entradas, gastos, retiros y devoluciones; distinguir movimientos de efectivo de otros medios de pago.
 - Cerrar mediante conteo, efectivo esperado, efectivo contado y diferencias.
-- Separar propinas y cobros de domicilio.
-- Mantener pedidos, turno y movimientos al reiniciar Windows sin internet.
+- Separar propinas y cobros de domicilio. En devoluciones, permitir seleccionar importes de ambos conceptos hasta sus saldos efectivamente pagados y no devueltos (confirmado el 14-09-2026).
+- Mantener pedidos, turno y movimientos al cerrar/reabrir el navegador o reiniciar el equipo sin internet.
 - Enviar el resumen de cierre por WhatsApp después de confirmar y sincronizar el turno.
 
 ## 8. Clientes y domicilios
@@ -247,12 +247,13 @@ Condiciones:
 - Consultar datos sincronizados e indicar sucursales con información pendiente.
 - Respetar las restricciones de costos y demás permisos del agente.
 
-## 14. Arquitectura técnica propuesta
+## 14. Arquitectura web vigente
 
-La siguiente es la base técnica propuesta, no una implementación ya realizada:
+Dirección confirmada el 15-09-2026; la verificación del nuevo adaptador se registra aparte de la evidencia histórica de 0–5:
 
-- Administración web: React y TypeScript.
-- Caja Windows: Electron y SQLite local.
+- Sitio único: React y TypeScript, Administración y Caja bajo el mismo origen y sesión.
+- Caja offline: IndexedDB transaccional, Web Locks entre pestañas, Web Crypto para concesiones/custodia y service worker para cargar la interfaz sin red.
+- Navegador objetivo inicial: Edge/Chrome actuales en los Windows existentes. No confundir el servidor de desarrollo local con una dependencia que instalar en cada cliente.
 - Servidor: API Node.js/TypeScript y PostgreSQL central.
 - Compartir reglas de cálculo entre caja y servidor.
 - API autenticada para administración, sincronización e importaciones. MCP como adaptador de la misma API.
@@ -270,7 +271,9 @@ La siguiente es la base técnica propuesta, no una implementación ya realizada:
 - Hasta siete días desde la última validación online para usuarios previamente autorizados en el equipo.
 - Al agotar los siete días sin validación online, bloquear nuevos cobros hasta reconectar; conservar consulta de datos autorizados, pedidos guardados y cierre del turno existente. No borrar ni perder operaciones pendientes.
 - Vender, seleccionar clientes sincronizados, editar pedidos, aplicar descuentos, registrar propinas, cancelar y manejar turnos de caja.
-- Recuperar pedidos y transacciones tras cerrar la aplicación o reiniciar Windows.
+- Recuperar pedidos y transacciones tras cerrar/reabrir el navegador o reiniciar el equipo.
+- Sincronizar mientras el sitio esté abierto y al reabrir/reconectar. No depender de ejecución en segundo plano con todas las pestañas cerradas.
+- Mantener el mismo perfil y origen; borrar los datos del sitio puede eliminar pendientes. Solicitar almacenamiento persistente, sin presentarlo como garantía de recuperación ante pérdida del disco.
 - Acumular puntos pendientes; no canjear offline.
 - Crear productos, recetas y clientes requiere conexión. También requieren conexión las compras, traslados y cambios administrativos.
 - Las revocaciones y cambios de permisos remotos se reciben al reconectar.

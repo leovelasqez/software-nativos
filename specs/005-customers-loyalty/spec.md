@@ -1,6 +1,6 @@
 # 005 — Clientes, domicilios y fidelización
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, secciones 4, 8 y 9.
+Estado: clientes y fidelización verificados localmente en incrementos 4/5; Excel y seguimiento de reparto posterior al cierre pendientes. Implementación local autorizada el 13-09-2026. Fuente: plan, secciones 4, 8 y 9.
 
 ## Requisitos
 
@@ -13,9 +13,9 @@ Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente seg
 
 ## Fronteras y estados
 
-Libro de puntos ligado a identidad de compra y versión de regla. Distinguir pendiente de sincronización, confirmado, canje y ajuste. Reservas y confirmaciones de canje se diseñan con 007 antes de habilitar escritura. Definir cómo una corrección se representa sin borrar movimientos previos.
+Libro de puntos ligado a identidad de compra y versión de regla. Distinguir pendiente de sincronización, confirmado, canje y ajuste. Confirmación central e intención durable local diseñadas con 007 y DEC-020. Las correcciones agregan movimientos sin borrar historia.
 
-Cada cobro de cuenta dividida acumula puntos para su cliente y emite su comprobante. Al devolver una compra, revertir sus puntos generados aunque ya se hayan gastado: permitir saldo negativo, bloquear canjes sin saldo suficiente y seguir permitiendo compras. La asignación exacta de puntos en devoluciones parciales sigue pendiente del contrato.
+Cada cobro de cuenta dividida acumula puntos para su cliente y emite su comprobante. Al devolver una compra, revertir sus puntos generados aunque ya se hayan gastado: permitir saldo negativo, bloquear canjes sin saldo suficiente y seguir permitiendo compras. El reparto acumulado proporcional y los redondeos constan en contracts/loyalty-v1.md.
 
 ## Aceptación
 
@@ -34,4 +34,17 @@ Base confirmada: productos a precio final con impuestos, después de descuentos 
 
 ## Dependencias y pendientes
 
-001/004/007/008. DEC-006: reglas de negocio confirmadas; queda diseñar reparto de puntos enteros y redondeos en devoluciones parciales. DEC-007: transacción de canje ante fallos. No derivar estas políticas de las simulaciones de la maqueta. Evidencia: pendiente.
+001/004/007/008. DEC-006/007: diseño y verificación concretados en DEC-020. No derivar estas políticas de las simulaciones de la maqueta. Evidencia: [incremento 5](../../docs/evidence/increment-5.md).
+
+
+## Incremento 4
+
+Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.md), [tareas](tasks-increment-4.md) y [evidencia](../../docs/evidence/increment-4.md). No acredita puntos, ingresos/gastos/retiros manuales, mensajería, hardware ni la capacidad completa.
+
+## Incremento 5
+
+Fidelización verificada según [plan](plan-increment-5.md), [tareas](tasks-increment-5.md) y evidencia. Excel permanece en incremento 6; régimen inicial sin vencimiento.
+
+## Dirección vigente — sitio web único
+
+La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.

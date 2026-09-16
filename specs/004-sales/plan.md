@@ -1,0 +1,29 @@
+# Plan técnico — Incremento 3: primera venta completa
+
+> Contexto histórico de incrementos 0–5. Para cambios nuevos prevalecen DEC-021 y specs/012-unified-web: un sitio único con Caja offline en navegador. Se conservan reglas y contratos comerciales.
+Estado: implementado y verificado localmente en el alcance del incremento 3. Autorización: «Continua con el incremento 3», 14-09-2026. Plan funcional y hoja de ruta vigentes; 001/002/003 fundamentos ya verificados.
+
+## Alcance y aceptación
+REQ-004-01/02/05 parciales, REQ-006-01/02/03/04 parciales y REQ-007-01/02/03/04/05/06 parciales. Una cuenta de mostrador persistente, Consumidor final, terminado/preparado con cantidades/opciones, cobro completo mediante un medio (efectivo/tarjeta/transferencia/Bre-B/Daviplata/Nequi), comprobante interno consultable, turnos apertura/cierre, consumo único con negativos y alerta, sincronización ordenada. Editar/quitar líneas no enviadas conserva catálogo. Sin comandas, clientes, división, pagos combinados, descuentos/propinas/envío/devoluciones/puntos todavía: incrementos 4/5. Impresión física y distribución instalable firmada: incremento 8.
+
+AC-004-12: abrir turno, guardar pedido, cobrar terminado/preparado con opción; comprobante y consumo/pago/caja persisten juntos, sin doble cobro por reintento. AC-004-11: impuesto vacío conservado; impuesto asignado incluido en precio final, no sumado. AC-006-05: un responsable por caja, base, ventas efectivo/digital y cierre contado/diferencia; otro usuario no opera turno ajeno. AC-007-07: SQLite real, reinicio/fallo antes/después commit, respuesta central perdida, reconexión y versiones antiguas sin pérdida/duplicado. AC-007-03/06: grant firmado por equipo/usuario/local y custodia DPAPI; expirar siete días bloquea nuevas aperturas/cobros, conserva pedidos/consulta/cierre. Revocación conocida bloquea nueva operación y conserva envío de operaciones previas por equipo para revisión.
+
+## Diseño
+Dominio TypeScript exacto sobre BigInt reutiliza catálogo/consumo. SQLite node:sqlite con WAL/FULL y transacciones BEGIN IMMEDIATE en servicio POS loopback separado del servidor central. React de caja servido localmente, también dentro de Electron (nodeIntegration=false, contextIsolation=true, sandbox=true; sin acceso del renderer a SQLite/secretos). En desarrollo Electron reutiliza servicio Node 24 del equipo, sin instalador; script local inicia ambos servicios ocultos. Caja sigue disponible aunque central esté detenido. No confundir navegador central con persistencia del POS.
+
+Un dueño enrola una instalación de caja por dispositivo activo. Token de equipo de alta entropía, hash central; token/usuario offline/verificador/concesión/reloj máximo en archivo cifrado DPAPI. Login online usa identidad existente; login offline verifica contraseña derivada y grant firmado. Clave pública fijada al enrolar por origen central configurado (solo loopback HTTP; HTTPS requerido fuera). Clave privada Ed25519 persistida exclusivamente central. Usuario/equipo/local/acciones en documento firmado. Todas las validaciones se ejecutan en servicio, nunca se confía en booleanos del cliente.
+
+Concesión siete días. Máximo de reloj protegido antes de cobros y comparación monotónica en proceso; no se promete resistencia a administrador del SO. Sin renovación por timeout. Reconexión consulta permisos actuales; usuario revocado se bloquea; operaciones previas se conservan para conciliación y las aceptadas llevan indicador de revisión. Equipo revocado conserva cola con error explícito.
+
+Snapshot de catálogo/recetas/existencias público completo, identificado centralmente y aplicado en transacción; pedidos y ventas referencian su snapshot. Sin costos, incluso para dueño en POS. Solo refrescar saldo base después de enviar pendientes; incluir secuencia central confirmada para no descontar local dos veces. Descarga fallida no sustituye snapshot vigente. Pantalla muestra pendientes, conexión y fecha de actualización.
+
+Commit local guarda venta, líneas/versiones, pago, consumos, efectivo, identidad de comprobante, turno, outbox y respuesta de comando. ID de pedido cobrado único, claves de comando estables. Comprobante identifica sucursal/dispositivo/instalación/secuencia, sin depender de internet. Consultar copia no cobra. Servidor valida bytes/hash/envoltura/precedencia/grant/snapshot y recalcula importes/consumos, guarda efecto y recibo en mismo commit. Reintento igual devuelve recibo; conflicto 409 no sobrescribe. Cola secuencial; retry/conciliación/ack según contrato v1.
+
+## Contratos y cálculos
+contracts/pos-v1.md y esquemas OpenAPI/schemas de POS. Importes/cantidades strings a seis decimales. Total al peso más cercano; empate medio peso hacia arriba (DEC-018). Impuesto incluido = importe*r/(100+r), redondeado a seis decimales; null distinto de 0/exento. Redondeo final expuesto separado; no redistribuir a líneas ni simular devolución. Digital debe igualar total; efectivo recibido >=total y cambio exclusivamente efectivo. Costeo promedio permanece pendiente.
+
+## Migración y recuperación
+003 PostgreSQL aditiva, amplía libro para consumos de venta sin modificar historial 001/002. SQLite versión/checksum, única instalación por base; migración conserva outbox/historia. Crash antes de commit revierte; después recupera venta íntegra. Reinicio real de servicio/SQLite, central y respuesta perdida se prueban con bases sintéticas. No respaldo operativo ni recuperación de disco perdido; no ejecutar datos de prueba en desarrollo.
+
+## Tareas y pruebas
+Contratos primero; dominio/cálculo; firma y rutas centrales; SQLite/custodia/transporte; UI; Electron y lanzador; pruebas de dominio, API PostgreSQL+SQLite, corte/reinicio, expiración/revocación, navegador/Electron, móvil/temas/teclado; actualizar evidencia. Sin contratación, publicación, Alegra, mensajería ni datos comerciales inventados.

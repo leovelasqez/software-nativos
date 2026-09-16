@@ -55,7 +55,11 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "payloadVersion": {
-      "const": 1
+      "enum": [
+        1,
+        2,
+        3
+      ]
     }
   }
 }

@@ -1,5 +1,6 @@
 # Plan técnico 007 — Incremento 0
 
+> Contexto histórico de incrementos 0–5. Para cambios nuevos prevalecen DEC-021 y specs/012-unified-web: un sitio único con Caja offline en navegador. Se conservan reglas y contratos comerciales.
 Estado: verificado el alcance contractual y políticas del incremento 0. Misma autorización local registrada en plan 001.
 
 ## Incremento seleccionado

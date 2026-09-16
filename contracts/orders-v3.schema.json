@@ -1,0 +1,1288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "commandEvent": {
+    "oneOf": [
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.save"
+          },
+          "order": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "lines": {
+                "type": "array",
+                "maxItems": 100,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "productId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "quantity": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    },
+                    "optionIds": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                      }
+                    },
+                    "snapshotId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    "discount": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "amount",
+                            "percent"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ]
+                    },
+                    "sentQuantity": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "productId",
+                    "quantity",
+                    "optionIds",
+                    "snapshotId",
+                    "notes",
+                    "discount",
+                    "sentQuantity"
+                  ]
+                }
+              },
+              "customerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "mode": {
+                "enum": [
+                  "counter",
+                  "table",
+                  "delivery"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "address": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "rider": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "deliveryStatus": {
+                "enum": [
+                  "pending",
+                  "preparing",
+                  "dispatched",
+                  "delivered"
+                ]
+              },
+              "shipping": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+              },
+              "closed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "revision",
+              "snapshotId",
+              "lines",
+              "customerId",
+              "mode",
+              "label",
+              "address",
+              "rider",
+              "deliveryStatus",
+              "shipping",
+              "closed"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "order"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.prepare"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.cancel"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                },
+                "preparedQuantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity",
+                "preparedQuantity"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision",
+          "lines",
+          "reason"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "sale.split"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "selection": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity"
+              ]
+            }
+          },
+          "customerId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tip": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "amount",
+                  "percent"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+              }
+            },
+            "required": [
+              "kind",
+              "value"
+            ]
+          },
+          "shipping": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "payments": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "method": {
+                  "enum": [
+                    "cash",
+                    "card",
+                    "transfer",
+                    "breb",
+                    "daviplata",
+                    "nequi"
+                  ]
+                },
+                "received": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "method",
+                "received"
+              ]
+            }
+          },
+          "points": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})$"
+          },
+          "ruleId": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision",
+          "selection",
+          "customerId",
+          "tip",
+          "shipping",
+          "payments"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "sale.refund"
+          },
+          "saleId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                },
+                "recoverable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity",
+                "recoverable"
+              ]
+            }
+          },
+          "tip": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "shipping": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "payments": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "method": {
+                  "enum": [
+                    "cash",
+                    "card",
+                    "transfer",
+                    "breb",
+                    "daviplata",
+                    "nequi"
+                  ]
+                },
+                "received": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "method",
+                "received"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "kind",
+          "saleId",
+          "lines",
+          "tip",
+          "shipping",
+          "payments",
+          "reason"
+        ]
+      }
+    ]
+  },
+  "order": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "snapshotId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "lines": {
+        "type": "array",
+        "maxItems": 100,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+            },
+            "productId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+            },
+            "quantity": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+            },
+            "optionIds": {
+              "type": "array",
+              "maxItems": 100,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              }
+            },
+            "snapshotId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "discount": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "amount",
+                    "percent"
+                  ]
+                },
+                "value": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ]
+            },
+            "sentQuantity": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+            }
+          },
+          "required": [
+            "id",
+            "productId",
+            "quantity",
+            "optionIds",
+            "snapshotId",
+            "notes",
+            "discount",
+            "sentQuantity"
+          ]
+        }
+      },
+      "customerId": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "mode": {
+        "enum": [
+          "counter",
+          "table",
+          "delivery"
+        ]
+      },
+      "label": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "address": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "rider": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "deliveryStatus": {
+        "enum": [
+          "pending",
+          "preparing",
+          "dispatched",
+          "delivered"
+        ]
+      },
+      "shipping": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+      },
+      "closed": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "revision",
+      "snapshotId",
+      "lines",
+      "customerId",
+      "mode",
+      "label",
+      "address",
+      "rider",
+      "deliveryStatus",
+      "shipping",
+      "closed"
+    ]
+  },
+  "line": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "productId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "quantity": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+      },
+      "optionIds": {
+        "type": "array",
+        "maxItems": 100,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+        }
+      },
+      "snapshotId": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+      },
+      "notes": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "discount": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "amount",
+              "percent"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ]
+      },
+      "sentQuantity": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+      }
+    },
+    "required": [
+      "id",
+      "productId",
+      "quantity",
+      "optionIds",
+      "snapshotId",
+      "notes",
+      "discount",
+      "sentQuantity"
+    ]
+  },
+  "payment": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "method": {
+        "enum": [
+          "cash",
+          "card",
+          "transfer",
+          "breb",
+          "daviplata",
+          "nequi"
+        ]
+      },
+      "received": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+      }
+    },
+    "required": [
+      "method",
+      "received"
+    ]
+  },
+  "event": {
+    "oneOf": [
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.save"
+          },
+          "order": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "snapshotId": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              "lines": {
+                "type": "array",
+                "maxItems": 100,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "productId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "quantity": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    },
+                    "optionIds": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                      }
+                    },
+                    "snapshotId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "notes": {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    "discount": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "amount",
+                            "percent"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ]
+                    },
+                    "sentQuantity": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "productId",
+                    "quantity",
+                    "optionIds",
+                    "snapshotId",
+                    "notes",
+                    "discount",
+                    "sentQuantity"
+                  ]
+                }
+              },
+              "customerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "mode": {
+                "enum": [
+                  "counter",
+                  "table",
+                  "delivery"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "address": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "rider": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "deliveryStatus": {
+                "enum": [
+                  "pending",
+                  "preparing",
+                  "dispatched",
+                  "delivered"
+                ]
+              },
+              "shipping": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+              },
+              "closed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "revision",
+              "snapshotId",
+              "lines",
+              "customerId",
+              "mode",
+              "label",
+              "address",
+              "rider",
+              "deliveryStatus",
+              "shipping",
+              "closed"
+            ]
+          },
+          "occurredAtMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "order",
+          "occurredAtMs",
+          "shiftId"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.prepare"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "occurredAtMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision",
+          "occurredAtMs",
+          "shiftId"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "order.cancel"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                },
+                "preparedQuantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity",
+                "preparedQuantity"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "occurredAtMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision",
+          "lines",
+          "reason",
+          "occurredAtMs",
+          "shiftId"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "sale.split"
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "selection": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity"
+              ]
+            }
+          },
+          "customerId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tip": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "amount",
+                  "percent"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+              }
+            },
+            "required": [
+              "kind",
+              "value"
+            ]
+          },
+          "shipping": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "payments": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "method": {
+                  "enum": [
+                    "cash",
+                    "card",
+                    "transfer",
+                    "breb",
+                    "daviplata",
+                    "nequi"
+                  ]
+                },
+                "received": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "method",
+                "received"
+              ]
+            }
+          },
+          "occurredAtMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loyalty": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "rule": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                  },
+                  "earnEvery": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,8})$"
+                  },
+                  "pointValue": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,8})$"
+                  },
+                  "maxPercent": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,8})$"
+                  },
+                  "createdAtMs": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "id",
+                  "earnEvery",
+                  "pointValue",
+                  "maxPercent",
+                  "createdAtMs"
+                ]
+              },
+              "redeemedPoints": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,8})$"
+              },
+              "knownBalance": {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]{0,11})$"
+              },
+              "memberSince": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "rule",
+              "redeemedPoints",
+              "knownBalance",
+              "memberSince"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "orderId",
+          "revision",
+          "selection",
+          "customerId",
+          "tip",
+          "shipping",
+          "payments",
+          "occurredAtMs",
+          "shiftId"
+        ]
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "sale.refund"
+          },
+          "saleId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "lineId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                },
+                "recoverable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "lineId",
+                "quantity",
+                "recoverable"
+              ]
+            }
+          },
+          "tip": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "shipping": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "payments": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "method": {
+                  "enum": [
+                    "cash",
+                    "card",
+                    "transfer",
+                    "breb",
+                    "daviplata",
+                    "nequi"
+                  ]
+                },
+                "received": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                }
+              },
+              "required": [
+                "method",
+                "received"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "occurredAtMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "saleId",
+          "lines",
+          "tip",
+          "shipping",
+          "payments",
+          "reason",
+          "occurredAtMs",
+          "shiftId"
+        ]
+      }
+    ]
+  }
+}

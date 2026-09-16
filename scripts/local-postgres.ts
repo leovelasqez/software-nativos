@@ -65,11 +65,18 @@ export async function startLocalPostgres(directory: string, options: { port?: nu
       await exec(bin.initdb, ['-D', dir, '-U', 'nativos_local', '--auth=scram-sha-256', `--pwfile=${passwordFile}`, '--encoding=UTF8', '--locale=C'], { windowsHide: true, timeout: 60_000 });
     } finally { await unlink(passwordFile); }
   }
-  await control(bin.pg_ctl, ['-D', dir, '-l', join(base, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start']);
+  let running = false;
+  if (options.port && await exists(join(dir, 'postmaster.pid'))) {
+    try { await control(bin.pg_ctl, ['-D', dir, 'status']); running = true; } catch { /* A stale PID is handled by PostgreSQL itself. */ }
+  }
+  if (!running) await control(bin.pg_ctl, ['-D', dir, '-l', join(base, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start']);
   const pool = new Pool({ host: '127.0.0.1', port, user: 'nativos_local', password, database: 'postgres', max: 8 });
   pool.on('error', () => { /* requests receive controlled errors; never log credentials */ });
+  if (running) {
+    try { const result = await pool.query('SHOW data_directory'); if ((await realpath(result.rows[0].data_directory)) !== (await realpath(dir))) throw new Error('postgres_directory_mismatch'); } catch (e) { await pool.end(); throw e; }
+  }
   let stopped = false;
-  return { pool, port, async stop() {
+  return { pool, port, connection: { host: '127.0.0.1', port, user: 'nativos_local', password }, async stop() {
     if (stopped) return; stopped = true;
     await pool.end(); await control(bin.pg_ctl, ['-D', dir, '-m', 'fast', '-w', 'stop']);
   } };

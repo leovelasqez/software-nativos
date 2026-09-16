@@ -1,6 +1,8 @@
 # Índice de especificaciones y trazabilidad
 
-Implementación local autorizada el 13-09-2026. **Incrementos 0 y 1 verificados en sus alcances**: políticas de 001/007 y fundamentos online de 001; ver [evidencia 0](../docs/evidence/increment-0.md) y [evidencia 1](../docs/evidence/increment-1.md). Las aceptaciones transversales de productos/ventas/offline siguen pendientes; nada está publicado. Resto de especificaciones: borrador, pendientes de sus incrementos. Los escenarios integrales continúan como criterios, no resultados obtenidos.
+**Dirección vigente: sitio web único (DEC-021, 15-09-2026).** Administración y Caja comparten origen; Caja conserva siete días offline en navegador. La transición se traza en [012](012-unified-web/spec.md). Las tablas 0–5 son evidencia histórica y no deben interpretarse como decisión de continuar Electron.
+
+Implementación local autorizada el 13-09-2026. **Incrementos 0–5 verificados en sus alcances**: fundamentos, catálogo/recetas/existencias, caja local y operación de pedidos/clientes/división/devolución. [Evidencia 5](../docs/evidence/increment-5.md). Las tablas históricas siguientes describen lo comprobado en cada incremento; no se acreditan aún las especificaciones completas de pedidos, compras, fidelización, integraciones, hardware o lanzamiento. Nada está publicado en producción.
 
 | Spec | Capacidad | Secciones del plan | Requisitos |
 | --- | --- | --- | --- |
@@ -14,6 +16,7 @@ Implementación local autorizada el 13-09-2026. **Incrementos 0 y 1 verificados 
 | [008](./008-reports/spec.md) | Informes y Excel | 9, 11 | REQ-008-01 a REQ-008-04 |
 | [009](./009-whatsapp/spec.md) | Alertas y cierres por WhatsApp | 12 | REQ-009-01 a REQ-009-04 |
 | [010](./010-agent-api/spec.md) | API y MCP para agentes | 13 | REQ-010-01 a REQ-010-04 |
+| [012](./012-unified-web/spec.md) | Sitio web único y transición | 1, 7, 14, 16–17 | REQ-012-01 a 05 |
 | [011](./011-migration-release/spec.md) | Migración, respaldo y puesta en marcha | 14–17 | REQ-011-01 a REQ-011-05 |
 
 Las secciones 16–18 del plan aportan pruebas, límites y referencias transversales. Sus correspondencias principales son:
@@ -61,3 +64,60 @@ Cada especificación enumera datos y fronteras a diseñar; esto no equivale a te
 | REQ-001-05; AC-001-04/10 | web/ | tests/e2e/foundation.spec.ts: flujo completo, temas, móvil, teclado, acceso de cajero y axe |
 | REQ-001-02/03; AC-001-02/03 comerciales | Políticas previas conservadas | Catálogo/ventas/caché/exportación siguen pendientes, no simulados |
 | REQ-007-03 | Contrato offline vigente | Login online no equivale a concesión POS firmada; queda para incremento 3 |
+
+## Trazabilidad del incremento 2
+
+| Alcance | Diseño/código | Prueba / estado |
+| --- | --- | --- |
+| REQ-002-01/02/05; AC-002-05/06 | planes/tasks 002/003, contracts/catalog-inventory-v1.json, src/server/catalog-api.ts | tests/integration/catalog.test.ts: alta por cajero, impuesto null/0, edición optimista e historia; E2E administrativo |
+| REQ-002-03/04/05; AC-002-02/07 | src/catalog.ts, recipe_versions, web/Catalog.tsx | tests/catalog.test.ts: conversiones/sustituciones/adicionales; integración y E2E borrador/activación/versiones |
+| REQ-003-01/02 parcial; AC-003-01/06 | migrations/002-catalog-inventory.sql, catalog-api.ts | Inicial exacto, reintento concurrente, reversión única, mínimo y paginación en PostgreSQL; flujo E2E |
+| REQ-003-05 parcial; AC-003-07 | Endpoints de costo separados, dominio recipeCost | Dueño consulta costo base; encargado/cajero 403; null distinto de cero. Promedio ponderado pendiente |
+| REQ-001-04; AC-003-08 | Transacción/idempotencia/auditoría y tablas inmutables | Rollback de producto y saldo, reinicio PostgreSQL y snapshot lógico restaurado en base sintética |
+| REQ-001-05 | Catálogo/recetas/inventario React | E2E: temas, móvil, teclado, formularios, axe y capturas revisadas |
+
+AC-002-01/03/04/05 integrales de pedido/cobro y AC-003-02/03/04/05 integrales de ventas/compras/márgenes siguen pendientes. No atribuir a incremento 2 operación offline, cobros, promedios, importación ni respaldo operativo.
+
+
+## Trazabilidad del incremento 3
+
+| Alcance | Diseño/código | Verificación |
+| --- | --- | --- |
+| AC-004-11/12, AC-006-05 | Planes/tareas 004/006/007, DEC-018, contracts/pos-*, src/pos-domain.ts | Cálculo exacto, impuesto ausente/0/asignado, efectivo/digital, receta y versión por línea |
+| AC-007-07; REQ-007-01/02/04 | src/pos/store.ts, src/server/pos-api.ts, migración 003 | SQLite y PostgreSQL reales: rollback, reinicio, pérdida de acuse, idempotencia, hash/secuencia/identidad y consumo único |
+| AC-007-03/06/07 | src/pos/engine.ts, vault.ts, pos-crypto.ts | Firma Ed25519, DPAPI sin secretos en SQLite, expiración/reloj, revocación y pendientes preservados |
+| AC-006-05 | Turnos locales/centrales y registro de efectivo | Responsable único, base+efectivo sin digitales; contado/diferencia; cierre y copia tras reinicio |
+| REQ-001-05, AC-004-12 | web/Pos.tsx, desktop/main.cjs | E2E Edge/Electron, temas/móvil/teclado, axe y capturas |
+
+Evidencia detallada: [incremento 3](../docs/evidence/increment-3.md). No cubre notificación de cierre de AC-006-04, hardware de AC-007-05, recuperación ante disco perdido ni el resto de operaciones de 004/006.
+
+
+## Trazabilidad del incremento 4
+
+| Alcance | Contrato e implementación | Evidencia |
+| --- | --- | --- |
+| AC-004-01/02/03/04/08/09/10 | Pedidos v2, opciones/notas/descuentos, comanda, cancelación preparada, división y medios combinados | Dominio, integración y E2E |
+| REQ-005-01; AC-005-01 parcial | Cliente único online, selección cacheada e historia sincronizada por sucursal | Duplicados, permisos, preservación de pedido y navegador |
+| REQ-005-02 parcial | Datos/estado manuales del domicilio pendiente | E2E de dirección/envío/mesa; sin seguimiento posterior al cierre |
+| REQ-004-05/06 sin puntos | Comprobante inmutable y devoluciones acumuladas por productos, propina y domicilio | Reintento, recuperación y restitución exacta; cajero denegado |
+| REQ-006-02/03 parcial | Cobro y devolución atómicos, efectivo aplicado y propina/domicilio netos del turno | Cierre local/central conciliado |
+| REQ-007-01/02/03 | Outbox causal v1/v2, checksum/migración, rollback, reinicio y concesiones | SQLite/PostgreSQL/DPAPI reales; acuse perdido |
+| REQ-001-05 | Formularios y navegación en escritorio/móvil, claro/oscuro | Edge/Electron, axe, teclado y capturas revisadas |
+
+[Evidencia](../docs/evidence/increment-4.md). Fidelización, movimientos manuales de caja, compras, respaldo, impresión física y las especificaciones integrales permanecen en sus incrementos.
+
+## Trazabilidad del incremento 5
+
+| Alcance | Diseño/implementación | Verificación |
+| --- | --- | --- |
+| AC-005-01/05; REQ-005-03/06 | loyalty-v1, loyalty-api, migración 005, web/Loyalty | Inscripción única, ajustes/reglas solo dueño, auditoría e idempotencia; integración y navegador |
+| AC-005-02/07/08; AC-004-06/07 | loyalty.ts, orders-domain.ts, comprobante v3 | Cálculo exacto, propina antes del canje, devolución proporcional, redondeos y restitución completa; dominio/integración |
+| AC-005-03/04/06; REQ-007-01/02 | loyalty-store, engine, orders-sync, pos-api | Offline/reinicio, canjes concurrentes, pérdida de acuse, cancelación antes/después del commit y saldo negativo; motores reales |
+| REQ-005-06 | Reglas inmutables y caché versionada | Ventas anteriores y offline conservan su regla; sin puntos retroactivos |
+| REQ-001-05 | Administración y controles de caja | Edge/Electron, escritorio/móvil, temas, teclado, axe y capturas |
+
+[Evidencia del incremento 5](../docs/evidence/increment-5.md). AC-005-01 a 08 cubiertos en este alcance. Excel de REQ-005-06 queda en 008/incremento 6; no se declara verificada la especificación completa de domicilios ni el lanzamiento operativo.
+
+## Trazabilidad de la transición web 5W
+
+REQ-012-01 a 05 / AC-012-01 a 05: [plan](012-unified-web/plan.md), [contrato](../contracts/browser-pos-v1.md), web/offline, local-transition y pruebas de navegador/traslado. [Evidencia](../docs/evidence/unified-web.md). Adaptadores web verificados localmente; datos anteriores conservados y traslado disponible al perfil elegido. No acredita hardware ni publicación.

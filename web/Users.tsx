@@ -7,7 +7,7 @@ import type { Action, Role } from '../src/contracts.ts';
 
 const labels: Record<Action, string> = {
   'data.read': 'Consultar datos', 'order.write': 'Gestionar pedidos', 'sale.discount': 'Aplicar descuentos',
-  'sale.cancel': 'Cancelar antes del cobro', 'sale.charge': 'Cobrar', 'shift.open': 'Abrir turno', 'shift.close': 'Cerrar turno',
+  'sale.cancel': 'Cancelar antes del cobro', 'sale.charge': 'Cobrar', 'shift.open': 'Abrir turno', 'shift.close': 'Cerrar turno', 'cash.movement': 'Registrar movimientos de caja',
   'product.create': 'Crear productos', 'recipe.create': 'Crear recetas', 'customer.create': 'Crear clientes',
   'loyalty.enroll': 'Inscribir a fidelización', 'loyalty.redeem': 'Canjear puntos', 'purchase.read': 'Consultar compras',
   'purchase.write': 'Registrar compras', 'inventory.manage': 'Administrar inventario', 'sale.refund': 'Autorizar devoluciones',

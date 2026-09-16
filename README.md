@@ -1,98 +1,63 @@
-# Nativos — Desarrollo guiado por especificaciones
+# Nativos — Un solo sitio para Administración y Caja
 
-## Estado actual
+Dirección confirmada por el usuario el 15-09-2026: Administración y Caja en el mismo sitio web, conservando hasta siete días de Caja sin internet y recuperación al cerrar/reabrir navegador. Se sustituye el requisito de aplicación Electron. La implementación anterior 0–5 se conserva como historia y compatibilidad; la transición web tiene [especificación propia](specs/012-unified-web/spec.md).
 
-Implementación local autorizada. **Incrementos 0 y 1 completados en su alcance**: políticas compartidas, administración React, servidor Fastify y PostgreSQL real con usuarios, permisos por sucursal y auditoría. Ver [evidencia del incremento 1](docs/evidence/increment-1.md).
+## Abrir el sitio local
 
-La aplicación local permite configurar el primer dueño, iniciar/cerrar sesión, crear/editar usuarios y permisos, administrar sucursales/bodegas/equipos y consultar auditoría. No hay cobros, catálogo, caja offline ni sincronización comercial implementados. No está desplegada en producción ni conectada a Alegra. La maqueta externa permanece como referencia visual; esta interfaz tiene servidor y persistencia reales.
-
-## Lectura inicial
-
-1. [Plan de producto](./software-nativos.md): qué necesita Nativos y qué queda fuera.
-2. [Instrucciones para agentes](./agents.md): restricciones y forma de trabajo.
-3. [Proceso SDD](./docs/sdd.md): cómo convertir una necesidad en una entrega verificada.
-4. [Índice y trazabilidad](./specs/README.md): especificaciones que cubren el plan.
-5. [Arquitectura propuesta](./docs/architecture.md): límites, datos e integraciones.
-6. [Decisiones pendientes](./docs/decisions.md): asuntos que no deben resolverse por suposición.
-7. [Secuencia de entrega](./docs/roadmap.md): incrementos y dependencias.
-
-## Organización
-
-```text
-software-nativos.md          Alcance funcional consolidado
-agents.md                   Instrucciones para agentes
-docs/
-  sdd.md                    Proceso, estados y criterios de calidad
-  architecture.md           Arquitectura y responsabilidades
-  decisions.md              Registro de decisiones y preguntas abiertas
-  roadmap.md                Orden de trabajo y criterios de salida
-specs/
-  README.md                 Matriz de trazabilidad y estados
-  _templates/               Plantillas de spec, plan y tareas
-  001-foundation/spec.md     Identidad, sucursales, permisos y UI
-  002-catalog-recipes/spec.md
-  003-inventory-purchases/spec.md
-  004-sales/spec.md
-  005-customers-loyalty/spec.md
-  006-cash/spec.md
-  007-offline-sync/spec.md
-  008-reports/spec.md
-  009-whatsapp/spec.md
-  010-agent-api/spec.md
-  011-migration-release/spec.md
-```
-
-El plan y tareas de 001 incluyen los incrementos 0/1; 007 conserva su frontera offline. `src/server/` contiene API/persistencia, `web/` la interfaz, `migrations/` el esquema SQL, `contracts/` los contratos y `tests/` las pruebas. Los siguientes incrementos requieren completar sus propios planes antes del código.
-
-## Cómo se realiza un cambio
-
-Ejemplo: agregar una sustitución de leche a una venta.
-
-1. Identificar los requisitos de catálogo, ventas e inventario afectados.
-2. Especificar la selección, su precio, la versión de receta y los ingredientes que se consumen.
-3. Resolver cómo se conserva esa selección offline y en el comprobante.
-4. Definir contratos y tareas pequeñas con pruebas esperadas.
-5. Implementar dentro del alcance autorizado.
-6. Ejecutar las pruebas y registrar resultados, incluidos reintentos y reconexión.
-
-Una pantalla que permite seleccionar una leche no demuestra por sí sola que el inventario, el costo y la sincronización funcionan.
-
-## Ejecutar la aplicación local
-
-Entorno verificado: Windows x64, Node 24.15.0, npm 12.0.2. Desde esta carpeta:
+Desde esta carpeta, en Windows con Node 24.15 o compatible con package.json:
 
 ```powershell
 npm.cmd ci
-npm.cmd run dev
+npm.cmd run start:local
 ```
 
-Abrir [Nativos local](http://127.0.0.1:4310). La primera pantalla permite elegir nombre, usuario y contraseña del dueño (mínimo 12 caracteres). No existe una contraseña predeterminada. Milán/Centro y sus bodegas/cajas iniciales ya están registradas; no se crean usuarios ni operaciones comerciales de ejemplo.
+Abre [Nativos](http://127.0.0.1:4310/) y entra con tu usuario. **Caja y ventas** abre [Caja](http://127.0.0.1:4310/caja) en el mismo sitio y usa la sesión existente. El lanzador compila e inicia un servidor web local y PostgreSQL para desarrollo; ya no inicia Electron ni el servicio separado del puerto 4311. Estos procesos son el entorno de desarrollo, no una aplicación que deba instalarse en cada equipo cliente del sitio alojado.
 
-`dev` compila React y arranca servidor/BD exclusivamente en 127.0.0.1 (puertos 4310 y 54329). PostgreSQL utiliza binarios del paquete fijado; no requiere servicio Windows, Docker ni contratación. No ejecutar dos instancias `dev` al mismo tiempo. Detener con Ctrl+C en la terminal de arranque; el proceso conserva los datos. Si esta tarea dejó la aplicación abierta, usar el enlace existente en vez de iniciar otra instancia.
+No hay contraseña predeterminada. Si no existe configuración, el primer dueño elige sus credenciales. La base de desarrollo, usuarios y operaciones existentes se conservan en `.local/development`, fuera de Git. No borrar esa carpeta para corregir problemas. Alojamiento, dominio y publicación siguen pendientes de autorización/preparación operativa.
 
-Datos en `.local/development/`, fuera de Git. Credencial de BD protegida por DPAPI y permisos del usuario Windows; no copiarla ni pegarla en mensajes. Cambiar de usuario Windows puede impedir descifrarla. No borrar esa carpeta para solucionar un problema de acceso: contiene la base persistente. Recuperación de contraseña del dueño por autoservicio y puesta en producción no forman parte de este incremento; otro dueño autorizado puede cambiar la contraseña desde Usuarios.
+## Caja en el navegador
 
-## Verificación
+El dueño vincula una vez el navegador a Milán o Centro. Usa siempre el mismo origen y perfil de Edge/Chrome para esa caja. Las pestañas comparten instalación y datos; un bloqueo de escritura evita cobrar simultáneamente la misma revisión. Cada usuario conserva sus permisos y turno propio.
+
+Caja guarda pedidos, turno, ventas, pagos, consumo, comprobantes, devoluciones y pendientes en IndexedDB. Una venta solo se muestra confirmada después del commit local. Los canjes necesitan confirmación central. El catálogo descargado conserva versiones y excluye costos incluso si antes entró un dueño.
+
+Sin internet se puede vender, guardar pedidos, cancelar, emitir comandas internas, registrar propina, devolver con permiso y cerrar turno. Crear productos/clientes/recetas, administrar compras/configuración y canjear puntos requiere conexión. A los siete días se bloquean nuevos cobros/aperturas; consulta, pedidos y cierre siguen disponibles. Los puntos de compras offline quedan pendientes.
+
+La primera carga y validación requieren conexión. El sitio precarga su interfaz para reabrirla offline. Cerrar todas las pestañas detiene la actividad de Caja; la sincronización se reanuda al abrirla y reconectar. No borrar datos del sitio ni cambiar de perfil/origen mientras existan pendientes: el servidor solo conserva lo sincronizado. Almacenamiento persistente no sustituye un respaldo ante pérdida del disco.
+
+## Conservar la caja anterior
+
+Los archivos `.local/pos/pos.sqlite` y `.local/pos/vault.dpapi` se mantienen. Si existe una caja anterior, un dueño que abre Caja desde un navegador sin vincular verá **Trasladar caja anterior**. El servicio antiguo debe estar detenido. El traslado conserva la instalación, secuencia, pedidos, turnos, comprobantes, devoluciones, pendientes e intención de canje; fija un solo destino y bloquea nuevas escrituras del motor anterior. No borra la fuente. Si la operación se interrumpe, reintentar desde el mismo perfil.
+
+El adaptador `src/pos/` y los archivos `desktop/` son históricos para compatibilidad y pruebas. No continuar el desarrollo del producto en Electron. No copiar bases entre cajas ni forzar otra vinculación para resolver un conflicto. El puente de archivos solo se habilita en desarrollo; no existe como acceso a archivos del servidor alojado.
+
+## Funciones conservadas
+
+- Usuarios, sucursales, bodegas, permisos y auditoría.
+- Productos terminados/preparados, precios e impuestos opcionales, recetas y opciones versionadas.
+- Existencias iniciales, mínimos y reversiones; costos exclusivos del dueño.
+- Pedidos de mostrador, mesa o domicilio manual; clientes, notas, descuentos, comandas y desperdicio al cancelar preparados.
+- División por productos, medios combinados, cambio solo en efectivo, propina/domicilio separados y devoluciones autorizadas.
+- Fidelización: inscripción, puntos, canje, comprobante, devoluciones, saldos negativos y ajustes/reglas auditados del dueño.
+
+Los datos de las pruebas son sintéticos y viven en carpetas/bases separadas. No se importaron fuentes comerciales ni se modificó Alegra.
+
+## Verificar cambios
 
 ```powershell
 npm.cmd run check
 npm.cmd run test:e2e
 ```
 
-`check` verifica TypeScript, ejecuta 16 pruebas de dominio, una suite con 11 escenarios de integración contra PostgreSQL real y compila la interfaz. `test:e2e` usa Microsoft Edge instalado, levanta el servidor 4320 y una base sintética independiente, verifica el flujo completo y accesibilidad, y cierra su PostgreSQL al terminar. Requiere haber ejecutado build/check. No ejecutar varias suites E2E simultáneas: comparten el puerto de pruebas y su archivo temporal de control.
+Check valida TypeScript, reglas de dominio, PostgreSQL real y regresiones de adaptadores históricos; compila el sitio y los esquemas precompilados. E2E usa Edge e IndexedDB reales, misma dirección para Administración/Caja, cierre/reapertura del navegador offline, pestañas concurrentes, canje con respuesta perdida y accesibilidad. No ejecutar dos suites E2E a la vez: comparten el puerto sintético 4320. Las pruebas anteriores de SQLite/Electron no acreditan por sí solas el nuevo adaptador.
 
-Pruebas y capturas usan identidades sintéticas y contraseñas efímeras generadas en memoria. Los directorios de pruebas `.local/test-*`/`.local/e2e-*` son independientes de desarrollo; no contienen datos operativos. Los diagnósticos locales no se versionan. La instancia de desarrollo y su configuración inicial no se alteran por las pruebas.
+## Guía de trabajo
 
-## Alcance y límites
+1. [Plan funcional vigente](software-nativos.md) e [instrucciones](agents.md).
+2. [Proceso SDD](docs/sdd.md), [trazabilidad](specs/README.md) y [decisiones](docs/decisions.md).
+3. [Arquitectura web](docs/architecture.md), [contrato Caja web](contracts/browser-pos-v1.md) y [plan de transición](specs/012-unified-web/plan.md).
+4. [Hoja de ruta](docs/roadmap.md).
 
-- Servidor comprueba identidad, alcance y permisos; cambios de usuario revocan sus sesiones. Sesión web de 12 horas, distinta de los siete días offline futuros.
-- Administración de usuarios, organización y auditoría reservada al dueño con permiso de configuración; otros usuarios consultan sus locales.
-- Auditoría y mutaciones comparten commit. PostgreSQL impide update/delete/truncate de auditoría por las rutas normales probadas; no se promete resistencia frente al administrador del motor.
-- Milán T80A y Centro T82E USB de 80 mm conservadas en configuración. No se probó hardware ni se imprimió.
-- Impuesto opcional y reglas comerciales siguen vigentes; se implementan en catálogo/ventas. API de fundamentos no simula esas operaciones.
-- Los datos persisten tras reiniciar procesos. Todavía no hay respaldo/restauración operativa ni protección ante pérdida total del disco.
-- No habilitar acceso LAN/producción sin completar preparación operativa, HTTPS, credenciales de servicio y autorización de publicación.
+Los planes históricos se conservan; para trabajo nuevo prevalece DEC-021. Antes del incremento 6 se verifica esta transición. Después: compras, traslados, conteos, informes, Excel, costeo promedio y respaldos. WhatsApp/API-MCP e importación/lanzamiento conservan su orden posterior.
 
-## Próximo paso
-
-Incremento 2 — Catálogo y existencias: refinar especificaciones 002/003, completar planes/tareas/contratos, implementar productos terminados/preparados, recetas válidas, movimientos iniciales y trazabilidad. No requiere renovar la autorización local.
+Impresión física de 80 mm, cajones USB y fiscalidad siguen pendientes. Deben ensayarse desde navegador antes de operar; no prometer impresión silenciosa ni apertura de cajón por una prueba visual. No hay despliegue productivo, integración bancaria ni respaldo operativo terminado.

@@ -45,3 +45,7 @@ Autorización vigente: «Ok, continua con incremento 1». Incluye REQ-001-01/02/
 - AC-001-10 → REQ-001-02/05: interfaz permite completar creación/edición y navegar en claro/oscuro a escritorio y móvil, con etiquetas, foco visible, mensajes de error y sin desbordamiento horizontal. Los módulos todavía no implementados no simulan operaciones comerciales.
 
 Evidencia del incremento 1: [registro](../../docs/evidence/increment-1.md). AC-001-01/04/05 a 10 cubiertos en alcance online; AC-001-02/03 conservan cobertura parcial del núcleo y esperan módulos comerciales.
+
+## Dirección vigente — sitio web único
+
+La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.

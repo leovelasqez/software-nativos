@@ -1,0 +1,450 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "createdAtMs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "branchId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "deviceId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "warehouseId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+    },
+    "serverSequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "products": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": ".*\\S.*"
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": ".*\\S.*"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": ".*\\S.*"
+          },
+          "unit": {
+            "const": "unit"
+          },
+          "presentation": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": ".*\\S.*"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+          },
+          "tax": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100,
+                    "pattern": ".*\\S.*"
+                  },
+                  "rate": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                  },
+                  "exempt": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "label",
+                  "rate",
+                  "exempt"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "type": {
+            "enum": [
+              "finished",
+              "prepared"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "activeRecipeVersion": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sellable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "reference",
+          "category",
+          "unit",
+          "presentation",
+          "price",
+          "tax",
+          "description",
+          "id",
+          "type",
+          "version",
+          "activeRecipeVersion",
+          "sellable"
+        ]
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "productId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": ".*\\S.*"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "active"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "itemId": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "quantity": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "conversion": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "factor": {
+                          "type": "string",
+                          "pattern": "^((0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?)?$"
+                        },
+                        "source": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      },
+                      "required": [
+                        "factor",
+                        "source"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "ingredient",
+                    "packaging"
+                  ]
+                },
+                "baseQuantity": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,23})(\\.[0-9]{1,6})?$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "itemId",
+                "quantity",
+                "unit",
+                "conversion",
+                "kind",
+                "baseQuantity"
+              ]
+            }
+          },
+          "options": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 100,
+                  "pattern": ".*\\S.*"
+                },
+                "kind": {
+                  "enum": [
+                    "addition",
+                    "substitution"
+                  ]
+                },
+                "replacesLineId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "line": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "itemId": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                    },
+                    "quantity": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "conversion": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "factor": {
+                              "type": "string",
+                              "pattern": "^((0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?)?$"
+                            },
+                            "source": {
+                              "type": "string",
+                              "maxLength": 100
+                            }
+                          },
+                          "required": [
+                            "factor",
+                            "source"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kind": {
+                      "enum": [
+                        "ingredient",
+                        "packaging"
+                      ]
+                    },
+                    "baseQuantity": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,23})(\\.[0-9]{1,6})?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "itemId",
+                    "quantity",
+                    "unit",
+                    "conversion",
+                    "kind",
+                    "baseQuantity"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "kind",
+                "replacesLineId",
+                "price",
+                "line"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "version",
+          "name",
+          "instructions",
+          "state",
+          "lines",
+          "options"
+        ]
+      }
+    },
+    "stock": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "quantity"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "createdAtMs",
+    "branchId",
+    "deviceId",
+    "warehouseId",
+    "serverSequence",
+    "products",
+    "recipes",
+    "stock"
+  ]
+}

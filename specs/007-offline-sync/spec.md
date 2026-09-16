@@ -1,10 +1,10 @@
-# 007 — Operación local, sincronización y recuperación
+# 007 — Caja web offline, sincronización y recuperación
 
 Estado: incremento 0 verificado en dominio/contratos; capacidad completa pendiente. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, sección 14.
 
 ## Requisitos
 
-- REQ-007-01: caja instalada con persistencia local de pedidos, ventas y turnos; sobrevivir cierre de aplicación y reinicio de Windows.
+- REQ-007-01: Caja en el sitio web con persistencia IndexedDB de pedidos, ventas y turnos; sobrevivir cierre/reapertura del navegador y reinicio del equipo.
 - REQ-007-02: cobro, pagos, consumo y caja atómicos localmente; enviar operaciones únicas con reintentos y eliminar pendientes solo después de acuse confirmado.
 - REQ-007-03: acceso offline hasta siete días para usuarios/equipos previamente autorizados; recibir cambios y revocaciones al reconectar.
 - REQ-007-04: preservar versiones de precios/recetas en ventas offline, reconciliar sin duplicar y mostrar última sincronización por local.
@@ -40,3 +40,20 @@ Solo existe el computador del local, sin segundo dispositivo de respaldo offline
 ## Alcance entregado — Incremento 0
 
 Ver [plan](plan.md), [tareas](tasks.md) y [evidencia](../../docs/evidence/increment-0.md). Se ejecutaron pruebas de políticas y esquemas; los AC originales que requieren servidor, almacenamiento, UI o reinicios NO están acreditados integralmente. No hay operación comercial real.
+
+## Incremento 3
+
+AC-007-07 → REQ-007-01/02/03/04. SQLite real conserva pedido/turno/venta tras reinicio; fallo antes del commit revierte todo; después conserva todo. Pérdida de respuesta central y reintento generan un solo efecto. Grant firmado, reloj protegido, expiración/revocación y caché sin costos se comprueban en adaptadores.
+
+Alcance: primera venta completa de la hoja de ruta. Ver plan/tareas del incremento 3; restantes escenarios se conservan para incrementos 4/5/6/8.
+
+Verificación del alcance de incremento 3: [evidencia](../../docs/evidence/increment-3.md). Los escenarios anteriores fuera de ese alcance permanecen pendientes.
+
+
+## Incremento 4
+
+Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.md), [tareas](tasks-increment-4.md) y [evidencia](../../docs/evidence/increment-4.md). No acredita puntos, ingresos/gastos/retiros manuales, mensajería, hardware ni la capacidad completa.
+
+## Dirección vigente — DEC-021
+
+Aplicar REQ-012-01 a 05 y AC-012-01 a 05 para el adaptador navegador. AC-007-07 y evidencias SQLite/DPAPI describen el adaptador anterior; no acreditan IndexedDB. Mantener protocolo, reglas y siete días offline. Agregar pruebas de cierre real del navegador, varias pestañas, cuota/aborto de transacción y caché de shell sin API.

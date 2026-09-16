@@ -2,7 +2,7 @@ import { isAction, isGrant, isId, isPrincipal } from './contracts.ts';
 import type { Action } from './contracts.ts';
 export { defaultActions } from './permissions.ts';
 const offline = new Set<Action>(['data.read', 'order.write', 'sale.discount', 'sale.cancel',
-  'sale.charge', 'shift.open', 'shift.close']);
+  'sale.charge', 'sale.refund', 'shift.open', 'shift.close']);
 const recovery = new Set<Action>(['data.read', 'order.write', 'shift.close']);
 export interface AccessRequest {
   principal: unknown; action: unknown; branchId: unknown; deviceId: unknown;

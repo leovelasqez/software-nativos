@@ -1,6 +1,6 @@
 # 008 — Informes y exportaciones
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, secciones 9 y 11.
+Estado: implementación local parcial verificada; costos y márgenes pendientes de DEC-005. Fuente: plan, secciones 9 y 11.
 
 ## Requisitos
 
@@ -23,3 +23,7 @@ Definir filtros, semántica de fechas/turnos, inclusión de anulaciones y devolu
 ## Dependencias y pendientes
 
 001/003/004/005/006/007. DEC-005 afecta márgenes, DEC-012 volumen/retención. Evidencia: pendiente.
+
+## Incremento 6 — alcance preparado
+
+El incremento implementará las consultas y exportaciones que no dependan de costos, junto con la antigüedad de sincronización por sucursal. Costos, costo de ventas y margen permanecen pendientes de DEC-005; retención y estrategia de gran volumen permanecen sujetas a DEC-012. Ver `plan.md`, `tasks.md` y `../../contracts/reports-v1.md`.

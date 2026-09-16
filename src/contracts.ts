@@ -6,7 +6,7 @@ import operation from '../contracts/sync-v1.schema.json' with { type: 'json' };
 export type Action = 'data.read' | 'order.write' | 'sale.discount' | 'sale.cancel'
   | 'sale.charge' | 'shift.open' | 'shift.close' | 'product.create' | 'recipe.create'
   | 'customer.create' | 'loyalty.enroll' | 'loyalty.redeem' | 'purchase.read'
-  | 'purchase.write' | 'inventory.manage' | 'sale.refund' | 'cost.read'
+  | 'purchase.write' | 'inventory.manage' | 'sale.refund' | 'cash.movement' | 'cost.read'
   | 'cost.write' | 'loyalty.adjust' | 'settings.manage';
 export type Role = 'owner' | 'manager' | 'cashier';
 export interface Principal {
@@ -20,7 +20,7 @@ export interface OfflineGrant {
 export interface Operation {
   version: 1; operationId: string; deviceId: string; branchId: string;
   actorId: string; sequence: number; previousOperationId: string | null;
-  payloadHash: string; payloadVersion: 1;
+  payloadHash: string; payloadVersion: 1 | 2 | 3;
 }
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 export const isPrincipal = ajv.compile<Principal>(identity);

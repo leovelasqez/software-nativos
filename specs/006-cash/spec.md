@@ -23,3 +23,20 @@ Turno y libro de movimientos, relación con cobro/devolución, cierre y su momen
 ## Dependencias y pendientes
 
 001/004/007/009. DEC-002/014 afectan redondeos, efectivo recibido/cambio y pagos fallidos. Datos de prueba sintéticos. Evidencia: pendiente.
+
+## Incremento 3
+
+AC-006-05 → REQ-006-01/02/03/04. Una caja conserva un turno y responsable; base más ventas en efectivo (sin digitales) determina esperado; cierre conserva contado/diferencia y se sincroniza después de ventas previas, sin duplicados.
+
+Alcance: primera venta completa de la hoja de ruta. Ver plan/tareas del incremento 3; restantes escenarios se conservan para incrementos 4/5/6/8.
+
+Verificación del alcance de incremento 3: [evidencia](../../docs/evidence/increment-3.md). Los escenarios anteriores fuera de ese alcance permanecen pendientes.
+
+
+## Incremento 4
+
+Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.md), [tareas](tasks-increment-4.md) y [evidencia](../../docs/evidence/increment-4.md). No acredita puntos, ingresos/gastos/retiros manuales, mensajería, hardware ni la capacidad completa.
+
+## Dirección vigente — sitio web único
+
+La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.

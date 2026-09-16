@@ -1,5 +1,6 @@
 # Plan técnico 001 — Incremento 0
 
+> Contexto histórico de incrementos 0–5. Para cambios nuevos prevalecen DEC-021 y specs/012-unified-web: un sitio único con Caja offline en navegador. Se conservan reglas y contratos comerciales.
 El registro del incremento 0 se conserva abajo. El alcance vigente es el incremento 1 descrito al final.
 
 Estado: verificado el alcance delimitado del incremento 0. Autorización: mensaje del usuario del 13-09-2026, «Autorizo iniciar la implementación local del sistema conforme al plan». No incluye producción, contratación ni escrituras en Alegra.

@@ -63,10 +63,10 @@ test('Incremento 1 — PostgreSQL real, API y persistencia', { timeout: 180_000 
       assert.equal((await db.pool.query('SELECT count(*) FROM app_users')).rows[0].count, '1');
       const raw = (await db.pool.query<UserRow>('SELECT * FROM app_users')).rows[0]!;
       assert.ok(raw.password_hash.startsWith('scrypt-v1$')); assert.notEqual(raw.password_hash, password);
-      const checksum = (await db.pool.query('SELECT checksum FROM schema_migrations')).rows[0].checksum;
-      await db.pool.query("UPDATE schema_migrations SET checksum='invalid-test-checksum'");
+      const checksum = (await db.pool.query("SELECT checksum FROM schema_migrations WHERE name='001-foundation.sql'")).rows[0].checksum;
+      await db.pool.query("UPDATE schema_migrations SET checksum='invalid-test-checksum' WHERE name='001-foundation.sql'");
       try { await assert.rejects(migrate(db.pool), /migration_checksum_mismatch/); }
-      finally { await db.pool.query('UPDATE schema_migrations SET checksum=$1', [checksum]); }
+      finally { await db.pool.query("UPDATE schema_migrations SET checksum=$1 WHERE name='001-foundation.sql'", [checksum]); }
     });
     await t.test('AC-001-06: CSRF, origen, Host, cuerpo cerrado y sesión requerida', async () => {
       assert.equal((await request('POST', '/api/branches', { name: 'No crear', reason: 'Prueba' }, ownerCookie, { 'x-nativos-request': '' })).statusCode, 403);

@@ -1,9 +1,16 @@
+import {exerciseBrowser} from './browser-flow.ts';
+import { exerciseLoyalty } from './loyalty-flow.ts';
 import { test, expect } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import { AxeBuilder } from '@axe-core/playwright';
+import { exercisePos } from './pos-flow.ts';
+import { exerciseCatalog } from './catalog-flow.ts';
+import { exercisePurchases } from './purchases-flow.ts';
+import { exerciseInventoryOperations } from './inventory-operations-flow.ts';
 
 test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditoría y temas', async ({ page }) => {
+  test.setTimeout(480_000);
   const password = randomBytes(24).toString('base64url');
   const consoleErrors: string[] = [];
   page.on('pageerror', e => consoleErrors.push(e.message));
@@ -43,9 +50,13 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await page.getByRole('navigation').getByRole('button', { name: 'Auditoría', exact: true }).click();
   await expect(page.getByText('Bodega sintética de verificación', { exact: true })).toBeVisible();
   await expect(page.getByText('Cambio sintético de nombre', { exact: true })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Respaldo y recuperación', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Respaldo y recuperación' })).toBeVisible();
+  await page.getByRole('button', { name: 'Crear respaldo', exact: true }).click();
+  await expect(page.getByText('Respaldo lógico local creado.', { exact: false })).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: 'Resumen', exact: true }).click();
 
-  await mkdir('docs/evidence/increment-1', { recursive: true });
+  await mkdir('docs/evidence/unified-web/regression/regression/foundation-regression', { recursive: true });
   for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     for (const dark of [false, true]) {
@@ -55,7 +66,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
       const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(report.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-      await page.screenshot({ path: `docs/evidence/increment-1/${viewport.name}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
+      await page.screenshot({ path: `docs/evidence/unified-web/regression/regression/foundation-regression/${viewport.name}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
       await page.reload(); await expect(page.locator('html')).toHaveAttribute('data-theme', dark ? 'dark' : 'light');
       await expect(page.getByRole('heading', { name: 'Hola, Equipo' })).toBeVisible();
     }
@@ -69,7 +80,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   const formReport = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(formReport.violations.map(v => v.id)).toEqual([]);
-  await page.screenshot({ path: 'docs/evidence/increment-1/mobile-form.png', fullPage: true });
+  await page.screenshot({ path: 'docs/evidence/unified-web/regression/regression/foundation-regression/mobile-form.png', fullPage: true });
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Mostrar navegación' }).click();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
@@ -82,5 +93,12 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await page.getByRole('button', { name: 'Mostrar navegación' }).click();
   await expect(page.getByRole('navigation').getByRole('button', { name: 'Usuarios y roles' })).toHaveCount(0);
   expect(await page.evaluate(async () => (await fetch('/api/branches/milan')).status)).toBe(403);
+  await exerciseCatalog(page, password);
+  await exerciseInventoryOperations(page);
+  await exercisePurchases(page);
+  await exercisePos(page, password);
+  await page.goto('http://127.0.0.1:4320/'); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
+  await exerciseLoyalty(page);
+  await exerciseBrowser(password);
   expect(consoleErrors).toEqual([]);
 });

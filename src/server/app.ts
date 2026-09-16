@@ -1,10 +1,16 @@
+import { registerLoyalty } from './loyalty-api.ts';
 import Fastify from 'fastify';
+import { registerCustomers } from './customers-api.ts';
+import { registerPos } from './pos-api.ts';
+import { registerCatalog } from './catalog-api.ts';
+import { registerReports } from './reports-api.ts';
+import { registerBackups } from './backup-api.ts';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import serveStatic from '@fastify/static';
 import { randomBytes, randomUUID } from 'node:crypto';
-import type { Pool, PoolClient } from 'pg';
+import type { Pool, PoolClient, PoolConfig } from 'pg';
 import { defaultActions } from '../authorization.ts';
 import type { Action, Role } from '../contracts.ts';
 import { transaction, audit, publicUser } from './db.ts';
@@ -16,13 +22,19 @@ import { routeSchema } from './api-contract.ts';
 interface UserInput { name: string; login: string; password: string; role: Role; branchIds: string[]; actions?: Action[]; active?: boolean; reason: string }
 interface ResourceInput { name: string; reason: string; active: boolean; isDefault: boolean; printerModel: string | null }
 type Params = { id: string; resourceId: string };
-export interface AppOptions { pool: Pool; origin: string; staticRoot?: string }
+export interface AppOptions { pool: Pool; origin: string; staticRoot?: string; backupDirectory?: string; backupRestoreDatabase?: string; backupRestoreConnection?: PoolConfig }
 
-export async function createApp({ pool, origin, staticRoot }: AppOptions) {
+export async function createApp({ pool, origin, staticRoot, backupDirectory, backupRestoreDatabase, backupRestoreConnection }: AppOptions) {
   const allowed = new URL(origin);
   const app = Fastify({ logger: false, bodyLimit: 32 * 1024, ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+  registerCatalog(app, pool);
+  registerReports(app, pool);
+  registerBackups(app, pool, backupDirectory, backupRestoreDatabase, backupRestoreConnection);
+  registerPos(app, pool);
+  registerCustomers(app, pool);
+  registerLoyalty(app, pool);
   const dummyHash = await hashPassword(randomBytes(32).toString('hex'));
   app.addHook('onRequest', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff').header('Referrer-Policy', 'no-referrer')
@@ -238,6 +250,7 @@ export async function createApp({ pool, origin, staticRoot }: AppOptions) {
   });
   if (staticRoot) {
     await app.register(serveStatic, { root: staticRoot });
+    app.get('/caja', (_req,reply)=>reply.sendFile('pos.html'));
     app.setNotFoundHandler((req, reply) => req.url.startsWith('/api/') ? reply.code(404).send({ code: 'not_found', message: 'Ruta no disponible.' }) : reply.sendFile('index.html'));
   }
   return app;

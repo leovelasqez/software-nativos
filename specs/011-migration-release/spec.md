@@ -41,3 +41,11 @@ Asignación confirmada por el usuario y nuevas fotos aportadas el 13 de septiemb
 AC-011-06 → REQ-011-04. Dada una pérdida total simulada del almacenamiento local, cuando se ensaya recuperación desde el servidor, entonces se concilian las operaciones previamente sincronizadas y se documenta que las operaciones exclusivamente locales no están cubiertas. Una copia en el mismo disco no se contabiliza como recuperación frente a este fallo. No realizar esta prueba destruyendo datos reales.
 
 - AC-011-07 → REQ-011-04. Dadas la T80A USB de Milán y la T82E USB de Centro, cuando se ensayan comprobantes y comandas online y offline en cada local, entonces ambos documentos se dirigen a la misma impresora de ese local, con formato de 80 mm. Una falla de impresión no repite cobros; la comanda no descuenta inventario. Registrar evidencia por equipo y probar la apertura del cajón por separado.
+
+## Dirección vigente — sitio web único
+
+La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.
+
+## Incremento 6 — alcance preparado
+
+Se diseña respaldo lógico y restauración aislada de datos ya sincronizados, sin migrar Alegra ni tocar datos comerciales. La política de retención, ubicación externa, RPO y RTO sigue bloqueada por DEC-012. Ver `plan.md`, `tasks.md` y `../../contracts/backup-v1.md`.

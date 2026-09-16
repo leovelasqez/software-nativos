@@ -60,7 +60,7 @@ test('AC-001-02 parcial: proyección no filtra costos presentes ni campos futuro
   assert.equal(stored.unitCost, '999');
 });
 test('AC-007-03: matriz offline permite operación local y bloquea operaciones centrales', () => {
-  const allowed = ['data.read', 'order.write', 'sale.discount', 'sale.cancel', 'sale.charge', 'shift.open', 'shift.close'];
+  const allowed = ['data.read', 'order.write', 'sale.discount', 'sale.cancel', 'sale.charge', 'sale.refund', 'shift.open', 'shift.close'];
   for (const action of defaultActions('owner')) {
     const r = request(action);
     r.verifiedGrant.actions = defaultActions('owner');
@@ -119,4 +119,10 @@ test('AC-007-03: duración inválida, versión y fechas fuera de contrato rechaz
   assert.equal(isGrant({ ...grant(), version: 2 }), false);
   assert.equal(isGrant({ ...grant(), validatedAtMs: 1.5 }), false);
   assert.equal(isGrant(grant()), true);
+});
+
+
+test('REQ-004-06/REQ-007-03: devolución exige permiso vigente y no es recuperación tras siete días',()=>{
+  for(const role of ['owner','manager'] as const){const r={...request('sale.refund'),principal:principal(role),verifiedGrant:{...grant(),actions:defaultActions(role)}};assert.equal(authorize(r).allowed,true);assert.deepEqual(authorize({...r,nowMs:start+WEEK_MS}),{allowed:false,reason:'offline_expired'});assert.deepEqual(authorize({...r,lastObservedAtMs:start+2}),{allowed:false,reason:'clock_untrusted'});}
+  assert.equal(authorize(request('sale.refund')).allowed,false);
 });
