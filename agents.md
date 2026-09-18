@@ -92,7 +92,7 @@ Preservar identificadores externos y conciliar el historial desde el primer regi
 - Maestro: `..\Maestro_inventario_Nativos_2026.xlsx`.
 - Formulaciones: `..\Formulaciones 2026.docx`.
 - Referencia de catálogo/inventario: `..\Snapshot_Alegra_2026-09-03.xlsx`; no contiene el historial completo de ventas solicitado.
-- Inventario inicial: conteo físico y costos revisados por local en la fecha de cambio.
+- Inventario inicial: GO-02 quedó completada para el piloto con una prueba representativa de un producto y un insumo, aprobada por el dueño el 18-09-2026. La carga restante es progresiva y no bloquea la operación; usar solo cantidades y costos revisados, sin inventar valores.
 
 Conservar los archivos fuente. No modificar originales, inventar datos faltantes ni incluir credenciales en código, Markdown, ejemplos o logs.
 
@@ -106,7 +106,7 @@ Al entregar, indicar qué cambió, qué se verificó y cualquier limitación rea
 
 ## Pendientes y límites de alcance
 
-Consultar la sección 17 del plan. No resolver por suposición la emisión fiscal, tasas, impresoras, conversiones, credenciales, destinatarios de WhatsApp o contratación. Estos pendientes no impiden el trabajo independiente expresamente autorizado.
+Consultar la sección 17 del plan. No inventar tasas, impresoras, conversiones, credenciales, destinatarios de WhatsApp o contratación. DEC-009 y GO-03 fueron descartadas por el dueño el 18-09-2026: la definición o emisión fiscal externa no es una condición para operar esta versión. Los demás pendientes no impiden el trabajo independiente expresamente autorizado.
 
 No añadir por iniciativa propia producción por lotes, vencimientos, créditos, cuentas por pagar, contabilidad completa, tienda online, integración bancaria o recepción automática de domicilios.
 

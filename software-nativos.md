@@ -289,7 +289,7 @@ Dirección confirmada el 15-09-2026; la verificación del nuevo adaptador se reg
 - Migrar el historial para consulta sin descontar el inventario actual, modificar turnos nuevos ni generar puntos retroactivos.
 - No inventar costos, sucursales u otros datos históricos ausentes.
 - Conciliar cantidades de documentos y totales por período contra Alegra.
-- Cargar cantidades y costos iniciales mediante conteo físico por local en la fecha de cambio.
+- Para el piloto, validar inventario y costos con una muestra representativa; GO-02 quedó completada el 18-09-2026 con un producto y un insumo. Cargar progresivamente las cantidades y costos restantes con datos revisados, sin inventar valores; un costo desconocido permanece desconocido.
 - Realizar ensayos en Milán y Centro antes de la puesta en marcha conjunta.
 
 ## 16. Pruebas de aceptación
@@ -316,13 +316,13 @@ Pendientes antes de operar:
 
 - Implementación local autorizada el 13-09-2026; puesta en producción y contratación siguen fuera de esta autorización.
 - Confirmadas dos impresoras USB de 80 mm: Milán usa T80A (etiqueta indica ESC/POS) y Centro usa NP / New Print T82E. Cada local imprime comprobantes y comandas en su misma impresora. Pendiente compatibilidad real con Windows, controladores y cajones; las fotos no sustituyen la prueba física.
-- Definición fiscal con el contador: la primera versión emite comprobantes internos; falta resolver cómo emitir los documentos fiscales aplicables al reemplazar Alegra.
-- Tasas tributarias concretas, conversiones de recetas, productos activos, precios de adicionales y sustituciones.
+- DEC-009 y GO-03 fueron descartadas por el dueño el 18-09-2026. La primera versión emite comprobantes internos y no requiere definición, emisión o integración fiscal externa para operar; este asunto no bloquea el lanzamiento.
+- Las tasas tributarias permanecen opcionales y solo se configuran si Nativos las entrega posteriormente; su ausencia no bloquea ventas. Siguen pendientes las conversiones de recetas, productos activos y precios de adicionales y sustituciones.
 - Acceso seguro a Alegra y validación del alcance real del historial extraíble.
 - Números del emisor y destinatarios de WhatsApp, plantillas y costo. Frecuencia y destinatarios por rol ya definidos: mínimos a las 8:00 a. m. y cierres al sincronizar para dueño y encargado del local.
 - Contratación de alojamiento, dominio si se desea y política operativa de respaldos.
 
-Fuera de la primera versión: producción por lotes, lotes/vencimientos, ventas a crédito, cuentas por pagar, contabilidad completa, tienda online, integraciones bancarias y recepción automática de domicilios. La emisión electrónica requiere definición adicional; no se presenta como implementada ni resuelta.
+Fuera de la primera versión: producción por lotes, lotes/vencimientos, ventas a crédito, cuentas por pagar, contabilidad completa, tienda online, integraciones bancarias, recepción automática de domicilios y emisión fiscal/electrónica. La ausencia de esta última no es una puerta operativa de esta versión.
 
 No se ha fijado una fecha límite de lanzamiento ni un presupuesto mensual aprobado.
 

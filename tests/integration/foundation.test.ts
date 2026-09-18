@@ -69,6 +69,8 @@ test('Incremento 1 — PostgreSQL real, API y persistencia', { timeout: 180_000 
       finally { await db.pool.query("UPDATE schema_migrations SET checksum=$1 WHERE name='001-foundation.sql'", [checksum]); }
     });
     await t.test('AC-001-06: CSRF, origen, Host, cuerpo cerrado y sesión requerida', async () => {
+      const health = await app.inject({ method: 'GET', url: '/health', headers: { host: 'railway-healthcheck.internal' } });
+      assert.equal(health.statusCode, 200); assert.deepEqual(health.json(), { ok: true });
       assert.equal((await request('POST', '/api/branches', { name: 'No crear', reason: 'Prueba' }, ownerCookie, { 'x-nativos-request': '' })).statusCode, 403);
       assert.equal((await request('POST', '/api/branches', { name: 'No crear', reason: 'Prueba' }, ownerCookie, { origin: 'https://other.invalid' })).statusCode, 403);
       assert.equal((await request('GET', '/api/me', undefined, ownerCookie, { host: 'other.invalid' })).statusCode, 403);

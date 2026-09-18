@@ -40,7 +40,7 @@ Regla confirmada de cambio: el dinero devuelto como cambio corresponde exclusiva
 
 ## Dependencias y pendientes
 
-001/002/003/005/006/007. DEC-002, DEC-006, DEC-007 y DEC-014 requieren completar contratos de cálculo, canje y pago parcial; las reglas confirmadas de DEC-013 se conservan. Hardware: DEC-008. Emisión fiscal: DEC-009 antes de operar, sin fingir que un comprobante interno la sustituye.
+001/002/003/005/006/007. DEC-002, DEC-006, DEC-007 y DEC-014 requieren completar contratos de cálculo, canje y pago parcial; las reglas confirmadas de DEC-013 se conservan. Hardware: DEC-008. DEC-009 fue descartada: la emisión fiscal externa queda fuera del alcance y no bloquea la operación.
 
 Evidencia y contratos de implementación: pendientes.
 

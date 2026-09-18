@@ -1,3 +1,27 @@
 .pos-sync{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;font-size:11px;color:var(--muted)}.pos-sync>button{margin-left:auto}.pos-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);gap:22px;align-items:start}.pos-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px;padding:18px}.pos-product{display:flex;flex-direction:column;align-items:start;gap:10px;text-align:left;padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-height:160px;overflow-wrap:anywhere}.pos-product:hover{background:var(--soft);border-color:var(--accent)}.pos-product small{font-size:10px}.pos-product strong{font-size:17px}.pos-product span{font-size:12px;color:var(--muted)}.pos-product b{color:var(--accent);margin-top:auto}.pos-order-line{display:flex;justify-content:space-between;gap:12px;padding:18px;border-top:1px solid var(--line);overflow-wrap:anywhere}.pos-order-line strong{font-size:14px}.pos-order-line p{font-size:11px;color:var(--muted)}.pos-order-line>div:last-child{display:flex;flex-direction:column}.pos-total{padding:22px;display:flex;justify-content:space-between;border-top:1px solid var(--line);align-items:center}.pos-total strong{font-size:26px}.pos-pay{display:grid;gap:12px;padding:0 20px 20px}.pos-shift{padding:26px;display:grid;gap:18px;max-width:600px}.pos-shift .primary{justify-self:start}.pos-receipt{display:grid;gap:18px}.receipt-number{overflow-wrap:anywhere}.receipt-line{display:flex;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);padding-bottom:16px;font-size:13px}.receipt-line>span{white-space:nowrap}.pos-shell .sidebar-account{flex-wrap:wrap}@media(max-width:1050px){.pos-grid{grid-template-columns:1fr}}@media(max-width:800px){.pos-shell .sidebar nav{display:flex!important;flex-direction:row;margin-top:18px;gap:5px}.pos-shell .sidebar .nav-label{display:none}.pos-shell .sidebar-account{display:flex!important;padding-top:12px;margin-top:10px}.pos-shell .sidebar nav>button{flex:1;justify-content:center}.pos-sync>button{margin-left:0}.pos-products{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}.pos-product{padding:14px}.receipt-line{flex-wrap:wrap}}
 
 .pos-order-picker{display:flex;gap:14px;align-items:center;padding:18px;margin-bottom:20px;flex-wrap:wrap;font-size:12px}.pos-order-picker>label{min-width:180px;flex:1}.pos-shell .sidebar nav{flex-wrap:wrap}@media(max-width:600px){.pos-order-picker{align-items:stretch;flex-direction:column}.pos-shell .sidebar nav>button{padding:10px 6px;min-width:75px}}
+
+/* El comprobante conserva un aspecto de papel, incluso cuando Caja usa modo oscuro. */
+.thermal-receipt{padding:22px;background:#fff;color:#000;border:1px solid #d7d7d7;border-radius:8px;font-family:Arial,Helvetica,sans-serif}
+.thermal-receipt .brand,.thermal-receipt p,.thermal-receipt h2{color:#000}
+.thermal-receipt .brand small,.thermal-receipt small{color:#333}
+.thermal-receipt .receipt-line{border-color:#d7d7d7}
+.thermal-receipt .notice{background:#fff;color:#000;border-color:#d7d7d7}
+.receipt-actions{display:flex;justify-content:flex-end}
+@media print{
+  @page{size:80mm auto;margin:0}
+  html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
+  body *{visibility:hidden!important}
+  .thermal-receipt,.thermal-receipt *{visibility:visible!important}
+  .thermal-receipt{position:absolute!important;left:0!important;top:0!important;width:80mm!important;box-sizing:border-box!important;padding:4mm!important;display:grid!important;gap:2.5mm!important;background:#fff!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important;font-size:10pt!important;line-height:1.28!important}
+  .thermal-receipt .brand{color:#000!important}
+  .thermal-receipt .brand small,.thermal-receipt small{color:#222!important}
+  .thermal-receipt .receipt-number{font-family:"Courier New",monospace!important;font-size:8pt!important;overflow-wrap:anywhere!important}
+  .thermal-receipt .receipt-line{gap:3mm!important;padding-bottom:2.5mm!important;border-color:#000!important;font-size:9pt!important}
+  .thermal-receipt .receipt-line>span{font-weight:700!important}
+  .thermal-receipt p,.thermal-receipt h2{margin:0!important;color:#000!important}
+  .thermal-receipt h2{font-size:13pt!important}
+  .thermal-receipt .notice{padding:2.5mm!important;border:1px solid #000!important;background:#fff!important;color:#000!important;font-size:8.5pt!important}
+  .receipt-actions,.receipt-screen-only{display:none!important}
+}

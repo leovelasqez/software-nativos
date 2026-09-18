@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
 import { audit, principal, transaction } from './db.ts';
 import type { Actor, UserRow } from './db.ts';
-import { ApiError, authenticate, requireAccess, requireAdmin, tokenHash, notFound } from './security.ts';
+import { ApiError, authenticate, requireAccess, tokenHash, notFound } from './security.ts';
 import { routeSchema } from './api-contract.ts';
 import { isOperation, WEEK_MS } from '../contracts.ts';
 import type { Operation } from '../contracts.ts';
@@ -49,7 +49,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     catch (e) { if (e instanceof CatalogError) throw new ApiError(422, 'invalid_payload', e.message); throw e; }
   }
   app.post('/api/pos/enroll', { schema: routeSchema('/api/pos/enroll', 'post') }, req => tx(async c => {
-    const actor = await authenticate(c, req); requireAdmin(actor);
+    const actor = await authenticate(c, req);
     const b = req.body as { deviceId: string; installationId: string };
     const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [b.deviceId])).rows[0]; if (!device) throw notFound(); requireAccess(actor, device.branch_id);
     const old = (await c.query('SELECT installation_id FROM pos_terminals WHERE device_id=$1', [device.id])).rows[0];

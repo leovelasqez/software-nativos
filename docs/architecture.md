@@ -53,7 +53,7 @@ Definir manejo de credenciales, almacenamiento protegido de autorizaciones offli
 
 Registrar métricas y errores por operación con datos personales mínimos. Diseñar respaldo, restauración, actualización de esquema local y compatibilidad temporal entre clientes y servidor. No actualizar una caja de forma que pierda operaciones aún no sincronizadas.
 
-El alojamiento en Render sigue siendo una propuesta. Contratación, presupuesto, capacidad, retención y objetivos de recuperación continúan pendientes.
+Railway fue elegido como alojamiento y desplegado el 18-09-2026. El sitio único corre como servicio Node/Fastify con PostgreSQL en la red privada de Railway; `DATABASE_URL`, dominio y puerto se reciben como variables externas. La aplicación y la base tienen una sola réplica en la misma región. PITR está habilitado y conectado a almacenamiento; presupuesto, capacidad medida, restauración aislada, retención y objetivos de recuperación continúan pendientes.
 
 ## Implementación local del incremento 0
 

@@ -1,17 +1,17 @@
 # DEC-012 — Decisión requerida: respaldo externo y recuperación operativa
 
-Estado: propuesta; no autoriza contratar, publicar ni copiar datos comerciales fuera del entorno actual. Afecta REQ-011-04, AC-011-04/06, TASK-INC6-BKP-05 y TASK-INC8-05.
+Estado: Railway elegido y desplegado el 18-09-2026; PITR habilitado con almacenamiento conectado. Restauración aislada y parámetros operativos pendientes. No autoriza copiar datos comerciales locales ni iniciar ventas reales. Afecta REQ-011-04/06, AC-011-04/06/08, TASK-INC6-BKP-05 y TASK-INC8-05/08.
 
 ## Hechos ya establecidos
 
 - El respaldo lógico local existente cubre únicamente hechos que el servidor ya recibió y puede restaurarse solo a una base aislada nueva.
 - Cada local tiene un único computador. IndexedDB, pedidos y ventas sin acuse central pueden perderse ante pérdida total del equipo, perfil u origen; una copia en el mismo disco no los protege.
 - Caja sincroniza mientras el sitio permanece abierto y conectado. No se promete sincronización ni respaldo con todas las pestañas cerradas.
-- No hay volumen real, presupuesto mensual, proveedor, alojamiento, dominio, retención, RPO ni RTO aprobados.
+- Railway aloja el servicio web y PostgreSQL privado en producción técnica. El dominio generado y `/health` están operativos; la base inició limpia. PITR está habilitado, pero la sesión CLI requiere renovar su concesión para la copia manual y la sonda SSH. No hay presupuesto mensual, dominio propio, responsable, retención, RPO ni RTO aprobados.
 
 ## Decisiones que faltan
 
-1. Ubicación y responsable del almacenamiento externo de la base sincronizada, con control de acceso y cifrado en tránsito/reposo.
+1. Responsable del almacenamiento y de las restauraciones de la base sincronizada; Railway ya proporciona el almacenamiento PITR administrado.
 2. Retención de copias y de registros de restauración; definir si hay retención legal/fiscal adicional.
 3. RPO para datos sincronizados y RTO para restaurar el servidor en un entorno nuevo.
 4. Presupuesto máximo mensual y responsable de revisar capacidad, fallos y restauraciones.

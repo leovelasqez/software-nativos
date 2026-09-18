@@ -17,7 +17,8 @@ Implementación local autorizada el 13-09-2026. **Incrementos 0–5 verificados 
 | [009](./009-whatsapp/spec.md) | Alertas y cierres por WhatsApp | 12 | REQ-009-01 a REQ-009-04 |
 | [010](./010-agent-api/spec.md) | API y MCP para agentes | 13 | REQ-010-01 a REQ-010-04 |
 | [012](./012-unified-web/spec.md) | Sitio web único y transición | 1, 7, 14, 16–17 | REQ-012-01 a 05 |
-| [011](./011-migration-release/spec.md) | Migración, respaldo y puesta en marcha | 14–17 | REQ-011-01 a REQ-011-05 |
+| [011](./011-migration-release/spec.md) | Migración, respaldo y puesta en marcha | 14–17 | REQ-011-01 a REQ-011-06 |
+| [015](./015-caja-branch-profiles/spec.md) | Perfiles de Caja por sucursal y comprobante térmico | Mantenimiento 18-09-2026 | REQ-015-01 a REQ-015-04 |
 
 Las secciones 16–18 del plan aportan pruebas, límites y referencias transversales. Sus correspondencias principales son:
 
@@ -121,3 +122,7 @@ Evidencia detallada: [incremento 3](../docs/evidence/increment-3.md). No cubre n
 ## Trazabilidad de la transición web 5W
 
 REQ-012-01 a 05 / AC-012-01 a 05: [plan](012-unified-web/plan.md), [contrato](../contracts/browser-pos-v1.md), web/offline, local-transition y pruebas de navegador/traslado. [Evidencia](../docs/evidence/unified-web.md). Adaptadores web verificados localmente; datos anteriores conservados y traslado disponible al perfil elegido. No acredita hardware ni publicación.
+
+## Trazabilidad de mantenimiento 015
+
+REQ-015-01 a 04 / AC-015-01 a 04: [spec](015-caja-branch-profiles/spec.md), [plan](015-caja-branch-profiles/plan.md), [tareas](015-caja-branch-profiles/tasks.md), [contrato de Caja](../contracts/browser-pos-v1.md) y [evidencia](../docs/evidence/caja-branch-profiles.md). Selector de terminal, aislamiento de perfiles, identificación de bodegas y formato térmico verificados localmente; la aceptación física de impresión sigue en 011.

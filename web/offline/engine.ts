@@ -23,6 +23,8 @@ export interface BrowserData{
  events:{id:string;actorId:string;event:OrderEvent|PosEvent;result:Result}[];stock:{sequence:number;itemId:string;quantity:string}[];
  outbox:Entry[];commands:Record<string,{fingerprint:string;response:Record<string,unknown>}>;staged:Staged|null;
  failures:Record<string,{count:number;until:number}>;retired?:boolean;
+ /** Estado aislado de las otras cajas activadas en este mismo navegador. */
+ terminalProfiles?:Record<string,BrowserData>;
 }
 export const blankData=():BrowserData=>({version:1,installationId:crypto.randomUUID(),sequence:0,previous:null,lastSyncAtMs:null,high:0,users:{},grants:{},session:null,snapshots:[],snapshotId:null,customers:[],loyalty:null,orders:{},selected:{},shifts:[],sales:[],refunds:[],events:[],stock:[],outbox:[],commands:{},staged:null,failures:{}});
 class RemoteError extends Error{constructor(public status:number,public code:string,message:string){super(message);}}
@@ -55,6 +57,26 @@ export class BrowserEngine{
  async session(){const me=await this.remote<{user:{login:string}}>('/me');return this.login(me.user.login,'',true);}
  async preparePassword(password:string){const login=this.loginName();if(this.data.users[login]?.passwordHash)return;if(!password)throw new Error('Ingresa tu contraseña para habilitar el acceso sin conexión.');await this.remote('/login',{login,password});this.data.users[login]!.passwordHash=await passwordHash(password);await this.save();}
  async enroll(deviceId:string){const login=this.loginName();this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});await this.save();await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{deviceId,previous:null}));await navigator.storage?.persist?.();return {ok:true};}
+ async terminals(){const me=await this.remote<{branches:{id:string;name:string}[]}>('/me');const devices:{id:string;name:string;branchName:string}[]=[];for(const branch of me.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+branch.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({id:d.id,name:d.name,branchName:branch.name})));}return devices;}
+ async switchTerminal(deviceId:string){
+  const current=this.data.terminal;if(!current||current.deviceId===deviceId)return this.state();
+  await this.sync();
+  if(this.data.outbox.length||this.data.staged)throw new Error('Sincroniza o resuelve los pendientes antes de cambiar de sucursal.');
+  if(this.shift())throw new Error('Cierra el turno actual antes de cambiar de sucursal.');
+  const login=this.loginName(), user=structuredClone(this.data.users[login]!);
+  const profiles=this.data.terminalProfiles??{};
+  const {terminalProfiles:_ignored,...currentProfile}=structuredClone(this.data);
+  profiles[current.deviceId]=currentProfile;
+  const saved=profiles[deviceId];
+  if(saved){
+   this.data=structuredClone(saved);this.data.terminalProfiles=profiles;this.data.session={login,expires:Date.now()+12*3600_000};this.data.users[login]=user;
+   await this.sync(false);await this.accept(login,user.passwordHash,await this.remote('/pos/authorize',{deviceId,previous:null}));
+  }else{
+   const next=blankData();next.installationId=current.installationId;next.session={login,expires:Date.now()+12*3600_000};next.users[login]=user;next.terminalProfiles=profiles;this.data=next;
+   await this.enroll(deviceId);
+  }
+  return this.state();
+ }
  shift(){return this.data.shifts.find(s=>s.closedAtMs===null)??null;}
  snapshot(){return this.data.snapshots.find(s=>s.id===this.data.snapshotId)??null;}
  current(actorId:string){const list=Object.values(this.data.orders).filter(o=>o.actorId===actorId&&!o.order.closed);return list.find(o=>o.order.id===this.data.selected[actorId])?.order??list.at(-1)?.order??upgradeOrder({id:crypto.randomUUID(),revision:0,snapshotId:this.data.snapshotId??'',lines:[]});}
@@ -95,6 +117,8 @@ export async function browserCall<T>(path:string,body:Record<string,unknown>={})
  else if(path==='/session')result=await e.session();
  else if(path==='/import-legacy'){await e.preparePassword(String(body.password??''));const login=e.loginName(),verifier=e.data.users[login]!.passwordHash;if(e.data.terminal||e.data.outbox.length||e.data.sequence)throw new Error('Este navegador ya tiene una caja.');await e.save();const target=e.data.installationId;const imported=await e.remote<BrowserData>('/local-transition',{targetId:target});if(imported.version!==1||!imported.terminal||imported.terminal.installationId!==imported.installationId)throw new Error('Traslado incompatible.');e.data=imported;e.data.users[login]={...(e.data.users[login]??{signed:{document:'',signature:''},revoked:false}),passwordHash:verifier};await e.save();await navigator.storage?.persist?.();result=await e.session();}
  else if(path==='/enroll'){await e.preparePassword(String(body.password??''));result=await e.enroll(String(body.deviceId));}
+ else if(path==='/terminals')result=await e.terminals();
+ else if(path==='/terminal/switch')result=await e.switchTerminal(String(body.deviceId));
  else if(path==='/logout'){localStorage.setItem('nativos-session-ended',String(Date.now()));e.data.session=null;await e.save();try{await e.remote('/logout',{});}catch{}result={ok:true};}
  else if(path==='/v2/state')result=await e.state();
  else if(path==='/v2/command')result=await e.command(String(body.operationId),body.event as CommandEvent);

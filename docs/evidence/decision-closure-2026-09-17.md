@@ -12,9 +12,9 @@ Fuente: respuestas numeradas del usuario a 16 decisiones de terminación.
 | 6 | Todo usuario con alta de producto archiva/restaura | Reutiliza `product.create`, online y auditado |
 | 7 | Impuesto opcional | Vacío conserva `null` y no bloquea venta |
 | 8 | Archivar Agua botella demo | Preservar historia, retirar de listas operativas |
-| 9 | Fiscalidad transitoria en Alegra | Conciliación manual durante piloto; contador aún requerido |
+| 9 | Fiscalidad transitoria en Alegra | Sustituida el 18-09-2026: DEC-009/GO-03 descartadas; no es requisito operativo |
 | 10 | Sin exportación histórica hoy | Migración diferida; contrato preparado |
-| 11 | Sin conteos/costos físicos hoy | No cargar cantidades inventadas |
+| 11 | Sin conteos/costos físicos hoy | Sustituida parcialmente el 18-09-2026: GO-02 cerrada con prueba representativa; carga completa progresiva y sin valores inventados |
 | 12 | Respaldo administrado con PITR | Proveedor y parámetros operativos aún necesarios antes de publicar |
 | 13 | Entorno local hoy | Dominio/alojamiento se difieren |
 | 14 | WhatsApp real desactivado | Cola/simulación local sí; envíos no |

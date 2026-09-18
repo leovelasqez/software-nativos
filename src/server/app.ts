@@ -43,7 +43,8 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   app.addHook('onRequest', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff').header('Referrer-Policy', 'no-referrer')
       .header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
-    if (req.headers.host !== allowed.host) throw new ApiError(403, 'invalid_host', 'Origen no permitido.');
+    const healthRequest = req.method === 'GET' && req.url === '/health';
+    if (!healthRequest && req.headers.host !== allowed.host) throw new ApiError(403, 'invalid_host', 'Origen no permitido.');
     if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
     if (req.headers.origin && req.headers.origin !== origin) throw new ApiError(403, 'invalid_origin', 'Origen no permitido.');
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-nativos-request'] !== '1')
@@ -63,6 +64,10 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
     reply.setCookie('nativos_session', token, { httpOnly: true, sameSite: 'strict',
       path: '/', secure: allowed.protocol === 'https:', maxAge: SESSION_MS / 1000 });
   }
+  app.get('/health', async () => {
+    await pool.query('SELECT 1');
+    return { ok: true };
+  });
   async function mutate<T>(req: FastifyRequest, run: (c: PoolClient, actor: Actor) => Promise<T>) {
     return transaction(pool, async c => {
       await c.query('SELECT pg_advisory_xact_lock(7301)');

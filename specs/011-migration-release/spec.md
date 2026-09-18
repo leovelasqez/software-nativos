@@ -6,9 +6,10 @@ Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente seg
 
 - REQ-011-01: importar catálogo desde el maestro y contrastar formulaciones; resolver conversiones y datos activos sin alterar los originales.
 - REQ-011-02: recuperar todo el historial de ventas disponible en Alegra desde el primer registro; preservar identificadores, estados y datos disponibles y conciliar documentos/totales.
-- REQ-011-03: historia de consulta sin descontar existencias iniciales, afectar turnos nuevos ni generar puntos; inventario inicial por conteo físico y costos revisados por local.
+- REQ-011-03: historia de consulta sin descontar existencias iniciales, afectar turnos nuevos ni generar puntos; inventario y costos iniciales cargados progresivamente con datos revisados. La prueba representativa aprobada para GO-02 es suficiente para iniciar el piloto.
 - REQ-011-04: probar hardware, recuperación de respaldos, esquema local y procedimientos operativos; definir qué datos no sincronizados no están cubiertos por respaldo central.
-- REQ-011-05: ensayar y lanzar conjuntamente Milán/Centro después de validación, definición fiscal y preparación operativa; no incluir funciones excluidas en el plan por inferencia.
+- REQ-011-05: ensayar y lanzar conjuntamente Milán/Centro después de validación y preparación operativa; no incluir funciones excluidas en el plan por inferencia. DEC-009/GO-03 no aplican.
+- REQ-011-06: desplegar el sitio único en Railway con PostgreSQL privado, origen HTTPS único, variables externas sin secretos en el repositorio, escucha en el puerto asignado y comprobación de salud contra la base. El sistema alojado no usa PostgreSQL embebido ni guarda respaldos en el disco efímero del contenedor.
 
 ## Fronteras
 
@@ -23,10 +24,11 @@ Definir una fecha de corte y actualización final para evitar omitir ventas real
 - AC-011-03 → REQ-011-02. Dada una extracción con documentos posteriores a la primera carga, cuando se ejecuta el corte final, entonces la conciliación cubre todo el período sin omisiones ni duplicados.
 - AC-011-04 → REQ-011-04. Dado un respaldo y operaciones locales pendientes, cuando se ensaya una restauración, entonces se demuestra qué datos se recuperan, qué pendientes sobreviven y los límites reales del procedimiento.
 - AC-011-05 → REQ-011-05. Dadas las pruebas de ambos locales y pendientes de puesta en marcha resueltos, cuando se autoriza el cambio, entonces se ejecuta el procedimiento conjunto y se registra la validación de ventas/caja/inventario posterior.
+- AC-011-08 → REQ-011-06. Dado un servicio Railway con `DATABASE_URL`, dominio público y `PORT`, cuando arranca, entonces aplica migraciones de forma idempotente, sirve Administración/Caja en el mismo origen HTTPS y `/health` responde correctamente solo si PostgreSQL está disponible. Si falta una variable requerida, el proceso falla sin imprimir credenciales.
 
 ## Dependencias y pendientes
 
-Todas las capacidades que integren la primera versión; DEC-008/009/011/012. No marcar hardware, fiscalidad, entrega de mensajes o recuperación como verificados por pruebas de maqueta. Evidencia: pendiente.
+Todas las capacidades que integren la primera versión; DEC-008/011/012. No marcar hardware, entrega de mensajes o recuperación como verificados por pruebas de maqueta. DEC-009 fue descartada y la fiscalidad externa no es una dependencia. Evidencia: pendiente.
 
 ## Entorno confirmado y validación pendiente
 
@@ -53,3 +55,7 @@ Se diseña respaldo lógico y restauración aislada de datos ya sincronizados, s
 ## Incremento 8 — plan de ejecución preparado
 
 La migración, prueba física y lanzamiento requieren fuentes, decisiones y autorización externas. El flujo, sus puertas y límites están en `plan-increment-8.md`; las tareas trazadas están en `tasks-increment-8.md`. Ninguno de los dos documentos acredita una importación, una prueba física ni un lanzamiento.
+
+## Puerta vigente de ventas reales
+
+La habilitación queda bloqueada hasta completar y registrar las puertas activas en [la lista operativa](../../docs/operations/real-sales-readiness.md): GO-01 credenciales del dueño en piloto y GO-02 prueba representativa de inventario/costos ya están completadas; en GO-04 Railway y PITR ya están operativos, pero faltan restauración aislada, presupuesto, responsable, RPO, RTO y retención; permanecen además GO-05 aceptación física de T80A/T82E/cajones y GO-06 autorización expresa posterior. GO-03 fue descartada y no aplica. La carga completa del inventario, la migración histórica de Alegra y WhatsApp real están diferidas y no son condiciones de este lanzamiento.

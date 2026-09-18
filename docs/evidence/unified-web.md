@@ -48,6 +48,6 @@ La caja anterior de desarrollo se conserva íntegra. El dueño debe elegir el pe
 
 Cerrar todas las pestañas suspende actividad; la cola se reanuda al abrir Caja/reconectar. La persistencia del navegador no protege frente a borrar el perfil/datos del sitio, pérdida del disco o JavaScript malicioso del mismo origen. Se solicita almacenamiento persistente sin prometer su concesión. No se ha dimensionado el agregado con volumen comercial real.
 
-Instalación opcional como sitio/PWA mediante manifiesto; no se ensayó la instalación del acceso directo. Hardware USB, impresión/cajón, restauración operativa, fiscalidad y publicación siguen pendientes. Compras, informes/Excel y costo promedio corresponden al incremento 6.
+Instalación opcional como sitio/PWA mediante manifiesto; no se ensayó la instalación del acceso directo. Hardware USB, impresión/cajón, restauración operativa y publicación siguen pendientes. Nota posterior del 18-09-2026: DEC-009/GO-03 fueron descartadas y la fiscalidad externa no bloquea esta versión. Compras, informes/Excel y costo promedio corresponden al incremento 6.
 
 No se realizó commit, despliegue, envío de mensajes ni migración comercial. El manifiesto [source-hashes.json](unified-web/source-hashes.json) identifica el estado del código entregado; se conservan los cambios previos de incrementos 2–5.

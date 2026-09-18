@@ -13,7 +13,9 @@ npm.cmd run start:local
 
 Abre [Nativos](http://127.0.0.1:4310/) y entra con tu usuario. **Caja y ventas** abre [Caja](http://127.0.0.1:4310/caja) en el mismo sitio y usa la sesión existente. El lanzador compila e inicia un servidor web local y PostgreSQL para desarrollo; ya no inicia Electron ni el servicio separado del puerto 4311. Estos procesos son el entorno de desarrollo, no una aplicación que deba instalarse en cada equipo cliente del sitio alojado.
 
-No hay contraseña predeterminada. Si no existe configuración, el primer dueño elige sus credenciales. La base de desarrollo, usuarios y operaciones existentes se conservan en `.local/development`, fuera de Git. No borrar esa carpeta para corregir problemas. Alojamiento, dominio y publicación siguen pendientes de autorización/preparación operativa.
+No hay contraseña predeterminada. Si no existe configuración, el primer dueño elige sus credenciales. La base de desarrollo, usuarios y operaciones existentes se conservan en `.local/development`, fuera de Git. No borrar esa carpeta para corregir problemas.
+
+El despliegue técnico de Railway está disponible en [nativos-web-production.up.railway.app](https://nativos-web-production.up.railway.app). Su PostgreSQL inició limpio y no recibió datos locales; allí todavía se debe crear el primer dueño de producción desde el formulario privado. La URL no implica autorización de ventas reales: recuperación operativa, hardware y autorización final continúan como puertas separadas.
 
 ## Caja en el navegador
 
@@ -60,4 +62,4 @@ Check valida TypeScript, reglas de dominio, PostgreSQL real y regresiones de ada
 
 Los planes históricos se conservan; para trabajo nuevo prevalece DEC-021. Antes del incremento 6 se verifica esta transición. Después: compras, traslados, conteos, informes, Excel, costeo promedio y respaldos. WhatsApp/API-MCP e importación/lanzamiento conservan su orden posterior.
 
-Impresión física de 80 mm, cajones USB y fiscalidad siguen pendientes. Deben ensayarse desde navegador antes de operar; no prometer impresión silenciosa ni apertura de cajón por una prueba visual. No hay despliegue productivo, integración bancaria ni respaldo operativo terminado.
+Impresión física de 80 mm y cajones USB siguen pendientes. Deben ensayarse desde navegador antes de operar; no prometer impresión silenciosa ni apertura de cajón por una prueba visual. DEC-009/GO-03 fueron descartadas y la fiscalidad externa no bloquea esta versión. Railway y PITR están desplegados, pero la restauración aislada y la política operativa de recuperación no están terminadas; tampoco hay integración bancaria ni autorización de ventas reales.

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.local/
+.env
+.env.*
+docs/
+specs/
+tests/
+desktop/
+test-results/
+playwright-report/
+playwright.config.ts
+*.log

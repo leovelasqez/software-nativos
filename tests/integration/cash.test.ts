@@ -53,12 +53,12 @@ test('Incremento 6 — movimientos manuales de caja conservan libro, corrección
     await db.pool.query("INSERT INTO inventory_minimums(warehouse_id,item_id,minimum) VALUES('centro-venta','notification-item','2')");
     const lowStock = await inject('/api/notifications/low-stock/run', { operationId: randomUUID(), branchId: 'centro', reason: 'Evaluación diaria de mínimos' }, { cookie }); assert.equal(lowStock.statusCode, 200, lowStock.body); assert.equal(lowStock.json().lowStockRows, 1);
     assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
-    const morning = new Date('2026-09-17T13:00:00.000Z'); assert.equal(isDailyLowStockWindow(morning), true); assert.equal(isDailyLowStockWindow(new Date('2026-09-17T12:00:00.000Z')), false);
+    const morning = new Date(`${lowStock.json().date}T13:00:00.000Z`); assert.equal(isDailyLowStockWindow(morning), true); assert.equal(isDailyLowStockWindow(new Date(morning.getTime() - 60 * 60 * 1000)), false);
     // La ejecución manual y el programador comparten la clave diaria: no generan
     // un segundo mensaje para el mismo local, fecha y rol.
     assert.equal(await runDailyLowStock(db.pool, morning), 1); assert.equal(await runDailyLowStock(db.pool, morning), 1); assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
     await db.pool.query("INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reason) VALUES('notification-restock','notification-item','centro-venta','initial','3','Reposición antes del corte')");
-    assert.equal(await runDailyLowStock(db.pool, new Date('2026-09-18T13:00:00.000Z')), 0); assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
+    assert.equal(await runDailyLowStock(db.pool, new Date(morning.getTime() + 24 * 60 * 60 * 1000)), 0); assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
     const listed = await app.inject({ method: 'GET', url: '/api/notifications?branchId=centro', headers: { host: '127.0.0.1:4340', cookie } }); assert.equal(listed.statusCode, 200, listed.body);
     const intent = listed.json().items.find((item: { type: string; recipientRole: string }) => item.type === 'low_stock_daily' && item.recipientRole === 'owner'); const simulation = { operationId: randomUUID(), reason: 'Prueba local de entrega incierta', outcome: 'uncertain' };
     const simulated = await inject(`/api/notifications/${intent.id}/simulate`, simulation, { cookie }); assert.equal(simulated.statusCode, 200, simulated.body); assert.equal(simulated.json().state, 'uncertain');

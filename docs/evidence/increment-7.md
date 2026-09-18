@@ -35,4 +35,4 @@ Los comandos anteriores terminaron sin fallos en los alcances indicados. El 17-0
 
 - DEC-005: resuelta con alternativa A y spec 014. No se calcula margen histórico retroactivo; los costos desconocidos continúan pendientes hasta conciliación causal del dueño.
 - DEC-010/012: emisor, destinatarios reales, plantillas, proveedor, reintentos de entrega, retención y operación de WhatsApp no están configurados.
-- Hardware, fiscalidad, Alegra, despliegue y recuperación operativa necesitan sus verificaciones externas respectivas.
+- Hardware, Alegra en los alcances aún autorizados, despliegue y recuperación operativa necesitan sus verificaciones externas respectivas. Nota posterior del 18-09-2026: DEC-009/GO-03 fueron descartadas y la fiscalidad externa no es una verificación ni puerta de esta versión.

@@ -1,6 +1,6 @@
 # Handoff — Nativos
 
-Fecha: 17 de septiembre de 2026. Este documento permite retomar sin depender del historial de conversación.
+Fecha: 18 de septiembre de 2026. Este documento permite retomar sin depender del historial de conversación.
 
 ## Actualización prevalente — cierre del MVP local
 
@@ -11,10 +11,10 @@ Esta sección sustituye cualquier afirmación posterior de este archivo que toda
 - Se permite inventario negativo con alerta. No bloquear el cobro por saldo insuficiente ni inventar existencias para la venta sintética existente.
 - Catálogo: seis productos están archivados, incluido `Agua botella demo`; sólo `frutos rojos` permanece activo. La sección histórica permite restaurar con `product.create`. Ver spec/evidencia 013.
 - Desarrollo continúa en `http://127.0.0.1:4310/` con `.local/development`. El piloto limpio y aislado está preparado en `http://127.0.0.1:4410/`, `.local/pilot`, y exige crear dueño; no copiar datos de desarrollo.
-- Fiscalidad permanece en Alegra durante el piloto; la migración histórica se difiere porque no hay exportación completa. WhatsApp real está desactivado y sólo se conserva cola/simulación.
-- Se eligió respaldo administrado con PITR, pero proveedor, presupuesto, responsable, RPO, RTO y retención siguen siendo puertas externas antes de publicar.
-- No hay conteos/costos físicos ni hardware disponible. No registrar valores inventados. T80A/T82E, cajones y fiscalidad deben aprobarse antes de cualquier venta real.
-- Verificación más reciente: `npm run typecheck`, 33/33 unitarias, 57/57 integraciones seriales, `npm run build` y 1/1 recorrido E2E completo en Edge, todo correcto. Los servidores locales 4310 y 4410 quedaron disponibles al finalizar esta actualización.
+- DEC-009/GO-03 fueron descartadas por el dueño el 18-09-2026: la fiscalidad externa no es requisito de operación ni puerta de lanzamiento de esta versión. La migración histórica se difiere porque no hay exportación completa. WhatsApp real está desactivado y sólo se conserva cola/simulación.
+- Railway quedó desplegado en `https://nativos-web-production.up.railway.app` con PostgreSQL privado, una sola región y PITR habilitado. La base inició limpia y requiere crear allí el primer dueño. Presupuesto, responsable, RPO, RTO, retención y restauración aislada siguen pendientes; la sesión CLI necesita renovar su concesión para copias manuales/sonda SSH.
+- GO-02 quedó completada el 18-09-2026 con una prueba representativa correcta de un producto y un insumo, suficiente para el piloto por decisión del dueño. La carga completa será progresiva y no es puerta; no registrar valores inventados. No hay hardware disponible: T80A/T82E y cajones deben aprobarse antes de cualquier venta real.
+- Verificación más reciente: `npm run typecheck`, 36/36 unitarias, 57/57 integraciones seriales y `npm run build`, todo correcto el 18-09-2026. El recorrido E2E completo en Edge más reciente continúa 1/1. Los servidores locales 4310 y 4410 quedaron disponibles al finalizar la actualización local anterior.
 
 ## 1. Objetivo y dirección vigente
 
@@ -22,7 +22,7 @@ Reemplazar Alegra para la operación de Nativos: ventas, inventario, recetas, ca
 
 **Cambio decisivo del usuario, 15-09-2026:** quiere un solo sitio web que reúna Administración y Caja, no una aplicación de escritorio separada. Confirmó expresamente conservar hasta siete días offline y recuperar pedidos al cerrar/reabrir el navegador. Aplicar DEC-021 y spec 012 por encima de referencias históricas a Electron/SQLite. No volver a diseñar el producto como app Windows.
 
-La implementación local está autorizada desde el 13-09-2026. No hay autorización de producción, contratación, modificaciones en Alegra ni mensajes reales. No se desplegó ni se migraron datos comerciales externos.
+La implementación local está autorizada desde el 13-09-2026 y el despliegue técnico en Railway desde el 18-09-2026. No hay autorización para ventas reales, modificaciones en Alegra ni mensajes reales. No se migraron datos comerciales externos.
 
 ## 2. Dónde trabajar y qué leer
 
@@ -68,7 +68,7 @@ Esto no significa que todas las especificaciones del producto estén completas. 
 
 React/TypeScript, Administración en `/` y Caja en `/caja`, mismo origen y cookie web. API modular Fastify/Node/PostgreSQL existente. Se conservan permisos en servidor y validación/recomputación de operaciones comerciales. Electron fue retirado de dependencias y del comando normal. `desktop/` y `src/pos/` permanecen como código histórico/compatibilidad; no son la nueva ruta de producto.
 
-`start:local` compila y arranca servidor web + PostgreSQL como procesos ocultos. Ya no inicia el servicio POS de 4311. El servidor local es desarrollo: el cliente del sitio alojado no requerirá instalar Node/PostgreSQL. No hay alojamiento productivo configurado.
+`start:local` compila y arranca servidor web + PostgreSQL como procesos ocultos. Ya no inicia el servicio POS de 4311. El servidor local es desarrollo: el cliente del sitio alojado no requiere instalar Node/PostgreSQL. El alojamiento técnico Railway usa `npm start`, variables externas, HTTPS y PostgreSQL privado; no usa `.local` ni el respaldo lógico sobre disco efímero.
 
 ### Caja web
 
@@ -150,10 +150,10 @@ Los cortes de red, aborto IndexedDB y carreras entre pestañas de las pruebas so
 4. Resolver DEC-005: definir costo promedio ante saldo negativo y entradas tardías, su conciliación y la historia que se conserva. No inventar costos ni márgenes mientras falte esa decisión.
 5. Resolver DEC-012: definir ubicación externa, retención, presupuesto, RPO y RTO. El respaldo local ya crea/verifica/restaura en base aislada, pero no protege pérdida total de disco ni pendientes IndexedDB.
 6. Aprobar DEC-005 y DEC-012 antes de completar costeo/márgenes y la política operativa de respaldo. Para WhatsApp, resolver también DEC-010 y obtener los recursos operativos antes de implementar un adaptador real. No adelantar contratación, configuración, envíos ni publicación.
-7. La verificación local del incremento 7 está cerrada: `test:integration` serial 55/55 y E2E Edge 1/1 el 17-09-2026. El plan y tareas del incremento 8 ya preparan sus puertas: `specs/011-migration-release/{plan,tasks}-increment-8.md`. Su ejecución sigue sujeta a historial Alegra, conciliación, inventario físico, hardware/fiscalidad y autorización de lanzamiento conjunto.
+7. La verificación local del incremento 7 está cerrada: `test:integration` serial 55/55 y E2E Edge 1/1 el 17-09-2026. El plan y tareas del incremento 8 ya preparan sus puertas: `specs/011-migration-release/{plan,tasks}-increment-8.md`. Su ejecución sigue sujeta a historial Alegra, conciliación, inventario físico, hardware, respaldo y autorización de lanzamiento conjunto.
 8. Prevuelo del incremento 8: las fuentes locales de maestro, snapshot e inventario fueron inspeccionadas sin modificarlas y quedaron fijadas por SHA-256 en `docs/evidence/increment-8-preflight.md`. El snapshot no contiene el historial de ventas; MIG-01 continúa bloqueado hasta obtener la exportación de solo lectura de Alegra.
 9. DEC-012 tiene un brief operativo listo para decisión en `docs/decision-briefs/dec-012-respaldo-operativo.md`. No se eligió proveedor, presupuesto, RPO/RTO ni se configuró un respaldo externo.
-10. DEC-009 tiene un brief para el contador/operación en `docs/decision-briefs/dec-009-fiscalidad-lanzamiento.md`. No se infirió obligación fiscal, tasa, proveedor, numeración ni se emitió documento alguno.
+10. DEC-009 y GO-03 quedaron descartadas por decisión expresa del dueño el 18-09-2026. No exigir confirmación de contador, procedimiento con Alegra ni configuración fiscal como condición de operación o lanzamiento de esta versión.
 11. La aceptación física de T80A Milán y T82E Centro tiene protocolo en `docs/operations/hardware-acceptance.md`. No se hizo prueba de impresión/cajón: requiere los equipos, controladores y personal presencial.
 12. MIG-01 ya tiene contrato de preparación en `contracts/alegra-history-extract-v1.md`: exige IDs externos, documentos, líneas, pagos, manifiesto de cobertura y corte explícito. No se conectó ni se escribió en Alegra.
 
