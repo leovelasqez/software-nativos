@@ -1,0 +1,26 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Nativos — Conciliación de costos", "version": "1.0.0" },
+  "paths": {
+    "/api/warehouses/{id}/cost-reconciliations": {
+      "get": {
+        "operationId": "get__api_warehouses_id_cost_reconciliations",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "branchId", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "after", "required": false, "schema": { "type": "string" } },
+          { "in": "query", "name": "limit", "required": false, "schema": { "type": "string", "pattern": "^([1-9][0-9]?|100)$" } }
+        ],
+        "responses": { "200": { "description": "Libro causal", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "properties": { "items": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string" }, "itemId": { "type": "string" }, "warehouseId": { "type": "string" }, "unitCost": { "type": "string" }, "effectiveFrom": { "type": "string", "format": "date" }, "reason": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" } }, "required": ["id", "itemId", "warehouseId", "unitCost", "effectiveFrom", "reason", "createdAt"] } }, "nextCursor": { "anyOf": [{ "type": "string" }, { "type": "null" }] } }, "required": ["items", "nextCursor"] } } } }, "400": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } }, "401": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } }, "403": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      },
+      "post": {
+        "operationId": "post__api_warehouses_id_cost_reconciliations",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }, { "in": "header", "name": "X-Nativos-Request", "required": true, "schema": { "const": "1" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "properties": { "branchId": { "type": "string" }, "operationId": { "type": "string", "format": "uuid" }, "reason": { "type": "string", "minLength": 3, "maxLength": 2000, "pattern": ".*\\S.*" }, "itemId": { "type": "string" }, "unitCost": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,8})(\\.[0-9]{1,6})?$" }, "effectiveFrom": { "type": "string", "format": "date" } }, "required": ["branchId", "operationId", "reason", "itemId", "unitCost", "effectiveFrom"] } } } },
+        "responses": { "200": { "description": "Conciliación registrada", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string" }, "itemId": { "type": "string" }, "warehouseId": { "type": "string" }, "unitCost": { "type": "string" }, "effectiveFrom": { "type": "string", "format": "date" }, "reason": { "type": "string" }, "createdAt": { "type": "string", "format": "date-time" } }, "required": ["id", "itemId", "warehouseId", "unitCost", "effectiveFrom", "reason", "createdAt"] } } } }, "400": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } }, "401": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } }, "403": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "description": "Error", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    }
+  }
+}

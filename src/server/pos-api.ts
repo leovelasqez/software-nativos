@@ -15,6 +15,7 @@ import type { Authorization, Signed, Snapshot } from '../pos-domain.ts';
 import { payloadHash, signAuthorization, verifyAuthorization } from '../pos-crypto.ts';
 import { handleOrdersSync } from './orders-sync.ts';
 import { CatalogError, decimal, formatted } from '../catalog.ts';
+import { queueShiftClosed } from './notifications-api.ts';
 
 async function key(c: PoolClient) {
   let row = (await c.query('SELECT * FROM pos_signing_key')).rows[0] as { public_key: string; private_key: string } | undefined;
@@ -34,7 +35,7 @@ async function terminal(c: PoolClient, req: FastifyRequest, deviceId: string) {
 }
 async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string }): Promise<Snapshot> {
   const warehouse = (await c.query('SELECT id FROM warehouses WHERE branch_id=$1 AND is_default', [device.branch_id])).rows[0]; if (!warehouse) throw notFound();
-  const products = (await c.query(`SELECT v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version ORDER BY p.id`)).rows.map(r => ({ ...r.data, activeRecipeVersion: r.active_recipe_version, sellable: r.data.type === 'finished' || r.active_recipe_version !== null }));
+  const products = (await c.query(`SELECT v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version WHERE p.archived_at IS NULL ORDER BY p.id`)).rows.map(r => ({ ...r.data, activeRecipeVersion: r.active_recipe_version, sellable: r.data.type === 'finished' || r.active_recipe_version !== null }));
   const recipes = (await c.query('SELECT r.data FROM recipe_versions r JOIN catalog_products p ON p.id=r.product_id AND p.active_recipe_version=r.version ORDER BY r.product_id')).rows.map(r => r.data);
   const stock = (await c.query(`SELECT i.id AS "itemId",coalesce(sum(m.quantity),0)::text AS quantity FROM inventory_items i LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=$1 GROUP BY i.id ORDER BY i.id`, [warehouse.id])).rows;
   const snapshotId = payloadHash(JSON.stringify({ deviceId: device.device_id, warehouseId: warehouse.id, sequence: device.last_sequence, products, recipes, stock }));
@@ -121,7 +122,8 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
         const history = (await c.query('SELECT data FROM pos_snapshots WHERE id=ANY($1::text[]) AND device_id=$2', [[...new Set(payload.lines.map(l => l.snapshotId))], o.deviceId])).rows.map(r => r.data as Snapshot);
         if (history.some(s => s.branchId !== o.branchId || s.createdAtMs > payload.occurredAtMs)) throw new ApiError(422, 'snapshot_invalid', 'Versión de línea inválida.');
         if ((await c.query('SELECT 1 FROM pos_sales WHERE order_id=$1', [payload.orderId])).rowCount) throw new ApiError(409, 'order_already_charged', 'Este pedido ya tiene un cobro confirmado.');
-        const sale = calculateSale(snap, payload.lines, payload.payment, history); const receiptNumber = `${o.branchId}-${o.deviceId}-${device.installation_id}-${o.sequence}`;
+        const sale = calculateSale(snap, payload.lines, payload.payment, history);
+        const receiptNumber = `${o.branchId}-${o.deviceId}-${device.installation_id}-${o.sequence}`;
         const data = { id: o.operationId, receiptNumber, occurredAtMs: payload.occurredAtMs, actorName: authorization.actorName, branchId: o.branchId, deviceId: o.deviceId, payment: payload.payment, ...sale };
         await c.query('INSERT INTO pos_sales(id,order_id,shift_id,device_id,branch_id,actor_id,receipt_number,data,cash_applied,occurred_at,review_required) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [o.operationId, payload.orderId, payload.shiftId, o.deviceId, o.branchId, o.actorId, receiptNumber, JSON.stringify(data), sale.cashApplied, occurred, reviewRequired]);
         for (const [i, item] of sale.consumption.entries()) await c.query(`INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reason,sale_id,created_at) VALUES($1,$2,$3,'sale',-$4::numeric,'Consumo por cobro',$5,$6)`, [`${o.operationId}-stock-${i}`, item.itemId, snap.warehouseId, item.quantity, o.operationId, occurred]);
@@ -132,12 +134,15 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
           if (!payload.reversesMovementId) throw new ApiError(422, 'invalid_payload', 'La corrección debe indicar el movimiento original.');
           const original = (await c.query('SELECT * FROM pos_cash_movements WHERE id=$1 AND shift_id=$2 AND amount=$3::numeric', [payload.reversesMovementId, payload.shiftId, payload.amount])).rows[0];
           if (!original || original.reverses_id || String(original.payment_method) !== payload.method) throw new ApiError(422, 'invalid_payload', 'La corrección no coincide con un movimiento vigente del turno.');
+          if ((await c.query('SELECT 1 FROM pos_cash_movements WHERE reverses_id=$1', [payload.reversesMovementId])).rowCount)
+            throw new ApiError(409, 'movement_already_corrected', 'El movimiento ya tiene una corrección registrada.');
           cashDelta = payload.method === 'cash' ? (original.class === 'income' ? -decimal(payload.amount) : decimal(payload.amount)) : 0n;
         } else if (payload.reversesMovementId) throw new ApiError(422, 'invalid_payload', 'Solo una corrección puede referenciar otro movimiento.');
         await c.query(`INSERT INTO pos_cash_movements(id,shift_id,device_id,branch_id,actor_id,class,payment_method,amount,cash_delta,reverses_id,reason,occurred_at,data)
           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [payload.movementId, payload.shiftId, o.deviceId, o.branchId, o.actorId, payload.class, payload.method, payload.amount, formatted(cashDelta), payload.reversesMovementId, payload.reason.trim(), occurred, JSON.stringify(payload)]);
       } else {
         await c.query(`UPDATE pos_shifts SET closed_at=$2,counted=$3,expected=opening_cash+(SELECT coalesce(sum(cash_applied),0) FROM pos_sales WHERE shift_id=$1)+(SELECT coalesce(sum(cash_applied),0) FROM pos_refunds WHERE shift_id=$1)+(SELECT coalesce(sum(cash_delta),0) FROM pos_cash_movements WHERE shift_id=$1),difference=$3::numeric-opening_cash-(SELECT coalesce(sum(cash_applied),0) FROM pos_sales WHERE shift_id=$1)-(SELECT coalesce(sum(cash_applied),0) FROM pos_refunds WHERE shift_id=$1)-(SELECT coalesce(sum(cash_delta),0) FROM pos_cash_movements WHERE shift_id=$1) WHERE id=$1`, [payload.shiftId, occurred, payload.counted]);
+        await queueShiftClosed(c, payload.shiftId);
       }
     }
     const response = { kind: 'accepted', receipt: o, reviewRequired };

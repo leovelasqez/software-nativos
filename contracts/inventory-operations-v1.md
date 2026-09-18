@@ -18,5 +18,7 @@ Importes y cantidades son cadenas decimales positivas con hasta seis posiciones.
 - `POST /api/transfers/{id}/dispatch`: crea las salidas de despacho una sola vez.
 - `POST /api/transfers/{id}/receive`: recibe cantidades por línea, hasta el saldo despachado; crea únicamente las entradas recibidas.
 - `POST /api/warehouses/{id}/counts`: registra conteo físico. La diferencia contra saldo deriva un movimiento `adjustment_in` o `adjustment_out`, conservando conteo y motivo.
+- `GET /api/warehouses/{id}/cost-reconciliations`: libro paginado disponible únicamente para el dueño con `cost.read`.
+- `POST /api/warehouses/{id}/cost-reconciliations`: registra costo unitario, fecha efectiva y motivo únicamente para el dueño con `cost.write`. Es append-only, no cambia existencias ni reescribe ventas o movimientos anteriores. La proyección vigente prefiere la conciliación efectiva más reciente; sin valor fiable conserva `null`, nunca cero implícito.
 
 Los estados de traslado son `draft`, `dispatched`, `received`, `cancelled`; cancelación solo es válida en `draft`. Una recepción parcial mantiene `dispatched`. Las respuestas de lista tienen `{items,nextCursor}`; errores controlados: 400 formato/regla, 401 sesión, 403 permiso/sucursal, 404 referencia y 409 estado, versión o idempotencia conflictiva.

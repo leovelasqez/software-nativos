@@ -54,6 +54,9 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await expect(page.getByRole('heading', { name: 'Respaldo y recuperación' })).toBeVisible();
   await page.getByRole('button', { name: 'Crear respaldo', exact: true }).click();
   await expect(page.getByText('Respaldo lógico local creado.', { exact: false })).toBeVisible();
+  await page.getByRole('navigation').getByRole('button', { name: 'Notificaciones', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Notificaciones' })).toBeVisible();
+  await expect(page.getByText('Esta pantalla no envía mensajes', { exact: false })).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: 'Resumen', exact: true }).click();
 
   await mkdir('docs/evidence/unified-web/regression/regression/foundation-regression', { recursive: true });
@@ -92,6 +95,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await expect(page.getByLabel('Sucursal', { exact: true }).locator('option')).toHaveCount(1);
   await page.getByRole('button', { name: 'Mostrar navegación' }).click();
   await expect(page.getByRole('navigation').getByRole('button', { name: 'Usuarios y roles' })).toHaveCount(0);
+  await expect(page.getByRole('navigation').getByRole('button', { name: 'Notificaciones' })).toHaveCount(0);
   expect(await page.evaluate(async () => (await fetch('/api/branches/milan')).status)).toBe(403);
   await exerciseCatalog(page, password);
   await exerciseInventoryOperations(page);

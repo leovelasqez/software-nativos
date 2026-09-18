@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
-import { authenticate, requireAccess, ApiError } from './security.ts';
+import { authenticate, authenticateAgent, requireAccess, ApiError } from './security.ts';
 import { decimal, formatted } from '../catalog.ts';
 import { xlsx } from './xlsx.ts';
 
@@ -25,13 +25,16 @@ function page<T extends { id: string }>(items: T[], q: Query) {
   const matching = items.filter(item => item.id > after); return { items: matching.slice(0, limit), nextCursor: matching.length > limit ? matching[limit - 1]!.id : null };
 }
 export function registerReports(app: FastifyInstance, pool: Pool) {
-  async function report(req: FastifyRequest, db: Pool | PoolClient) {
+  async function report(req: FastifyRequest, db: Pool | PoolClient, agent = false) {
     const kind = (req.params as { kind: string }).kind as Kind; if (!kinds.has(kind)) throw new ApiError(404, 'not_found', 'Informe no disponible.');
-    const q = req.query as Query; const actor = await authenticate(db, req); const permitted = new Set(['branchId', 'from', 'to', 'after', 'limit', ...(kind === 'sales' ? ['productId', 'customerId', 'paymentMethod'] : kind === 'purchases' ? ['supplierId', 'paymentMethod'] : kind === 'waste' ? ['productId'] : kind === 'loyalty' ? ['customerId'] : [])]);
+    const q = req.query as Query; const actor = agent ? await authenticateAgent(db, req) : await authenticate(db, req); const permitted = new Set(['branchId', 'from', 'to', 'after', 'limit', ...(kind === 'sales' ? ['productId', 'customerId', 'paymentMethod'] : kind === 'purchases' ? ['supplierId', 'paymentMethod'] : kind === 'waste' ? ['productId'] : kind === 'loyalty' ? ['customerId'] : [])]);
     if (Object.keys(q).some(key => !permitted.has(key)) || (q.from && !datePattern.test(q.from)) || (q.to && !datePattern.test(q.to)) || (q.from && q.to && q.from > q.to) || [q.productId, q.customerId, q.supplierId].some(value => value !== undefined && !idPattern.test(value)) || (q.paymentMethod && !paymentMethods.has(q.paymentMethod))) throw new ApiError(400, 'invalid_filter', 'Revisa los filtros del informe.');
     const branches = q.branchId === 'all' ? actor.user.branch_ids : q.branchId ? [q.branchId] : [];
     if (!branches.length) throw new ApiError(400, 'branch_required', 'Selecciona una sucursal.'); for (const branchId of branches) requireAccess(actor, branchId, kind === 'purchases' ? 'purchase.read' : 'data.read');
-    const context = { kind, branchIds: branches, from: q.from ?? null, to: q.to ?? null, filters: { productId: q.productId ?? null, customerId: q.customerId ?? null, supplierId: q.supplierId ?? null, paymentMethod: q.paymentMethod ?? null }, timeZone: 'America/Bogota', lastSynchronizedAt: Object.fromEntries((await db.query(`SELECT d.branch_id,max(t.last_sync_at) AS synchronized FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE d.branch_id=ANY($1::text[]) GROUP BY d.branch_id`, [branches])).rows.map(row => [row.branch_id, row.synchronized instanceof Date ? row.synchronized.toISOString() : row.synchronized ?? null])) };
+    const synchronization = new Map<string, string | null>((await db.query('SELECT id FROM branches WHERE id=ANY($1::text[])', [branches])).rows.map(row => [row.id, null]));
+    for (const row of (await db.query(`SELECT d.branch_id,max(t.last_sync_at) AS synchronized FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE d.branch_id=ANY($1::text[]) GROUP BY d.branch_id`, [branches])).rows)
+      synchronization.set(row.branch_id, row.synchronized instanceof Date ? row.synchronized.toISOString() : row.synchronized ?? null);
+    const context = { kind, branchIds: branches, from: q.from ?? null, to: q.to ?? null, filters: { productId: q.productId ?? null, customerId: q.customerId ?? null, supplierId: q.supplierId ?? null, paymentMethod: q.paymentMethod ?? null }, timeZone: 'America/Bogota', lastSynchronizedAt: Object.fromEntries(synchronization) };
     const amount = zero(); let items: { id: string; [key: string]: unknown }[] = [];
     if (kind === 'sales') {
       const params: unknown[] = [branches]; const rows = (await db.query(`SELECT id,branch_id,data,occurred_at FROM pos_sales WHERE branch_id=ANY($1::text[])${localRange('occurred_at', q, params)} ORDER BY id`, params)).rows;
@@ -42,10 +45,13 @@ export function registerReports(app: FastifyInstance, pool: Pool) {
       items.sort((a, b) => a.id.localeCompare(b.id));
     } else if (kind === 'cash') {
       const params: unknown[] = [branches]; const rows = (await db.query(`SELECT id,branch_id,opening_cash::text,expected::text,counted::text,difference::text,opened_at,closed_at FROM pos_shifts WHERE branch_id=ANY($1::text[])${localRange('opened_at', q, params)} ORDER BY id`, params)).rows;
-      items = rows.map(row => ({ id: row.id, branchId: row.branch_id, openingCash: row.opening_cash, expected: row.expected, counted: row.counted, difference: row.difference, openedAt: row.opened_at instanceof Date ? row.opened_at.toISOString() : row.opened_at, closedAt: row.closed_at instanceof Date ? row.closed_at.toISOString() : row.closed_at ?? null }));
+      items = rows.map(row => ({ id: row.id, kind: 'shift', branchId: row.branch_id, openingCash: row.opening_cash, expected: row.expected, counted: row.counted, difference: row.difference, openedAt: row.opened_at instanceof Date ? row.opened_at.toISOString() : row.opened_at, closedAt: row.closed_at instanceof Date ? row.closed_at.toISOString() : row.closed_at ?? null }));
       const movements = await db.query(`SELECT payment_method,cash_delta::text FROM pos_cash_movements WHERE branch_id=ANY($1::text[])${localRange('occurred_at', q, [branches])}`, [branches, ...(q.from ? [q.from] : []), ...(q.to ? [q.to] : [])]); for (const movement of movements.rows) { if (movement.payment_method === 'cash') amount.cash += text(movement.cash_delta.replace('-', '')) * (String(movement.cash_delta).startsWith('-') ? -1n : 1n); else amount.digital += text(movement.cash_delta); }
+      const movementParams: unknown[] = [branches]; const movementRows = (await db.query(`SELECT m.id,m.shift_id,m.branch_id,m.class,m.payment_method,m.amount::text,m.cash_delta::text,m.reason,m.occurred_at,u.name AS actor_name FROM pos_cash_movements m JOIN app_users u ON u.id=m.actor_id WHERE m.branch_id=ANY($1::text[])${localRange('m.occurred_at', q, movementParams)} ORDER BY m.id`, movementParams)).rows;
+      items.push(...movementRows.map(row => ({ id: row.id, kind: 'movement', shiftId: row.shift_id, branchId: row.branch_id, class: row.class, paymentMethod: row.payment_method, amount: row.amount, cashDelta: row.cash_delta, reason: row.reason, actorName: row.actor_name, occurredAt: row.occurred_at.toISOString() })));
+      items.sort((a, b) => a.id.localeCompare(b.id));
     } else if (kind === 'inventory') {
-      const rows = (await db.query(`SELECT i.id,i.name,i.reference,coalesce(sum(m.quantity),0)::text AS quantity FROM inventory_items i CROSS JOIN (SELECT id FROM warehouses WHERE branch_id=ANY($1::text[])) w LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=w.id GROUP BY i.id,i.name,i.reference ORDER BY i.id`, [branches])).rows; items = rows.map(row => ({ id: row.id, name: row.name, reference: row.reference, quantity: row.quantity }));
+      const rows = (await db.query(`SELECT w.id AS warehouse_id,w.name AS warehouse_name,i.id AS item_id,i.name,i.reference,coalesce(sum(m.quantity),0)::numeric(30,6)::text AS quantity,minimums.minimum::text AS minimum FROM inventory_items i CROSS JOIN (SELECT id,name FROM warehouses WHERE branch_id=ANY($1::text[])) w LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=w.id LEFT JOIN inventory_minimums minimums ON minimums.warehouse_id=w.id AND minimums.item_id=i.id GROUP BY w.id,w.name,i.id,i.name,i.reference,minimums.minimum ORDER BY w.id,i.id`, [branches])).rows; items = rows.map(row => ({ id: `${row.warehouse_id}:${row.item_id}`, warehouseId: row.warehouse_id, warehouse: row.warehouse_name, itemId: row.item_id, name: row.name, reference: row.reference, quantity: row.quantity, minimum: row.minimum }));
     } else if (kind === 'purchases') {
       const params: unknown[] = [branches]; const rows = (await db.query(`SELECT p.id,p.branch_id,p.supplier_id,p.purchased_on::text,s.data->>'name' AS supplier,p.payment_method,p.paid_amount::text FROM purchases p JOIN suppliers s ON s.id=p.supplier_id WHERE p.branch_id=ANY($1::text[])${q.from ? ` AND p.purchased_on >= $${params.push(q.from)}::date` : ''}${q.to ? ` AND p.purchased_on <= $${params.push(q.to)}::date` : ''}${q.supplierId ? ` AND p.supplier_id=$${params.push(q.supplierId)}` : ''}${q.paymentMethod ? ` AND p.payment_method=$${params.push(q.paymentMethod)}` : ''} ORDER BY p.id`, params)).rows; items = rows.map(row => ({ id: row.id, branchId: row.branch_id, supplierId: row.supplier_id, purchasedOn: row.purchased_on, supplier: row.supplier, paymentMethod: row.payment_method, paidAmount: row.paid_amount }));
     } else if (kind === 'waste') {
@@ -55,12 +61,13 @@ export function registerReports(app: FastifyInstance, pool: Pool) {
     }
     return { context, ...page(items, q), totals: totals(amount), allItems: items };
   }
-  async function snapshot(req: FastifyRequest) {
+  async function snapshot(req: FastifyRequest, agent = false) {
     const db = await pool.connect();
-    try { await db.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'); const value = await report(req, db); await db.query('COMMIT'); return value; }
+    try { await db.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'); const value = await report(req, db, agent); await db.query('COMMIT'); return value; }
     catch (error) { await db.query('ROLLBACK'); throw error; } finally { db.release(); }
   }
   app.get('/api/reports/:kind', async req => { const value = await snapshot(req); const { allItems, ...response } = value; return response; });
+  app.get('/api/agent/v1/reports/:kind', async req => { const value = await snapshot(req, true); const { allItems, ...response } = value; return response; });
   app.get('/api/reports/:kind/export', async (req, reply) => {
     const value = await snapshot(req); const columns = [...new Set(value.allItems.flatMap(item => Object.keys(item)))]; const name = `nativos-${value.context.kind}-${value.context.from ?? 'todo'}-${value.context.to ?? 'actual'}.xlsx`;
     const file = xlsx([{ name: 'Contexto', rows: [['Campo', 'Valor'], ...Object.entries(value.context).map(([key, item]) => [key, typeof item === 'object' ? JSON.stringify(item) : item])]}, { name: 'Datos', rows: [columns, ...value.allItems.map(item => columns.map(column => typeof item[column] === 'object' ? JSON.stringify(item[column]) : item[column] ?? ''))]}, { name: 'Totales', rows: [['Concepto', 'Importe'], ...Object.entries(value.totals)] }]);

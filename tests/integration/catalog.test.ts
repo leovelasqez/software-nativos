@@ -6,6 +6,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { Pool } from 'pg';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import contract from '../../contracts/catalog-inventory-v1.json' with { type: 'json' };
+import lifecycleContract from '../../contracts/catalog-lifecycle-v1.json' with { type: 'json' };
 import { startLocalPostgres } from '../../scripts/local-postgres.ts';
 import { migrate } from '../../src/server/db.ts';
 import { createApp } from '../../src/server/app.ts';
@@ -14,12 +15,19 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
   const directory = resolve(`.local/test-${randomUUID()}`); const password = randomBytes(24).toString('base64url'); const dbPassword = randomBytes(32).toString('hex');
   let db = await startLocalPostgres(directory, { password: dbPassword });
   let app = await createApp({ pool: db.pool, origin: 'http://127.0.0.1:4310' });
-  let owner = ''; let manager = ''; let cashier = ''; let warehouse = ''; let productId = ''; let rawId = ''; let milkId = ''; let moveId = '';
+  let owner = ''; let manager = ''; let cashier = ''; let warehouse = ''; let productId = ''; let finishedId = ''; let rawId = ''; let milkId = ''; let moveId = '';
+  type ResponseDefinition = { content: { 'application/json': { schema: object } } } | { $ref: string };
+  type ContractDocument = { paths: Record<string, Record<string, { responses: Record<string, ResponseDefinition> }>>; components?: { responses?: Record<string, { content: { 'application/json': { schema: object } } }> } };
+  const documents = [contract, lifecycleContract] as unknown as ContractDocument[];
+  const contractPaths = Object.assign({}, ...documents.map(document => document.paths)) as ContractDocument['paths'];
   const ajv = new Ajv2020({ strict: false }); const validators = new Map<string, ReturnType<typeof ajv.compile>>();
-  for (const [path, methods] of Object.entries(contract.paths as Record<string, Record<string, { responses: Record<string, { content: { 'application/json': { schema: object } } }> }>>)) for (const [method, op] of Object.entries(methods)) for (const [status, response] of Object.entries(op.responses)) validators.set(`${method} ${path} ${status}`, ajv.compile(response.content['application/json'].schema));
+  for (const document of documents) for (const [path, methods] of Object.entries(document.paths)) for (const [method, op] of Object.entries(methods)) for (const [status, response] of Object.entries(op.responses)) {
+    const resolved = '$ref' in response ? document.components?.responses?.[response.$ref.split('/').at(-1)!] : response;
+    if (resolved) validators.set(`${method} ${path} ${status}`, ajv.compile(resolved.content['application/json'].schema));
+  }
   const req = async (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object, cookie = owner) => {
     const r = await app.inject({ method, url, ...(payload ? { payload } : {}), headers: { host: '127.0.0.1:4310', 'x-nativos-request': '1', cookie } });
-    const path = Object.keys(contract.paths).find(p => new RegExp('^' + p.replaceAll(/\{[^}]+\}/g, '[^/]+') + '$').test(url.split('?')[0]!));
+    const requestPath = url.split('?')[0]!; const path = Object.keys(contractPaths).find(p => p === requestPath) ?? Object.keys(contractPaths).find(p => new RegExp('^' + p.replaceAll(/\{[^}]+\}/g, '[^/]+') + '$').test(requestPath));
     if (path) { const validate = validators.get(`${method.toLowerCase()} ${path} ${r.statusCode}`); assert.ok(validate, r.body); assert.ok(validate(r.json()), JSON.stringify(validate.errors)); }
     return r;
   };
@@ -54,8 +62,20 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
       assert.equal((await req('PUT', `/api/products/${productId}`, { ...body, expectedVersion: 1 }, cashier)).statusCode, 409);
       const history = (await req('GET', `/api/products/${productId}/versions?branchId=centro&limit=1`)).json(); assert.equal(history.items[0].price, '12500'); assert.equal(history.items[0].tax, null); assert.equal(history.nextCursor, '1');
       const second = (await req('GET', `/api/products/${productId}/versions?branchId=centro&after=1`)).json(); assert.equal(second.items[0].tax.rate, '0');
-      const finished = await req('POST', '/api/products', { ...product(), type: 'finished', reference: 'FIN-TEST' }, cashier); assert.equal(finished.statusCode, 200); assert.equal(finished.json().sellable, true);
+      const finished = await req('POST', '/api/products', { ...product(), type: 'finished', reference: 'FIN-TEST' }, cashier); assert.equal(finished.statusCode, 200); assert.equal(finished.json().sellable, true); finishedId = finished.json().id;
       assert.ok((await req('GET', '/api/items?branchId=centro')).json().items.some((i: { id: string }) => i.id === finished.json().id));
+    });
+    await t.test('AC-013-01/02/03/04: archivado reversible, idempotente y sin borrar historia', async () => {
+      const body = { ...common(), expectedVersion: 1 };
+      const archived = await req('POST', `/api/products/${finishedId}/archive`, body, cashier); assert.equal(archived.statusCode, 200, archived.body); assert.deepEqual(archived.json(), { id: finishedId, archived: true });
+      assert.deepEqual((await req('POST', `/api/products/${finishedId}/archive`, body, cashier)).json(), archived.json());
+      assert.ok(!(await req('GET', '/api/products?branchId=centro')).json().items.some((p: { id: string }) => p.id === finishedId));
+      assert.ok(!(await req('GET', '/api/items?branchId=centro')).json().items.some((i: { id: string }) => i.id === finishedId));
+      assert.ok((await req('GET', '/api/products/archived?branchId=centro')).json().items.some((p: { id: string }) => p.id === finishedId));
+      assert.equal((await req('POST', `/api/products/${finishedId}/restore`, { ...common(), expectedVersion: 2 }, cashier)).statusCode, 409);
+      const restored = await req('POST', `/api/products/${finishedId}/restore`, { ...common(), expectedVersion: 1 }, cashier); assert.deepEqual(restored.json(), { id: finishedId, archived: false });
+      assert.ok((await req('GET', '/api/products?branchId=centro')).json().items.some((p: { id: string }) => p.id === finishedId));
+      assert.equal((await db.pool.query('SELECT count(*)::int AS count FROM product_versions WHERE product_id=$1', [finishedId])).rows[0].count, 1);
     });
     await t.test('AC-003-06/08: artículos, permisos y aislamiento de sucursales', async () => {
       const body = { ...common(), name: 'Pulpa sintética', reference: 'RAW-TEST', kind: 'raw', baseUnit: 'g' };
@@ -92,6 +112,18 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
       assert.equal((await req('GET', `/api/warehouses/${warehouse}/recipe-cost/${productId}?branchId=centro`)).json().cost, null);
       assert.equal((await req('POST', `/api/warehouses/${warehouse}/initial`, { ...common(), itemId: milkId, quantity: '1', unit: 'l', conversion: null, unitCost: '3' })).statusCode, 200);
       assert.equal((await req('GET', `/api/warehouses/${warehouse}/recipe-cost/${productId}?branchId=centro`)).json().cost, '450');
+    });
+    await t.test('DEC-005-A: dueño concilia costo sin reescribir inventario ni exponerlo a otros roles', async () => {
+      const body = { ...common(), itemId: milkId, unitCost: '4', effectiveFrom: '2020-01-01', reason: 'Conciliación manual con soporte del propietario' };
+      assert.equal((await req('POST', `/api/warehouses/${warehouse}/cost-reconciliations`, body, manager)).statusCode, 403);
+      const first = await req('POST', `/api/warehouses/${warehouse}/cost-reconciliations`, body); assert.equal(first.statusCode, 200, first.body);
+      assert.deepEqual((await req('POST', `/api/warehouses/${warehouse}/cost-reconciliations`, body)).json(), first.json());
+      assert.equal(first.json().unitCost, '4.000000'); assert.equal(first.json().effectiveFrom, '2020-01-01');
+      assert.equal((await req('GET', `/api/warehouses/${warehouse}/cost-reconciliations?branchId=centro`, undefined, manager)).statusCode, 403);
+      const history = await req('GET', `/api/warehouses/${warehouse}/cost-reconciliations?branchId=centro`); assert.equal(history.statusCode, 200); assert.equal(history.json().items.length, 1);
+      assert.equal((await req('GET', `/api/warehouses/${warehouse}/costs?branchId=centro`)).json().items.find((i: { itemId: string }) => i.itemId === milkId).unitCost, '4.000000');
+      assert.equal((await req('GET', `/api/warehouses/${warehouse}/recipe-cost/${productId}?branchId=centro`)).json().cost, '600');
+      assert.equal((await db.pool.query('SELECT count(*) FROM inventory_cost_reconciliations')).rows[0].count, '1');
     });
     await t.test('AC-003-06: reversión relacionada única, nuevo inicial y paginación sin duplicados', async () => {
       const body = { ...common(), movementId: moveId };
@@ -167,7 +199,7 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
       }
       finally { await db.pool.query('DROP TRIGGER fail_catalog_audit ON audit_events; DROP FUNCTION fail_catalog_audit()'); }
       assert.equal((await req('POST', '/api/products', body)).statusCode, 200);
-      for (const table of ['inventory_movements', 'recipe_versions', 'product_versions', 'catalog_operations']) for (const sql of [`DELETE FROM ${table}`, `TRUNCATE ${table} CASCADE`]) await assert.rejects(db.pool.query(sql), /history_is_append_only/);
+      for (const table of ['inventory_movements', 'recipe_versions', 'product_versions', 'inventory_cost_reconciliations', 'catalog_operations']) for (const sql of [`DELETE FROM ${table}`, `TRUNCATE ${table} CASCADE`]) await assert.rejects(db.pool.query(sql), /history_is_append_only/);
       const events = (await req('GET', '/api/audit?branchId=centro&limit=100')).body; assert.ok(events.includes('operationId')); assert.ok(!events.includes('unitCost'));
     });
     await t.test('AC-003-08: reinicio y restauración de snapshot lógico de pruebas preservan existencias/versiones', async () => {
@@ -176,7 +208,7 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
       assert.deepEqual((await req('GET', `/api/warehouses/${warehouse}/stock?branchId=centro`)).json(), snapshot);
       // The bundled runtime has no pg_dump. Exercise an explicit logical fixture
       // snapshot/SQL restore into a fresh database; this is not an operational backup.
-      const tables = ['branches', 'warehouses', 'devices', 'app_users', 'sessions', 'login_attempts', 'catalog_products', 'product_versions', 'inventory_items', 'recipe_versions', 'suppliers', 'purchases', 'purchase_lines', 'inventory_transfers', 'inventory_transfer_lines', 'inventory_transfer_events', 'inventory_transfer_event_lines', 'inventory_counts', 'inventory_count_lines', 'inventory_internal_consumptions', 'inventory_internal_consumption_lines', 'inventory_movements', 'inventory_minimums', 'catalog_operations', 'audit_events'];
+      const tables = ['branches', 'warehouses', 'devices', 'app_users', 'sessions', 'login_attempts', 'catalog_products', 'product_versions', 'inventory_items', 'recipe_versions', 'suppliers', 'purchases', 'purchase_lines', 'inventory_transfers', 'inventory_transfer_lines', 'inventory_transfer_events', 'inventory_transfer_event_lines', 'inventory_counts', 'inventory_count_lines', 'inventory_internal_consumptions', 'inventory_internal_consumption_lines', 'inventory_movements', 'inventory_minimums', 'inventory_cost_reconciliations', 'catalog_operations', 'audit_events'];
       const snapshotRows: Record<string, Record<string, unknown>[]> = {};
       for (const table of tables) snapshotRows[table] = (await db.pool.query(`SELECT * FROM ${table}`)).rows;
       const dump = join(directory, 'logical-fixture.json'); await writeFile(dump, JSON.stringify(snapshotRows), { mode: 0o600 });

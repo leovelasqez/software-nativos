@@ -21,8 +21,14 @@ function page<T>(rows: T[], limit: number, key: (row: T) => string) {
   return { items: rows.slice(0, limit), nextCursor: rows.length > limit ? key(rows[limit - 1]!) : null };
 }
 function signedDecimal(value: string): bigint { return value.startsWith('-') ? -decimal(value.slice(1)) : decimal(value); }
+function auditSafe(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(auditSafe);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !['unitCost', 'cost', 'margin'].includes(key)).map(([key, item]) => [key, auditSafe(item)]));
+}
 const itemSelect = 'SELECT id,name,reference,kind,base_unit AS "baseUnit" FROM inventory_items';
 const movementSelect = `SELECT id,item_id AS "itemId",warehouse_id AS "warehouseId",kind,quantity::text,entry,sale_id AS "saleId",purchase_id AS "purchaseId",transfer_event_id AS "transferEventId",count_id AS "countId",internal_consumption_id AS "internalConsumptionId","reverses_id" AS "reversesId",reason,created_at AS "createdAt" FROM inventory_movements`;
+const costReconciliationSelect = `SELECT id,item_id AS "itemId",warehouse_id AS "warehouseId",unit_cost::text AS "unitCost",effective_from::text AS "effectiveFrom",reason,created_at AS "createdAt" FROM inventory_cost_reconciliations`;
 function validateNames(value: unknown) {
   if (!value || typeof value !== 'object') return;
   for (const [key, v] of Object.entries(value)) {
@@ -61,7 +67,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
         const response = await run(c, actor);
         await c.query('INSERT INTO catalog_operations(id,actor_id,fingerprint,response) VALUES($1,$2,$3,$4)', [body.operationId, actor.user.id, fingerprint, JSON.stringify(response)]);
         await audit(c, actor, 'catalog.' + req.method.toLowerCase() + '.' + req.routeOptions.url, body.reason,
-          { operationId: body.operationId, result: response }, body.branchId);
+          { operationId: body.operationId, result: auditSafe(response) }, body.branchId);
         return response;
       });
     } catch (e) { if (e instanceof CatalogError) throw new ApiError(400, 'catalog_invalid', e.message); throw e; }
@@ -69,7 +75,14 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
   app.get('/api/products', { schema: routeSchema('/api/products', 'get') }, async req => {
     const { q, limit, after } = await read(req);
     const rows = (await pool.query(`SELECT v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version
-      WHERE p.id>$1 AND (v.data->>'name' ILIKE $2 OR p.reference ILIKE $2) ORDER BY p.id LIMIT $3`, [after, '%' + (q.q ?? '') + '%', limit + 1])).rows.map(publicProduct);
+      WHERE p.archived_at IS NULL AND p.id>$1 AND (v.data->>'name' ILIKE $2 OR p.reference ILIKE $2) ORDER BY p.id LIMIT $3`, [after, '%' + (q.q ?? '') + '%', limit + 1])).rows.map(publicProduct);
+    return page(rows, limit, p => p.id);
+  });
+  app.get('/api/products/archived', { schema: routeSchema('/api/products/archived', 'get') }, async req => {
+    const { limit, after } = await read(req);
+    const rows = (await pool.query(`SELECT p.id,p.reference,p.current_version AS version,p.archived_at AS "archivedAt",v.data->>'name' AS name
+      FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version
+      WHERE p.archived_at IS NOT NULL AND p.id>$1 ORDER BY p.id LIMIT $2`, [after, limit + 1])).rows;
     return page(rows, limit, p => p.id);
   });
   async function saveProduct(req: FastifyRequest, edit: boolean) {
@@ -96,6 +109,20 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
   }
   app.post('/api/products', { schema: routeSchema('/api/products', 'post') }, req => saveProduct(req, false));
   app.put('/api/products/:id', { schema: routeSchema('/api/products/{id}', 'put') }, req => saveProduct(req, true));
+  async function transitionProduct(req: FastifyRequest, archived: boolean) {
+    return mutate(req, 'product.create', async c => {
+      const body = req.body as Common & { expectedVersion: number }; const id = (req.params as Params).id;
+      const product = (await c.query('SELECT id,current_version,kind,archived_at FROM catalog_products WHERE id=$1 FOR UPDATE', [id])).rows[0];
+      if (!product) throw notFound();
+      if (product.current_version !== body.expectedVersion) throw new ApiError(409, 'version_conflict', 'El producto cambió. Recarga antes de modificar su estado.');
+      if ((product.archived_at !== null) === archived) return { id, archived };
+      await c.query('UPDATE catalog_products SET archived_at=$2 WHERE id=$1', [id, archived ? new Date() : null]);
+      if (product.kind === 'finished') await c.query('UPDATE inventory_items SET archived_at=$2 WHERE id=$1', [id, archived ? new Date() : null]);
+      return { id, archived };
+    });
+  }
+  app.post('/api/products/:id/archive', { schema: routeSchema('/api/products/{id}/archive', 'post') }, req => transitionProduct(req, true));
+  app.post('/api/products/:id/restore', { schema: routeSchema('/api/products/{id}/restore', 'post') }, req => transitionProduct(req, false));
   app.get('/api/products/:id/versions', { schema: routeSchema('/api/products/{id}/versions', 'get') }, async req => {
     const { limit, after } = await read(req);
     const rows = (await pool.query('SELECT data FROM product_versions WHERE product_id=$1 AND version>$2 ORDER BY version LIMIT $3', [(req.params as Params).id, /^\d+$/.test(after) ? after : '0', limit + 1])).rows.map(r => r.data as Product);
@@ -103,7 +130,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
   });
   app.get('/api/items', { schema: routeSchema('/api/items', 'get') }, async req => {
     const { limit, after } = await read(req);
-    return page((await pool.query<Item>(itemSelect + ' WHERE id>$1 ORDER BY id LIMIT $2', [after, limit + 1])).rows, limit, i => i.id);
+    return page((await pool.query<Item>(itemSelect + ' WHERE archived_at IS NULL AND id>$1 ORDER BY id LIMIT $2', [after, limit + 1])).rows, limit, i => i.id);
   });
   app.post('/api/items', { schema: routeSchema('/api/items', 'post') }, req => mutate(req, 'inventory.manage', async c => {
     const b = req.body as Common & Item; const id = randomUUID();
@@ -133,7 +160,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     const rows = (await pool.query(`SELECT i.id AS "itemId",i.name,i.reference,i.base_unit AS "baseUnit",coalesce(s.quantity,0)::text AS quantity,
       coalesce(m.minimum,0)::text AS minimum, coalesce(s.quantity,0)<=coalesce(m.minimum,0) AS low FROM inventory_items i
       LEFT JOIN (SELECT item_id,sum(quantity) AS quantity FROM inventory_movements WHERE warehouse_id=$1 GROUP BY item_id) s ON s.item_id=i.id
-      LEFT JOIN inventory_minimums m ON m.item_id=i.id AND m.warehouse_id=$1 WHERE i.id>$2 ORDER BY i.id LIMIT $3`, [id, after, limit + 1])).rows;
+      LEFT JOIN inventory_minimums m ON m.item_id=i.id AND m.warehouse_id=$1 WHERE i.archived_at IS NULL AND i.id>$2 ORDER BY i.id LIMIT $3`, [id, after, limit + 1])).rows;
     return page(rows, limit, r => r.itemId);
   });
   app.get('/api/warehouses/:id/movements', { schema: routeSchema('/api/warehouses/{id}/movements', 'get') }, async req => {
@@ -145,7 +172,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     const warehouseId = (req.params as Params).id; await warehouse(c, warehouseId, b.branchId);
     if (b.unitCost !== null) costAccess(actor, b.branchId, 'cost.write');
     const item = (await c.query<Item>(itemSelect + ' WHERE id=$1', [b.itemId])).rows[0]; if (!item) throw notFound();
-    if ((await c.query(`SELECT 1 FROM inventory_movements m WHERE item_id=$1 AND warehouse_id=$2 AND kind='initial'
+    if ((await c.query(`SELECT 1 FROM inventory_movements m WHERE item_id=$1 AND warehouse_id=$2 AND kind IN ('initial','import_initial')
       AND NOT EXISTS(SELECT 1 FROM inventory_movements r WHERE r.reverses_id=m.id)`, [b.itemId, warehouseId])).rowCount) throw new ApiError(409, 'initial_exists', 'Ya existe un inicial vigente. Revierte el anterior para corregirlo.');
     const quantity = toBase(b.quantity, b.unit, item.baseUnit, b.conversion); const id = randomUUID();
     await c.query(`INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,unit_cost,reason,entry) VALUES($1,$2,$3,'initial',$4,$5,$6,$7)`, [id, item.id, warehouseId, quantity, b.unitCost, b.reason, JSON.stringify({ quantity: b.quantity, unit: b.unit, conversion: b.conversion })]);
@@ -293,21 +320,40 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     return { id, warehouseId, lines: lines.map(({ itemId, baseQuantity }) => ({ itemId, baseQuantity })) };
   }));
   async function costs(warehouseId: string, after = '', limit = 101) {
-    return (await pool.query(`SELECT i.id AS "itemId",m.unit_cost::text AS "unitCost" FROM inventory_items i LEFT JOIN inventory_movements m
-      ON m.item_id=i.id AND m.warehouse_id=$1 AND m.kind='initial' AND NOT EXISTS(SELECT 1 FROM inventory_movements r WHERE r.reverses_id=m.id)
-      WHERE i.id>$2 ORDER BY i.id LIMIT $3`, [warehouseId, after, limit])).rows as { itemId: string; unitCost: string | null }[];
+    return (await pool.query(`SELECT i.id AS "itemId",coalesce(rc.unit_cost,initial.unit_cost)::text AS "unitCost" FROM inventory_items i
+      LEFT JOIN LATERAL (SELECT r.unit_cost FROM inventory_cost_reconciliations r
+        WHERE r.warehouse_id=$1 AND r.item_id=i.id AND r.effective_from<=CURRENT_DATE
+        ORDER BY r.effective_from DESC,r.created_at DESC,r.id DESC LIMIT 1) rc ON true
+      LEFT JOIN LATERAL (SELECT m.unit_cost FROM inventory_movements m
+        WHERE m.item_id=i.id AND m.warehouse_id=$1 AND m.kind='initial' AND NOT EXISTS(SELECT 1 FROM inventory_movements reversal WHERE reversal.reverses_id=m.id)
+        ORDER BY m.created_at DESC,m.id DESC LIMIT 1) initial ON true
+      WHERE i.archived_at IS NULL AND i.id>$2 ORDER BY i.id LIMIT $3`, [warehouseId, after, limit])).rows as { itemId: string; unitCost: string | null }[];
   }
   app.get('/api/warehouses/:id/costs', { schema: routeSchema('/api/warehouses/{id}/costs', 'get') }, async req => {
     const { q, actor, after, limit } = await read(req); costAccess(actor, q.branchId, 'cost.read'); const id = (req.params as Params).id;
     await warehouse(pool, id, q.branchId); return page(await costs(id, after, limit + 1), limit, r => r.itemId);
   });
+  app.get('/api/warehouses/:id/cost-reconciliations', { schema: routeSchema('/api/warehouses/{id}/cost-reconciliations', 'get') }, async req => {
+    const { q, actor, after, limit } = await read(req); costAccess(actor, q.branchId, 'cost.read'); const id = (req.params as Params).id;
+    await warehouse(pool, id, q.branchId);
+    const rows = (await pool.query(costReconciliationSelect + ' WHERE warehouse_id=$1 AND id>$2 ORDER BY id LIMIT $3', [id, after, limit + 1])).rows;
+    return page(rows, limit, r => r.id);
+  });
+  app.post('/api/warehouses/:id/cost-reconciliations', { schema: routeSchema('/api/warehouses/{id}/cost-reconciliations', 'post') }, req => mutate(req, 'cost.write', async (c, actor) => {
+    const b = req.body as Common & { itemId: string; unitCost: string; effectiveFrom: string }; const warehouseId = (req.params as Params).id;
+    costAccess(actor, b.branchId, 'cost.write'); await warehouse(c, warehouseId, b.branchId); decimal(b.unitCost);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(b.effectiveFrom ?? '')) throw new CatalogError('La fecha efectiva no es válida.');
+    if (!(await c.query('SELECT 1 FROM inventory_items WHERE id=$1 AND archived_at IS NULL', [b.itemId])).rowCount) throw notFound();
+    const id = randomUUID();
+    await c.query('INSERT INTO inventory_cost_reconciliations(id,warehouse_id,item_id,actor_id,unit_cost,effective_from,reason) VALUES($1,$2,$3,$4,$5,$6,$7)', [id, warehouseId, b.itemId, actor.user.id, b.unitCost, b.effectiveFrom, b.reason]);
+    return (await c.query(costReconciliationSelect + ' WHERE id=$1', [id])).rows[0];
+  }));
   app.get('/api/warehouses/:id/recipe-cost/:productId', { schema: routeSchema('/api/warehouses/{id}/recipe-cost/{productId}', 'get') }, async req => {
     const { q, actor } = await read(req); costAccess(actor, q.branchId, 'cost.read'); const { id, productId } = req.params as Params;
     await warehouse(pool, id, q.branchId);
     const recipe = (await pool.query('SELECT r.data FROM recipe_versions r JOIN catalog_products p ON p.id=r.product_id AND p.active_recipe_version=r.version WHERE p.id=$1', [productId])).rows[0]?.data as Recipe | undefined;
     if (!recipe) throw notFound();
-    const rows = (await pool.query(`SELECT m.item_id AS "itemId",m.unit_cost::text AS "unitCost" FROM inventory_movements m WHERE m.warehouse_id=$1 AND m.kind='initial'
-      AND NOT EXISTS(SELECT 1 FROM inventory_movements r WHERE r.reverses_id=m.id)`, [id])).rows;
+    const rows = await costs(id, '', 10000);
     try { return { cost: recipeCost(recipe, new Map(rows.map(r => [r.itemId, r.unitCost]))), recipeVersion: recipe.version }; }
     catch (e) { if (e instanceof CatalogError) return { cost: null, recipeVersion: recipe.version }; throw e; }
   });

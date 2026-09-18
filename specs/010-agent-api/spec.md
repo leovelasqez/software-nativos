@@ -1,6 +1,6 @@
 # 010 — API y MCP para agentes de IA
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, sección 13.
+Estado: implementación local de 7A verificada en integración; queda validación integral del proyecto. Fuente: plan, sección 13.
 
 ## Requisitos
 
@@ -22,4 +22,4 @@ Diseñar contrato de autenticación, permisos, consulta paginada, trabajo de imp
 
 ## Dependencias y pendientes
 
-001/002/003/007/008. Contratos definitivos cuando estas capacidades estén refinadas. Configurar identidad de agentes no autoriza por sí solo a ejecutar operaciones externas. Evidencia: pendiente.
+001/002/003/007/008. El diseño y tareas del alcance independiente están en `plan.md` y `tasks.md`; los contratos definitivos preceden código. Configurar identidad de agentes no autoriza por sí solo a ejecutar operaciones externas. Evidencia: `tests/integration/agent-api.test.ts`, typecheck y build locales.

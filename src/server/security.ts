@@ -41,6 +41,17 @@ export async function authenticate(db: Pool | PoolClient, request: FastifyReques
   if (!row) throw new ApiError(401, 'unauthenticated', 'Tu sesión terminó. Inicia sesión de nuevo.');
   return { user: row, deviceId: row.device_id, tokenHash: tokenHash(token) };
 }
+export async function authenticateAgent(db: Pool | PoolClient, request: FastifyRequest): Promise<Actor> {
+  const authorization = request.headers.authorization;
+  const token = typeof authorization === 'string' && authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length) : '';
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new ApiError(401, 'agent_unauthenticated', 'Credencial de agente inválida.');
+  const result = await db.query<UserRow>(`SELECT u.* FROM agent_credentials c JOIN app_users u ON u.id=c.user_id
+    WHERE c.token_hash=$1 AND c.active AND u.active AND u.kind='agent'`, [tokenHash(token)]);
+  const user = result.rows[0];
+  if (!user) throw new ApiError(401, 'agent_unauthenticated', 'Credencial de agente inválida o revocada.');
+  // Agent IDs are valid device identifiers for the shared authorization policy.
+  return { user, deviceId: user.id, tokenHash: tokenHash(token) };
+}
 export function requireAccess(actor: Actor, branchId: string, action: Action = 'data.read') {
   if (!authorize({ principal: principal(actor.user), action, branchId,
     deviceId: actor.deviceId, mode: 'online' }).allowed) throw new ApiError(403, 'forbidden', 'No tienes permiso para esta operación.');

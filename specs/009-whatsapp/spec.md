@@ -1,6 +1,6 @@
 # 009 — Notificaciones por WhatsApp
 
-Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente según hoja de ruta. Fuente: plan, sección 12.
+Estado: lista para implementación local de cola/observabilidad; envío real bloqueado por DEC-010/012. Fuente: plan, sección 12.
 
 ## Requisitos
 
@@ -28,4 +28,4 @@ No hay envío real autorizado por la existencia de esta especificación. Emisor,
 
 ## Dependencias y pendientes
 
-003/006/007/008. DEC-010 debe cerrar sus datos de entorno y recuperación antes del diseño final de envíos; destinatarios por rol y horarios ya están confirmados. Validar contratos actuales del proveedor al implementarlo. Evidencia: pendiente.
+003/006/007/008. La cola local está planificada en `plan.md`, tareas y contrato v1; DEC-010 debe cerrar sus datos de entorno y recuperación antes del diseño final de envíos. Destinatarios por rol y horarios ya están confirmados. Validar contratos actuales del proveedor al implementarlo. Evidencia de implementación: pendiente.

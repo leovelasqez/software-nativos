@@ -1,6 +1,20 @@
 # Handoff — Nativos
 
-Fecha: 16 de septiembre de 2026. Actualizado durante el incremento 6 a petición del usuario. Este documento permite retomar sin depender del historial de conversación.
+Fecha: 17 de septiembre de 2026. Este documento permite retomar sin depender del historial de conversación.
+
+## Actualización prevalente — cierre del MVP local
+
+Esta sección sustituye cualquier afirmación posterior de este archivo que todavía describa DEC-005, DEC-010, DEC-011 o DEC-012 como decisiones sin respuesta.
+
+- El usuario cerró 16 decisiones en `docs/evidence/decision-closure-2026-09-17.md`. El objetivo actual es **MVP local listo para piloto**, no producción.
+- DEC-005 eligió costo desconocido hasta conciliación causal manual del dueño. Está implementado y verificado mediante spec 014, contrato, migración 017, UI e integración; no hay margen histórico retroactivo.
+- Se permite inventario negativo con alerta. No bloquear el cobro por saldo insuficiente ni inventar existencias para la venta sintética existente.
+- Catálogo: seis productos están archivados, incluido `Agua botella demo`; sólo `frutos rojos` permanece activo. La sección histórica permite restaurar con `product.create`. Ver spec/evidencia 013.
+- Desarrollo continúa en `http://127.0.0.1:4310/` con `.local/development`. El piloto limpio y aislado está preparado en `http://127.0.0.1:4410/`, `.local/pilot`, y exige crear dueño; no copiar datos de desarrollo.
+- Fiscalidad permanece en Alegra durante el piloto; la migración histórica se difiere porque no hay exportación completa. WhatsApp real está desactivado y sólo se conserva cola/simulación.
+- Se eligió respaldo administrado con PITR, pero proveedor, presupuesto, responsable, RPO, RTO y retención siguen siendo puertas externas antes de publicar.
+- No hay conteos/costos físicos ni hardware disponible. No registrar valores inventados. T80A/T82E, cajones y fiscalidad deben aprobarse antes de cualquier venta real.
+- Verificación más reciente: `npm run typecheck`, 33/33 unitarias, 57/57 integraciones seriales, `npm run build` y 1/1 recorrido E2E completo en Edge, todo correcto. Los servidores locales 4310 y 4410 quedaron disponibles al finalizar esta actualización.
 
 ## 1. Objetivo y dirección vigente
 
@@ -32,8 +46,10 @@ La implementación local está autorizada desde el 13-09-2026. No hay autorizaci
 | 5 | Fidelización, inscripción, acumulación offline pendiente, canje central, reglas/ajustes auditados y devolución de puntos |
 | 5W / 012 | Sitio único, Caja en navegador, IndexedDB/Web Locks/Web Crypto, shell offline, pruebas de navegador y puente de traslado de datos anteriores |
 | 6 (parcial por decisiones) | Compras/proveedores, traslados, conteos/ajustes, consumo interno, movimientos de Caja, Informes/XLSX y respaldo/restauración local |
+| 7A (verificado localmente) | API versionada y MCP JSON-RPC para agentes: credenciales revocables, consultas acotadas e importaciones atómicas/idempotentes de inventario y catálogo/recetas |
+| 7B (parcial por decisión externa) | Libro durable de intenciones de notificación, resúmenes locales de mínimos/cierre y pantalla de dueño con simulación; sin proveedor ni envío WhatsApp real |
 
-Esto no significa que todas las especificaciones del producto estén completas. Del incremento 6 solo quedan costo promedio/márgenes (DEC-005) y política externa de respaldo, retención, RPO/RTO (DEC-012); hardware, integraciones y lanzamiento siguen pendientes.
+Esto no significa que todas las especificaciones del producto estén completas. Del incremento 6 solo quedan costo promedio/márgenes (DEC-005) y política externa de respaldo, retención, RPO/RTO (DEC-012). El adaptador WhatsApp de producción permanece bloqueado por DEC-010/012; hardware, integraciones y lanzamiento siguen pendientes.
 
 ### Servicios y datos al cierre
 
@@ -133,7 +149,13 @@ Los cortes de red, aborto IndexedDB y carreras entre pestañas de las pruebas so
 3. El piloto E2E ya comprobó actualización de service worker con un comprobante pendiente: el worker nuevo espera y la reapertura offline conserva IndexedDB. La solicitud de almacenamiento persistente se ejecuta tanto en enrolamiento como en traslado. No se verificó una concesión real del navegador del usuario y no se promete protección frente a limpieza del sitio; medir crecimiento/rendimiento con volumen definido antes de lanzamiento.
 4. Resolver DEC-005: definir costo promedio ante saldo negativo y entradas tardías, su conciliación y la historia que se conserva. No inventar costos ni márgenes mientras falte esa decisión.
 5. Resolver DEC-012: definir ubicación externa, retención, presupuesto, RPO y RTO. El respaldo local ya crea/verifica/restaura en base aislada, pero no protege pérdida total de disco ni pendientes IndexedDB.
-6. Una vez decididas, completar costeo/márgenes y la política operativa de respaldo; después continuar incremento 7 (WhatsApp y API/MCP) e incremento 8 (historial Alegra, conciliación, inventario físico, hardware/fiscalidad y lanzamiento conjunto). No adelantar contratación, envíos o publicación.
+6. Aprobar DEC-005 y DEC-012 antes de completar costeo/márgenes y la política operativa de respaldo. Para WhatsApp, resolver también DEC-010 y obtener los recursos operativos antes de implementar un adaptador real. No adelantar contratación, configuración, envíos ni publicación.
+7. La verificación local del incremento 7 está cerrada: `test:integration` serial 55/55 y E2E Edge 1/1 el 17-09-2026. El plan y tareas del incremento 8 ya preparan sus puertas: `specs/011-migration-release/{plan,tasks}-increment-8.md`. Su ejecución sigue sujeta a historial Alegra, conciliación, inventario físico, hardware/fiscalidad y autorización de lanzamiento conjunto.
+8. Prevuelo del incremento 8: las fuentes locales de maestro, snapshot e inventario fueron inspeccionadas sin modificarlas y quedaron fijadas por SHA-256 en `docs/evidence/increment-8-preflight.md`. El snapshot no contiene el historial de ventas; MIG-01 continúa bloqueado hasta obtener la exportación de solo lectura de Alegra.
+9. DEC-012 tiene un brief operativo listo para decisión en `docs/decision-briefs/dec-012-respaldo-operativo.md`. No se eligió proveedor, presupuesto, RPO/RTO ni se configuró un respaldo externo.
+10. DEC-009 tiene un brief para el contador/operación en `docs/decision-briefs/dec-009-fiscalidad-lanzamiento.md`. No se infirió obligación fiscal, tasa, proveedor, numeración ni se emitió documento alguno.
+11. La aceptación física de T80A Milán y T82E Centro tiene protocolo en `docs/operations/hardware-acceptance.md`. No se hizo prueba de impresión/cajón: requiere los equipos, controladores y personal presencial.
+12. MIG-01 ya tiene contrato de preparación en `contracts/alegra-history-extract-v1.md`: exige IDs externos, documentos, líneas, pagos, manifiesto de cobertura y corte explícito. No se conectó ni se escribió en Alegra.
 
 Hardware conocido: Milán T80A USB 80 mm; Centro NP/New Print T82E USB 80 mm. Se debe probar desde navegador impresión de comprobantes/comandas y cajón; no inferir soporte idéntico en ambas.
 
@@ -153,7 +175,7 @@ E2E usa servidor/base sintética en 4320 y perfiles `.local/browser-e2e-*`; no e
 
 ## 10. Git y archivos cambiados
 
-HEAD al escribir: `d33a6867dca602b6aab79a5b7165337e54e3d1c0`. **No se hizo commit en estas continuaciones.** Hay cambios rastreados y muchos archivos sin seguimiento de incrementos 2–5 además de 5W. No asumir que todo el diff corresponde a la transición ni descartar archivos untracked. package-lock.json no aparece modificado frente a HEAD tras retirar Electron; conservar su estado real, no inventar un diff.
+HEAD al escribir: `d33a6867dca602b6aab79a5b7165337e54e3d1c0`. **No se hizo commit en estas continuaciones.** Hay cambios rastreados y muchos archivos sin seguimiento de incrementos 2–7. No asumir que todo el diff corresponde a un solo incremento ni descartar/restaurar archivos untracked. package-lock.json no aparece modificado frente a HEAD tras retirar Electron; conservar su estado real, no inventar un diff.
 
 ### Archivos principales de la transición web
 
@@ -199,6 +221,36 @@ HEAD al escribir: `d33a6867dca602b6aab79a5b7165337e54e3d1c0`. **No se hizo commi
 - Los archivos centrales del incremento 6 incluyen migraciones `006`–`010`, `src/server/{pos-api,reports-api,backup-api,xlsx}.ts`, `web/{Purchases,InventoryOperations,Reports,Backups,Pos}.tsx`, contratos de inventario/caja/informes/respaldo y sus pruebas de integración/E2E.
 - El árbol Git continúa intencionalmente sin commit y con cambios heredados de incrementos anteriores. `git status --short` al actualizar confirma archivos nuevos de incremento 6 y modificaciones históricas; no descartar ni restaurar cambios ajenos.
 - Los únicos entregables de incremento 6 no implementables sin nueva definición son valoración promedio, costos/márgenes (DEC-005), y respaldo externo/retención/RPO/RTO (DEC-012).
+
+### Incremento 7 — estado al retomar
+
+#### 7A: API y MCP para agentes
+
+- Se añadieron las migraciones aditivas `011-cash-correction-uniqueness.sql`, `012-agent-credentials.sql`, `013-agent-inventory-imports.sql` y `014-agent-catalog-imports.sql`. La 011 impide correcciones de Caja duplicadas; las demás conservan credenciales de agente revocables y recibos inmutables de importación.
+- `src/server/security.ts` autentica el principal `agent` por Bearer, sin almacenar el secreto en claro. La rotación/revocación invalida el acceso y queda auditada.
+- `src/server/agent-api.ts` expone únicamente las proyecciones autorizadas de catálogo, recetas activas, inventario, movimientos e informes; aplica alcance de sucursal, paginación y no devuelve costos. Las importaciones de inventario y de catálogo/recetas siguen vista previa, confirmación atómica e idempotencia; los errores se informan por fila sin escrituras parciales.
+- El mismo módulo ofrece MCP por JSON-RPC (`initialize`, `tools/list`, `tools/call`) y delega en las operaciones autorizadas, sin capacidad general de SQL, archivos ni ejecución arbitraria.
+- Contratos: `contracts/agent-api-v1.{md,json}`, `contracts/agent-import-v1.schema.json` y `contracts/agent-catalog-import-v1.md`. Prueba principal: `tests/integration/agent-api.test.ts`.
+
+#### 7B: notificaciones locales preparadas
+
+- `migrations/015-notification-intents.sql` guarda `notification_intents` deduplicables, `notification_attempts` append-only y operaciones auditables. No contiene contactos, números, tokens ni una integración externa.
+- `src/server/notifications-api.ts` evalúa localmente los mínimos una vez al día en la ventana de las 08:00 de Colombia (arranque y verificación cada minuto), con clave diaria persistente. Agrupa por bodega, descarta alertas si hubo reposición antes del corte y crea destinatarios lógicos `owner` y `branch_manager`.
+- Al cerrar un turno sincronizado, genera un resumen con ventas normalizadas por medio de pago, devoluciones leídas de `pos_refunds` y diferencias de Caja. La notificación se deduplica por turno.
+- `web/Notifications.tsx` y sus rutas permiten solo al dueño consultar la cola y simular resultado entregado/incierto. La simulación no envía mensajes ni resuelve un intento externo.
+- Contrato: `contracts/notifications-v1.md`. La base de evidencia es `docs/evidence/increment-7.md`; las pruebas focalizadas están en `tests/integration/cash.test.ts`.
+
+#### Verificación confirmada del incremento 7
+
+- Pasaron `npm.cmd run typecheck`, `npm.cmd run build`, `npm.cmd audit --omit=dev` (0 vulnerabilidades) y `git diff --check` en las ejecuciones registradas.
+- Pasaron las pruebas focalizadas de agentes, Caja/notificaciones, informes y respaldo. La suite unitaria registró 33/33 correctas.
+- El 17-09-2026 se repitieron en serie las baterías integrales: `npm.cmd run test:integration` terminó con 55/55 y `npm.cmd run test:e2e` con 1/1 en Edge. La salida terminal concluyente y la revisión de la captura de recuperación de canje quedaron registradas en `docs/evidence/increment-7.md`.
+
+#### Decisiones y límites que no se deben saltar
+
+- **DEC-005:** falta política aprobada para costo promedio con inventario negativo y entradas tardías. El brief `docs/decision-briefs/dec-005-costeo-promedio.md` propone una alternativa inicial, pero no es aprobación; no calcular ni publicar costos/márgenes por inferencia.
+- **DEC-010/012:** faltan proveedor/cuenta de WhatsApp, emisor, destinatarios reales, plantillas aprobadas, reconciliación de estado, retención y política de reintentos. El brief `docs/decision-briefs/dec-010-whatsapp-operacion.md` documenta la decisión. Mantener el adaptador real deshabilitado: no contratar, configurar ni enviar mensajes.
+- Los resúmenes locales son una cola operativa simulable, no una garantía de entrega ni una automatización cuando el servidor esté apagado. La evaluación ocurre mientras el servidor local está activo.
 
 ### Cambios anteriores conservados
 

@@ -5,6 +5,8 @@ import { registerPos } from './pos-api.ts';
 import { registerCatalog } from './catalog-api.ts';
 import { registerReports } from './reports-api.ts';
 import { registerBackups } from './backup-api.ts';
+import { registerAgents } from './agent-api.ts';
+import { registerNotifications } from './notifications-api.ts';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
@@ -32,6 +34,8 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   registerCatalog(app, pool);
   registerReports(app, pool);
   registerBackups(app, pool, backupDirectory, backupRestoreDatabase, backupRestoreConnection);
+  registerAgents(app, pool);
+  registerNotifications(app, pool);
   registerPos(app, pool);
   registerCustomers(app, pool);
   registerLoyalty(app, pool);
@@ -97,7 +101,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
       await c.query('SELECT pg_advisory_xact_lock(7301)');
       const attempts = (await c.query<{ failures: number; blocked_until: Date | null }>('SELECT * FROM login_attempts WHERE login=$1', [login])).rows[0];
       if (attempts?.blocked_until && attempts.blocked_until.getTime() > Date.now()) return null;
-      const user = (await c.query<UserRow>('SELECT * FROM app_users WHERE login=$1', [login])).rows[0];
+      const user = (await c.query<UserRow>("SELECT * FROM app_users WHERE login=$1 AND kind='human'", [login])).rows[0];
       const valid = await verifyPassword(body.password, user?.password_hash ?? dummyHash);
       if (!user || !user.active || !valid) {
         const count = attempts?.blocked_until ? 1 : (attempts?.failures ?? 0) + 1;
@@ -128,7 +132,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   });
   app.get('/api/users', { schema: routeSchema('/api/users', 'get') }, async req => {
     const actor = await authenticate(pool, req); requireAdmin(actor);
-    const users = await pool.query<UserRow>('SELECT id,name,login,role,active,branch_ids,actions FROM app_users WHERE branch_ids <@ $1::text[] ORDER BY name,id', [actor.user.branch_ids]);
+    const users = await pool.query<UserRow>("SELECT id,name,login,role,active,branch_ids,actions FROM app_users WHERE kind='human' AND branch_ids <@ $1::text[] ORDER BY name,id", [actor.user.branch_ids]);
     return { items: users.rows.map(publicUser) };
   });
   app.post('/api/users', { schema: routeSchema('/api/users', 'post') }, async (req, reply) => {
@@ -147,7 +151,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   app.patch('/api/users/:id', { schema: routeSchema('/api/users/{id}', 'patch') }, async req => {
     const body = req.body as Partial<UserInput> & { reason: string };
     return mutate(req, async (c, actor) => {
-      const old = (await c.query<UserRow>('SELECT * FROM app_users WHERE id=$1 AND branch_ids <@ $2::text[] FOR UPDATE',
+      const old = (await c.query<UserRow>("SELECT * FROM app_users WHERE id=$1 AND kind='human' AND branch_ids <@ $2::text[] FOR UPDATE",
         [(req.params as Params).id, actor.user.branch_ids])).rows[0];
       if (!old) throw notFound();
       const role = body.role ?? old.role;
@@ -157,7 +161,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
       const user = (await c.query<UserRow>(`UPDATE app_users SET name=$2,login=$3,password_hash=$4,role=$5,active=$6,branch_ids=$7,actions=$8
         WHERE id=$1 RETURNING *`, [old.id, body.name?.trim() ?? old.name, body.login?.toLowerCase() ?? old.login,
         body.password ? await hashPassword(body.password) : old.password_hash, role, body.active ?? old.active, branchIds, actions])).rows[0]!;
-      if (!(await c.query("SELECT 1 FROM app_users WHERE active AND role='owner' AND 'settings.manage'=ANY(actions)")).rowCount)
+      if (!(await c.query("SELECT 1 FROM app_users WHERE active AND kind='human' AND role='owner' AND 'settings.manage'=ANY(actions)")).rowCount)
         throw new ApiError(409, 'last_admin', 'Debe quedar al menos un dueño activo con administración.');
       await c.query('DELETE FROM sessions WHERE user_id=$1', [user.id]);
       await audit(c, actor, 'user.updated', body.reason, { before: publicUser(old), after: publicUser(user), passwordChanged: Boolean(body.password) },

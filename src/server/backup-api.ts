@@ -16,6 +16,7 @@ const tables = [
   'purchase_lines', 'inventory_transfers', 'inventory_transfer_lines', 'inventory_transfer_events',
   'inventory_transfer_event_lines', 'inventory_counts', 'inventory_count_lines',
   'inventory_internal_consumptions', 'inventory_internal_consumption_lines', 'pos_cash_movements',
+  'agent_credentials', 'agent_inventory_imports', 'agent_catalog_imports', 'notification_intents', 'notification_attempts', 'notification_operations',
 ] as const;
 
 type Manifest = {

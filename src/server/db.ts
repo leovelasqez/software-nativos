@@ -6,14 +6,14 @@ import type { Action, Principal, Role } from '../contracts.ts';
 
 export interface UserRow {
   id: string; name: string; login: string; password_hash: string; role: Role;
-  active: boolean; branch_ids: string[]; actions: Action[];
+  active: boolean; kind: 'human' | 'agent'; branch_ids: string[]; actions: Action[];
 }
 export function publicUser(u: UserRow) {
   return { id: u.id, name: u.name, login: u.login, role: u.role,
     active: u.active, branchIds: u.branch_ids, actions: u.actions };
 }
 export function principal(u: UserRow): Principal {
-  return { version: 1, actorId: u.id, kind: 'human', role: u.role,
+  return { version: 1, actorId: u.id, kind: u.kind, role: u.role,
     active: u.active, branchIds: u.branch_ids, actions: u.actions };
 }
 export interface Actor { user: UserRow; deviceId: string; tokenHash: string }

@@ -49,3 +49,7 @@ La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escr
 ## Incremento 6 — alcance preparado
 
 Se diseña respaldo lógico y restauración aislada de datos ya sincronizados, sin migrar Alegra ni tocar datos comerciales. La política de retención, ubicación externa, RPO y RTO sigue bloqueada por DEC-012. Ver `plan.md`, `tasks.md` y `../../contracts/backup-v1.md`.
+
+## Incremento 8 — plan de ejecución preparado
+
+La migración, prueba física y lanzamiento requieren fuentes, decisiones y autorización externas. El flujo, sus puertas y límites están en `plan-increment-8.md`; las tareas trazadas están en `tasks-increment-8.md`. Ninguno de los dos documentos acredita una importación, una prueba física ni un lanzamiento.

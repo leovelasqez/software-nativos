@@ -1,6 +1,6 @@
 # Contrato v1 — Informes y Excel (incremento 6)
 
-Estado: implementación verificada excepto costos y márgenes bloqueados por DEC-005. Todas las rutas son online, autenticadas y `Cache-Control: no-store`.
+Estado: implementación de informes operativos verificada. DEC-005 está resuelta con conciliación causal; costos y márgenes históricos siguen fuera del informe hasta que cada salida tenga valoración explícita, sin reescribir historia. Todas las rutas son online, autenticadas y `Cache-Control: no-store`.
 
 ## Consulta
 

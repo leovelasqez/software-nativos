@@ -15,8 +15,9 @@ import { Purchases } from './Purchases.tsx';
 import { Counts, Transfers } from './InventoryOperations.tsx';
 import { Reports } from './Reports.tsx';
 import { Backups } from './Backups.tsx';
+import { Notifications } from './Notifications.tsx';
 
-type Page = 'summary' | 'users' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups';
+type Page = 'summary' | 'users' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups' | 'notifications';
 const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   { id: 'summary', name: 'Resumen', icon: '◫' }, { id: 'branches', name: 'Sucursales y bodegas', icon: '⌂' },
   { id: 'products', name: 'Productos', icon: '◇' }, { id: 'recipes', name: 'Recetas', icon: '≋' }, { id: 'inventory', name: 'Inventario', icon: '▤' },
@@ -24,7 +25,7 @@ const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   { id: 'transfers', name: 'Traslados', icon: '⇄' }, { id: 'counts', name: 'Conteos y ajustes', icon: '±' },
   {id:'customers',name:'Clientes',icon:'♧'}, {id:'loyalty',name:'Fidelización',icon:'☆'},
   {id:'reports',name:'Informes',icon:'▥'},
-  { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
+  { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'notifications', name: 'Notificaciones', icon: '◌', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
 ];
 const pending = ['WhatsApp', 'Agentes de IA'];
 function App() {
@@ -81,6 +82,7 @@ function App() {
         {page === 'counts' && <Counts key={branchId} me={me} branchId={branchId} />}
         {page === 'reports' && <Reports key={branchId} branchId={branchId} />}
         {page === 'backups' && admin && <Backups />}
+        {page === 'notifications' && admin && <Notifications key={branchId} branchId={branchId} />}
         {page === 'users' && admin && <Users me={me} onSessionRefresh={refresh} />}
         {page === 'branches' && branchId && <Branches me={me} branchId={branchId} refresh={refresh} />}
         {page === 'audit' && admin && <Audit me={me} />}
