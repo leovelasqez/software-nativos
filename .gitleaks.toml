@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Manifiestos SHA-256 reproducibles de la evidencia"
+paths = [
+  '''^docs/evidence/increment-[1-5]/source-(sha256|hashes)\.json$''',
+  '''^docs/evidence/unified-web/source-hashes\.json$'''
+]
