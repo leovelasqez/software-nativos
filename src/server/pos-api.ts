@@ -16,6 +16,7 @@ import { payloadHash, signAuthorization, verifyAuthorization } from '../pos-cryp
 import { handleOrdersSync } from './orders-sync.ts';
 import { CatalogError, decimal, formatted } from '../catalog.ts';
 import { queueShiftClosed } from './notifications-api.ts';
+import { isWithinGrantClock } from '../authorization.ts';
 
 async function key(c: PoolClient) {
   let row = (await c.query('SELECT * FROM pos_signing_key')).rows[0] as { public_key: string; private_key: string } | undefined;
@@ -105,7 +106,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
       await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1',[o.deviceId,o.sequence,o.operationId]); return response;
     }
     if (!isPosEvent(payload)) throw new ApiError(422, 'invalid_payload', 'Formato de operación inválido.');
-    if (!grant.actions.includes(payload.kind) || payload.occurredAtMs < grant.validatedAtMs || payload.occurredAtMs > Date.now() + 300_000 || payload.kind !== 'shift.close' && payload.occurredAtMs >= grant.expiresAtMs) throw new ApiError(403, 'grant_denied', 'La operación está fuera de la autorización registrada.');
+    if (!grant.actions.includes(payload.kind) || !isWithinGrantClock(payload.occurredAtMs, grant.validatedAtMs) || payload.occurredAtMs > Date.now() + 300_000 || payload.kind !== 'shift.close' && payload.occurredAtMs >= grant.expiresAtMs) throw new ApiError(403, 'grant_denied', 'La operación está fuera de la autorización registrada.');
     const user = (await c.query<UserRow>('SELECT * FROM app_users WHERE id=$1', [o.actorId])).rows[0]; if (!user) throw notFound();
     const reviewRequired = !user.active || !user.branch_ids.includes(o.branchId) || !user.actions.includes(payload.kind);
     const actor: Actor = { user, deviceId: o.deviceId, tokenHash: '' }; const occurred = new Date(payload.occurredAtMs);

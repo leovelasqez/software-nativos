@@ -23,6 +23,17 @@ export function isRetryableInventoryRejection(issue: ReconciliationIssue): boole
     || insufficientStockMessage.test(issue.error ?? '');
 }
 
+// A deployment that compared browser and server clocks without tolerance may
+// have preserved an otherwise valid operation as rejected. Retrying keeps the
+// immutable operation, grant and payload; the central validator decides again.
+export function isRetryableClockAuthorizationRejection(issue: ReconciliationIssue): boolean {
+  if (issue.state !== 'reconciliation_required' || issue.errorCode !== 'grant_denied') return false;
+  try {
+    const event = JSON.parse(issue.payload) as { occurredAtMs?: unknown };
+    return Number.isSafeInteger(event.occurredAtMs) && Number(event.occurredAtMs) >= 0;
+  } catch { return false; }
+}
+
 export function rebaseOperations(operations: Operation[], cursor: SyncCursor): Operation[] {
   if (!Number.isSafeInteger(cursor.sequence) || cursor.sequence < 0
     || (cursor.sequence === 0 ? cursor.operationId !== null : typeof cursor.operationId !== 'string')) {

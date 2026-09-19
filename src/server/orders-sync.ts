@@ -8,11 +8,12 @@ import type { OrderV2, Customer, RefundV2 } from '../orders-domain.ts';
 import type { Actor, UserRow } from './db.ts';
 import { ApiError, notFound } from './security.ts';
 import { audit } from './db.ts';
+import { isWithinGrantClock } from '../authorization.ts';
 export async function handleOrdersSync(c:PoolClient,o:Operation,payload:unknown,a:Authorization,installationId:string){
   const validate=o.payloadVersion===3?isOrderEventV3:isOrderEvent;
   if(!validate(payload))throw new ApiError(422,'invalid_payload','Formato de pedido inválido.');
   const action=eventAction(payload);const recovery=action==='order.write';const grant=a.grant;
-  if(!grant.actions.includes(action)||payload.occurredAtMs<grant.validatedAtMs||payload.occurredAtMs>Date.now()+300_000||!recovery&&payload.occurredAtMs>=grant.expiresAtMs)throw new ApiError(403,'grant_denied','Operación fuera de la autorización.');
+  if(!grant.actions.includes(action)||!isWithinGrantClock(payload.occurredAtMs,grant.validatedAtMs)||payload.occurredAtMs>Date.now()+300_000||!recovery&&payload.occurredAtMs>=grant.expiresAtMs)throw new ApiError(403,'grant_denied','Operación fuera de la autorización.');
   if(payload.kind==='order.save'&&payload.order.lines.some(l=>l.discount.value!=='0')&&!grant.actions.includes('sale.discount'))throw new ApiError(403,'discount_denied','No tienes permiso de descuento.');
   const user=(await c.query<UserRow>('SELECT * FROM app_users WHERE id=$1',[o.actorId])).rows[0];if(!user)throw notFound();
   const reviewRequired=!user.active||!user.branch_ids.includes(o.branchId)||!user.actions.includes(action);const actor:Actor={user,deviceId:o.deviceId,tokenHash:''};

@@ -22,6 +22,8 @@ La respuesta de autorización incluye `serverSequence` y `serverOperationId` com
 
 Una venta conservada por el rechazo histórico y contrario a REQ-003-03 de existencias insuficientes ofrece un reintento explícito. Solo aplica a payloads `sale.charge` o `sale.split` y al código `insufficient_stock`/`stock_insufficient` o su mensaje histórico. El reintento no altera `operationId`, secuencia, predecesor, payload, hash ni concesión; vuelve a usar `/api/pos/sync` y solo retira la entrada tras un acuse exacto. Si el servidor vuelve a rechazar, se conserva en conciliación y no se reintenta automáticamente.
 
+Una operación conservada con `grant_denied` por la antigua comparación estricta entre reloj del navegador y reloj central también ofrece un reintento explícito cuando contiene `occurredAtMs`. El servidor aplica la misma tolerancia máxima de cinco segundos usada por la autorización local; el reintento conserva íntegros operación, payload y concesión, y cualquier rechazo distinto vuelve a conciliación.
+
 Canje: vaciar outbox, validar saldo/regla central, guardar intención, enviar transacción central y aplicar resultado local atómicamente con retirada de intención. Acuse perdido conserva intención; reinicio la muestra. Cancelación antes del commit impide mensaje tardío; después recupera la venta. Durante incertidumbre se bloquean nuevas escrituras comerciales. Acumulación offline pendiente y devoluciones proporcionales conservan contrato loyalty-v1.
 
 ## Shell offline y actualización

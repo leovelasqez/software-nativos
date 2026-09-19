@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { authorize, defaultActions, MAX_CLOCK_SKEW_MS, publicProduct } from '../src/authorization.ts';
+import { authorize, defaultActions, isWithinGrantClock, MAX_CLOCK_SKEW_MS, publicProduct } from '../src/authorization.ts';
 import { isGrant, isPrincipal, WEEK_MS } from '../src/contracts.ts';
 import type { Action, OfflineGrant, Principal, Role } from '../src/contracts.ts';
 
@@ -80,6 +80,8 @@ test('AC-007-06: cobra hasta el último ms, bloquea al límite exacto y después
 });
 test('AC-007-03/06: reloj regresivo bloquea cobro, conserva recuperación autorizada', () => {
   assert.equal(authorize({ ...request(), nowMs: start - MAX_CLOCK_SKEW_MS }).allowed, true);
+  assert.equal(isWithinGrantClock(start - MAX_CLOCK_SKEW_MS, start), true);
+  assert.equal(isWithinGrantClock(start - MAX_CLOCK_SKEW_MS - 1, start), false);
   for (const r of [{ ...request(), nowMs: start - MAX_CLOCK_SKEW_MS - 1 }, { ...request(), lastObservedAtMs: start + MAX_CLOCK_SKEW_MS + 2 }]) {
     assert.deepEqual(authorize(r), { allowed: false, reason: 'clock_untrusted' });
     assert.equal(authorize({ ...r, action: 'data.read' }).allowed, true);

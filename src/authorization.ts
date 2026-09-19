@@ -17,6 +17,9 @@ export type AccessDecision = { allowed: true } | { allowed: false; reason: Reaso
 const deny = (reason: Reason): AccessDecision => ({ allowed: false, reason });
 const validTime = (value: unknown): value is number => typeof value === 'number'
   && Number.isSafeInteger(value) && value >= 0;
+export const isWithinGrantClock = (occurredAtMs: unknown, validatedAtMs: unknown): boolean =>
+  validTime(occurredAtMs) && validTime(validatedAtMs)
+  && occurredAtMs + MAX_CLOCK_SKEW_MS >= validatedAtMs;
 
 // REQ-001-02/03; REQ-007-03/05. Pure policy, not authentication or persistence.
 export function authorize(request: AccessRequest): AccessDecision {

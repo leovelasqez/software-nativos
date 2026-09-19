@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isRetryableInventoryRejection, rebaseOperations, transition } from '../src/sync.ts';
+import { isRetryableClockAuthorizationRejection, isRetryableInventoryRejection, rebaseOperations, transition } from '../src/sync.ts';
 import { isOperation } from '../src/contracts.ts';
 import type { Operation } from '../src/contracts.ts';
 
@@ -77,4 +77,12 @@ test('AC-012-07: solo el rechazo histórico de inventario de una venta puede rei
   assert.equal(isRetryableInventoryRejection({ ...issue, error: 'El pedido cambió.', errorCode: 'order_conflict' }), false);
   assert.equal(isRetryableInventoryRejection({ ...issue, state: 'retry' }), false);
   assert.equal(isRetryableInventoryRejection({ ...issue, payload: '{' }), false);
+});
+test('rechazo de autorización por deriva conserva la operación para reintento central', () => {
+  const issue = { state: 'reconciliation_required' as const, errorCode: 'grant_denied',
+    error: 'Operación fuera de la autorización.', payload: JSON.stringify({ kind: 'order.save', occurredAtMs: 1_800_000_000_000 }) };
+  assert.equal(isRetryableClockAuthorizationRejection(issue), true);
+  assert.equal(isRetryableClockAuthorizationRejection({ ...issue, errorCode: 'scope_denied' }), false);
+  assert.equal(isRetryableClockAuthorizationRejection({ ...issue, payload: JSON.stringify({ kind: 'order.save' }) }), false);
+  assert.equal(isRetryableClockAuthorizationRejection({ ...issue, state: 'retry' }), false);
 });
