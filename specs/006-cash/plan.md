@@ -33,3 +33,7 @@ Contratos primero; dominio/cálculo; firma y rutas centrales; SQLite/custodia/tr
 Ingresos, gastos y retiros manuales quedan pendientes de implementar de manera online para el turno activo. Cada movimiento declara clase, medio, importe, motivo, actor, turno y sucursal; efectivo modifica esperado y los medios digitales permanecen separados. No se edita ni borra un movimiento confirmado: una corrección agrega una contrapartida causal. La consulta de cierre y los informes leen el mismo libro, de modo que no exista una suma distinta por módulo.
 
 El contrato futuro `contracts/cash-movements-v1.md` fija idempotencia, rechazo de turno cerrado/ajeno y que una salida no puede transformarse en cambio digital. La sincronización causal seguirá enviando ventas antes de un cierre que las referencia. Impresión física, apertura del cajón y aviso WhatsApp no entran en esta fase.
+
+## Mantenimiento de permisos existentes
+
+`cash.movement` forma parte de los permisos predeterminados de todos los roles humanos. La migración aditiva 019 lo incorpora una sola vez a usuarios creados antes de esa acción, sin reemplazar su arreglo de permisos ni tocar agentes. La concesión de Caja se renueva desde el servidor antes de registrar un movimiento, por lo que el control continúa en API y no solo en la interfaz.

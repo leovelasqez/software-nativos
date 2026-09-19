@@ -33,14 +33,14 @@ async function terminal(c: PoolClient, req: FastifyRequest, deviceId: string) {
   if (!t || !t.active || !t.device_active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
   return t;
 }
-async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string }): Promise<Snapshot> {
+async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string; last_operation_id: string | null }): Promise<Snapshot> {
   const warehouse = (await c.query('SELECT id FROM warehouses WHERE branch_id=$1 AND is_default', [device.branch_id])).rows[0]; if (!warehouse) throw notFound();
   const products = (await c.query(`SELECT v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version WHERE p.archived_at IS NULL ORDER BY p.id`)).rows.map(r => ({ ...r.data, activeRecipeVersion: r.active_recipe_version, sellable: r.data.type === 'finished' || r.active_recipe_version !== null }));
   const recipes = (await c.query('SELECT r.data FROM recipe_versions r JOIN catalog_products p ON p.id=r.product_id AND p.active_recipe_version=r.version ORDER BY r.product_id')).rows.map(r => r.data);
   const stock = (await c.query(`SELECT i.id AS "itemId",coalesce(sum(m.quantity),0)::text AS quantity FROM inventory_items i LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=$1 GROUP BY i.id ORDER BY i.id`, [warehouse.id])).rows;
-  const snapshotId = payloadHash(JSON.stringify({ deviceId: device.device_id, warehouseId: warehouse.id, sequence: device.last_sequence, products, recipes, stock }));
+  const snapshotId = payloadHash(JSON.stringify({ deviceId: device.device_id, warehouseId: warehouse.id, sequence: device.last_sequence, operationId: device.last_operation_id, products, recipes, stock }));
   const existing = (await c.query('SELECT data FROM pos_snapshots WHERE id=$1', [snapshotId])).rows[0]; if (existing) return existing.data as Snapshot;
-  const data: Snapshot = { id: snapshotId, createdAtMs: Date.now(), branchId: device.branch_id, deviceId: device.device_id, warehouseId: warehouse.id, serverSequence: Number(device.last_sequence), products, recipes, stock };
+  const data: Snapshot = { id: snapshotId, createdAtMs: Date.now(), branchId: device.branch_id, deviceId: device.device_id, warehouseId: warehouse.id, serverSequence: Number(device.last_sequence), serverOperationId: device.last_operation_id, products, recipes, stock };
   await c.query('INSERT INTO pos_snapshots(id,device_id,data) VALUES($1,$2,$3)', [data.id, device.device_id, JSON.stringify(data)]); return data;
 }
 export function registerPos(app: FastifyInstance, pool: Pool) {
@@ -91,7 +91,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const fingerprint = payloadHash(JSON.stringify(o) + b.payload + b.signed.document + b.signed.signature);
     const old = (await c.query('SELECT * FROM pos_receipts WHERE operation_id=$1', [o.operationId])).rows[0];
     if (old) { if (old.fingerprint !== fingerprint) throw new ApiError(409, 'operation_conflict', 'La operación ya existe con otro contenido.'); return old.response; }
-    if (o.sequence <= Number(device.last_sequence)) throw new ApiError(409, 'operation_conflict', 'La secuencia ya fue utilizada por otra operación.');
+    if (o.sequence <= Number(device.last_sequence)) throw new ApiError(409, 'sequence_conflict', 'La secuencia ya fue utilizada por otra operación.');
     if (o.sequence !== Number(device.last_sequence) + 1 || o.previousOperationId !== device.last_operation_id) throw new ApiError(409, 'predecessor_required', 'Se requiere la operación previa de esta caja.');
     let authorization: Authorization;
     try { authorization = verifyAuthorization(b.signed, (await key(c)).public_key); } catch { throw new ApiError(403, 'invalid_grant', 'Firma de autorización inválida.'); }

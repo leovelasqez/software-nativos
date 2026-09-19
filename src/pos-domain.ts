@@ -3,7 +3,7 @@ import type { Product, Recipe } from './catalog.ts';
 import type { OfflineGrant, Principal } from './contracts.ts';
 export interface Signed { document: string; signature: string }
 export interface Authorization { grant: OfflineGrant; principal: Principal; actorName: string }
-export interface Snapshot { id: string; createdAtMs: number; branchId: string; deviceId: string; warehouseId: string; serverSequence: number; products: Product[]; recipes: Recipe[]; stock: { itemId: string; quantity: string }[] }
+export interface Snapshot { id: string; createdAtMs: number; branchId: string; deviceId: string; warehouseId: string; serverSequence: number; serverOperationId?: string | null; products: Product[]; recipes: Recipe[]; stock: { itemId: string; quantity: string }[] }
 export interface OrderLine { id: string; productId: string; snapshotId: string; quantity: string; optionIds: string[] }
 export interface Order { id: string; revision: number; snapshotId: string; lines: OrderLine[] }
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'breb' | 'daviplata' | 'nequi';

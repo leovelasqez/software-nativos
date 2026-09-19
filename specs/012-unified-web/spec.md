@@ -13,4 +13,8 @@ AC-012-03: dos pestañas actúan sobre la misma revisión; solo una confirma, la
 AC-012-04: canje central con acuse perdido conserva intención; recuperación/cancelación no vuelve a cobrar.
 AC-012-05: compatibilidad de datos históricos y rechazo de reemplazo inseguro; las pruebas antiguas no acreditan automáticamente IndexedDB.
 
+AC-012-06: dado un perfil de Caja sin pendientes cuyo cursor central ya avanzó, al autorizarlo el navegador adopta el cursor central antes de crear otra operación. Si ya existe una cola local que colisiona con ese cursor, la Caja bloquea nuevas escrituras, distingue el conflicto de una desconexión y permite una conciliación explícita que conserva IDs, payloads y orden local, reasigna solo la cadena causal y elimina cada pendiente únicamente después de su acuse.
+
+AC-012-07: dada una venta pendiente conservada como `reconciliation_required` por un rechazo anterior de existencias insuficientes, cuando el operador solicita reintentarla, entonces Caja reenvía la misma operación sin cambiar ID, payload, hash, secuencia ni predecesor. El servidor aplica la regla vigente de REQ-003-03: confirma el cobro y deja el saldo negativo con alerta; si vuelve a rechazarla, la operación permanece guardada y bloqueada para revisión.
+
 No cambia la regla de canje solo online ni las operaciones administrativas online. Impresión/cajón requieren ensayo real desde navegador. Cerrar todas las pestañas suspende la sincronización hasta volver a abrir; no depender de Background Sync. Borrar datos del sitio o perder el perfil puede perder pendientes no sincronizados.

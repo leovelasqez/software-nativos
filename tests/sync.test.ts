@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { transition } from '../src/sync.ts';
+import { isRetryableInventoryRejection, rebaseOperations, transition } from '../src/sync.ts';
 import { isOperation } from '../src/contracts.ts';
 import type { Operation } from '../src/contracts.ts';
 
@@ -45,4 +45,36 @@ test('REQ-007-02/04: envoltura versionada y orden causal mínimo, sin aceptar pa
   }
   assert.equal(isOperation({ ...operation, sequence: 2, previousOperationId: operation.operationId }), false);
   assert.equal(isOperation({ ...operation, sequence: 2, previousOperationId: '00000000-0000-4000-8000-000000000002' }), true);
+});
+test('AC-012-06: conciliación reencadena sin cambiar identidad ni contenido', () => {
+  const second: Operation = { ...operation, operationId: '00000000-0000-4000-8000-000000000002',
+    sequence: 2, previousOperationId: operation.operationId, payloadHash: 'b'.repeat(64), payloadVersion: 2 };
+  const before = structuredClone([operation, second]);
+  const rebased = rebaseOperations([operation, second], {
+    sequence: 7, operationId: '00000000-0000-4000-8000-000000000099',
+  });
+  assert.deepEqual(rebased.map(({ sequence, previousOperationId }) => ({ sequence, previousOperationId })), [
+    { sequence: 8, previousOperationId: '00000000-0000-4000-8000-000000000099' },
+    { sequence: 9, previousOperationId: operation.operationId },
+  ]);
+  for (const [index, value] of rebased.entries()) {
+    assert.equal(value.operationId, before[index]!.operationId);
+    assert.equal(value.payloadHash, before[index]!.payloadHash);
+    assert.equal(value.payloadVersion, before[index]!.payloadVersion);
+    assert.equal(isOperation(value), true);
+  }
+  assert.deepEqual([operation, second], before);
+  assert.throws(() => rebaseOperations([operation], { sequence: 1, operationId: null }), /invalid_sync_cursor/);
+});
+test('AC-012-07: solo el rechazo histórico de inventario de una venta puede reintentarse', () => {
+  const issue = { state: 'reconciliation_required' as const, errorCode: null,
+    error: 'Existencias insuficientes para 5 artículos. Registra una compra, traslado o inventario inicial antes de cobrar.',
+    payload: JSON.stringify({ kind: 'sale.split', orderId: 'order-test' }) };
+  assert.equal(isRetryableInventoryRejection(issue), true);
+  assert.equal(isRetryableInventoryRejection({ ...issue, error: null, errorCode: 'insufficient_stock' }), true);
+  assert.equal(isRetryableInventoryRejection({ ...issue, error: null, errorCode: 'stock_insufficient', payload: JSON.stringify({ kind: 'sale.charge' }) }), true);
+  assert.equal(isRetryableInventoryRejection({ ...issue, payload: JSON.stringify({ kind: 'order.save' }) }), false);
+  assert.equal(isRetryableInventoryRejection({ ...issue, error: 'El pedido cambió.', errorCode: 'order_conflict' }), false);
+  assert.equal(isRetryableInventoryRejection({ ...issue, state: 'retry' }), false);
+  assert.equal(isRetryableInventoryRejection({ ...issue, payload: '{' }), false);
 });

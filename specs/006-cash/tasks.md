@@ -17,5 +17,6 @@
 | TASK-INC6-CASH-02 | Libro inmutable, permisos e idempotencia | REQ-006-01/02/03 | Completado — migración 010 e integración PostgreSQL |
 | TASK-INC6-CASH-03 | Formulario y cierre consistente con informes | AC-006-02/03 | Completado — Caja web e informe de caja conectados en el incremento |
 | TASK-INC6-CASH-04 | Integración, E2E y evidencia | REQ-006-04 | Verificado — integración PostgreSQL y regresión E2E conjunta |
+| TASK-INC6-CASH-05 | Alinear usuarios humanos anteriores con el permiso predeterminado de movimientos | AC-006-06; REQ-006-02 | Verificado localmente — migración 019 y formulario habilitado en Caja de desarrollo |
 
 Evidencia: [incremento 3](../../docs/evidence/increment-3.md). Alcance parcial de cada especificación, según hoja de ruta.

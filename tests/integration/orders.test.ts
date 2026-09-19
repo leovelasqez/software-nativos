@@ -44,7 +44,7 @@ test('Incremento 4 — pedidos, clientes, cancelación, división y devolución 
       const r=await send(event,id);assert.deepEqual(await send(event,id),r);first=r.sale as SaleV2;assert.equal(first.total,'9900');assert.equal(first.change,'5100');assert.equal(engine!.store.shift()!.expected,'54900');assert.equal(engine!.stateV2('owner-orders').order.lines[0]!.quantity,'1');
       engine!.close();engine=await open();await engine.login('owner-orders',password);assert.equal(engine.orders.receipt(first.id)!.customer!.id,customerId);assert.equal(engine.stateV2('owner-orders').order.lines[0]!.quantity,'1');
     });
-    await t.test('REQ-007-02: acuse v2 perdido; servidor y caja conservan venta, stock y pedido iguales',async()=>{
+    await t.test('AC-003-02/REQ-007-02: saldo negativo permitido y acuse v2 perdido sin duplicar consumo',async()=>{
       offline=false;loseSale=true;await engine!.sync();assert.ok(engine!.store.pending().length>0);await engine!.sync();assert.equal(engine!.store.pending().length,0,engine!.message);
       assert.deepEqual((await db.pool.query('SELECT data FROM pos_sales WHERE id=$1',[first.id])).rows[0].data,first);assert.equal((await db.pool.query('SELECT count(*) FROM pos_sales')).rows[0].count,'1');assert.equal((await db.pool.query('SELECT sum(quantity)::text AS n FROM inventory_movements WHERE item_id=$1',[productId])).rows[0].n,'-2.000000');
       const o=engine!.stateV2('owner-orders').order;assert.deepEqual((await db.pool.query('SELECT data FROM pos_orders_v2 WHERE id=$1',[o.id])).rows[0].data,o);

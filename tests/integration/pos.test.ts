@@ -117,8 +117,10 @@ test('Incremento 3 — PostgreSQL, SQLite y DPAPI reales; recuperación y sincro
         assert.equal((await send({ ...pending.operation, branchId: 'centro' })).statusCode, 403);
         assert.equal((await send(pending.operation, pending.payload, { ...signed, document: signed.document.replace('Cajero', 'Intruso') })).statusCode, 403);
         await second.sync(); assert.equal(second.store.pending().length, 0);
-        assert.equal((await send({ ...pending.operation, operationId: randomUUID() })).json().code, 'operation_conflict');
-        const altered = pending.payload.replace('"openingCash":"0"', '"openingCash":"1"'); assert.equal((await send({ ...pending.operation, payloadHash: payloadHash(altered) }, altered)).statusCode, 409);
+        assert.equal(second.state('cashier-pos').snapshot!.serverSequence, pending.operation.sequence);
+        assert.equal(second.state('cashier-pos').snapshot!.serverOperationId, pending.operation.operationId);
+        assert.equal((await send({ ...pending.operation, operationId: randomUUID() })).json().code, 'sequence_conflict');
+        const altered = pending.payload.replace('"openingCash":"0"', '"openingCash":"1"'); const alteredResponse = await send({ ...pending.operation, payloadHash: payloadHash(altered) }, altered); assert.equal(alteredResponse.statusCode, 409); assert.equal(alteredResponse.json().code, 'operation_conflict');
         const state = second.state('cashier-pos'); await second.saveOrder('cashier-pos', { ...state.order, lines: [{ id: randomUUID(), productId, snapshotId: state.snapshot!.id, quantity: '1', optionIds: [] }] });
         const order = second.state('cashier-pos').order; await second.execute('cashier-pos', 'sale.charge', { operationId: randomUUID(), orderId: order.id, revision: order.revision, payment: { method: 'cash', received: '1000' } });
         const users = (await req('GET', '/api/users')).json().items; const cashier = users.find((u: { login: string }) => u.login === 'cashier-pos');

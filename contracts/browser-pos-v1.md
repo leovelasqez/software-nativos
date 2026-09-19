@@ -18,6 +18,10 @@ Agregado incluye instalación, cursor secuencial, concesiones históricas, máxi
 
 Conservar `/api/pos/enroll`, `/authorize`, `/sync`, `/redemption/cancel` y payloadVersion 1/2/3. Hash SHA-256 sobre bytes UTF-8 exactos; firma Ed25519 verificada con Web Crypto. El servidor recalcula y valida actor, permiso, caja, secuencia, snapshots e importes. Acuse debe coincidir en todos los campos; una respuesta ajena no elimina pendientes. Conflictos visibles, no descarte automático.
 
+La respuesta de autorización incluye `serverSequence` y `serverOperationId` como cursor causal inseparable. Un perfil sin outbox adopta un cursor central más avanzado antes de generar operaciones. Si una cola existente colisiona, se marca para conciliación y se bloquean nuevas escrituras. La acción explícita de conciliación puede reencadenar esa cola después del cursor central conservando IDs, payloads, hashes y concesiones; cada operación continúa pendiente hasta recibir su propio acuse exacto. No se reencadenan rechazos de contenido, permiso o versión como si fueran conflictos de secuencia.
+
+Una venta conservada por el rechazo histórico y contrario a REQ-003-03 de existencias insuficientes ofrece un reintento explícito. Solo aplica a payloads `sale.charge` o `sale.split` y al código `insufficient_stock`/`stock_insufficient` o su mensaje histórico. El reintento no altera `operationId`, secuencia, predecesor, payload, hash ni concesión; vuelve a usar `/api/pos/sync` y solo retira la entrada tras un acuse exacto. Si el servidor vuelve a rechazar, se conserva en conciliación y no se reintenta automáticamente.
+
 Canje: vaciar outbox, validar saldo/regla central, guardar intención, enviar transacción central y aplicar resultado local atómicamente con retirada de intención. Acuse perdido conserva intención; reinicio la muestra. Cancelación antes del commit impide mensaje tardío; después recupera la venta. Durante incertidumbre se bloquean nuevas escrituras comerciales. Acumulación offline pendiente y devoluciones proporcionales conservan contrato loyalty-v1.
 
 ## Shell offline y actualización

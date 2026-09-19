@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Rediseño 017 — implementado y verificado localmente
+
+Propuesta visual aprobada el 19-09-2026 para todo el sitio, con Resumen operativo por sucursal. [Spec](017-visual-redesign/spec.md), [plan](017-visual-redesign/plan.md), [tareas](017-visual-redesign/tasks.md), [contrato](../contracts/dashboard-v1.md) y [evidencia](../docs/evidence/visual-redesign.md). Sitio real verificado con datos sintéticos, 45 pruebas unitarias, 58 de integración, regresión E2E y revisión visual de los 15 módulos. Sin publicación.
+
 **Dirección vigente: sitio web único (DEC-021, 15-09-2026).** Administración y Caja comparten origen; Caja conserva siete días offline en navegador. La transición se traza en [012](012-unified-web/spec.md). Las tablas 0–5 son evidencia histórica y no deben interpretarse como decisión de continuar Electron.
 
 Implementación local autorizada el 13-09-2026. **Incrementos 0–5 verificados en sus alcances**: fundamentos, catálogo/recetas/existencias, caja local y operación de pedidos/clientes/división/devolución. [Evidencia 5](../docs/evidence/increment-5.md). Las tablas históricas siguientes describen lo comprobado en cada incremento; no se acreditan aún las especificaciones completas de pedidos, compras, fidelización, integraciones, hardware o lanzamiento. Nada está publicado en producción.
@@ -121,8 +125,14 @@ Evidencia detallada: [incremento 3](../docs/evidence/increment-3.md). No cubre n
 
 ## Trazabilidad de la transición web 5W
 
-REQ-012-01 a 05 / AC-012-01 a 05: [plan](012-unified-web/plan.md), [contrato](../contracts/browser-pos-v1.md), web/offline, local-transition y pruebas de navegador/traslado. [Evidencia](../docs/evidence/unified-web.md). Adaptadores web verificados localmente; datos anteriores conservados y traslado disponible al perfil elegido. No acredita hardware ni publicación.
+REQ-012-01 a 05 / AC-012-01 a 06: [plan](012-unified-web/plan.md), [contrato](../contracts/browser-pos-v1.md), web/offline, local-transition y pruebas de navegador/traslado. [Evidencia](../docs/evidence/unified-web.md). Adaptadores web verificados localmente; datos anteriores conservados y traslado disponible al perfil elegido. La autorización alinea un perfil vacío con el cursor causal central y la interfaz recupera explícitamente una colisión de secuencia sin cambiar identidad, contenido ni hash de los pendientes. No acredita hardware ni publicación.
+
+AC-012-07 / REQ-003-03: Caja reconoce únicamente el rechazo histórico de existencias insuficientes sobre un cobro y ofrece reintentar la misma envoltura. El servidor conserva la regla de saldo negativo con alerta. AC-006-06 alinea mediante migración aditiva los usuarios humanos anteriores con el permiso predeterminado `cash.movement`; ver [evidencia web](../docs/evidence/unified-web.md).
 
 ## Trazabilidad de mantenimiento 015
 
 REQ-015-01 a 04 / AC-015-01 a 04: [spec](015-caja-branch-profiles/spec.md), [plan](015-caja-branch-profiles/plan.md), [tareas](015-caja-branch-profiles/tasks.md), [contrato de Caja](../contracts/browser-pos-v1.md) y [evidencia](../docs/evidence/caja-branch-profiles.md). Selector de terminal, aislamiento de perfiles, identificación de bodegas y formato térmico verificados localmente; la aceptación física de impresión sigue en 011.
+
+## Mantenimiento 016 — Interfaz de Caja
+
+REQ-016-01 a 07 / AC-016-01 a 07: [especificación](016-caja-ui/spec.md), [plan](016-caja-ui/plan.md) y [tareas](016-caja-ui/tasks.md). Cabecera compacta, catálogo filtrable, pedido visible, cobro progresivo y resumen exacto de pagos. Verificada localmente; [evidencia y capturas](../docs/evidence/caja-ui.md).

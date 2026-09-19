@@ -28,6 +28,8 @@ Turno y libro de movimientos, relación con cobro/devolución, cierre y su momen
 
 AC-006-05 → REQ-006-01/02/03/04. Una caja conserva un turno y responsable; base más ventas en efectivo (sin digitales) determina esperado; cierre conserva contado/diferencia y se sincroniza después de ventas previas, sin duplicados.
 
+AC-006-06 → REQ-006-02. Dado un usuario humano creado antes de incorporar movimientos manuales, cuando la instalación se actualiza, entonces recibe el permiso predeterminado `cash.movement` igual que un usuario nuevo y puede registrar el movimiento de su propio turno con conexión. La migración no modifica datos de ventas, inventario ni movimientos existentes.
+
 Alcance: primera venta completa de la hoja de ruta. Ver plan/tareas del incremento 3; restantes escenarios se conservan para incrementos 4/5/6/8.
 
 Verificación del alcance de incremento 3: [evidencia](../../docs/evidence/increment-3.md). Los escenarios anteriores fuera de ese alcance permanecen pendientes.
