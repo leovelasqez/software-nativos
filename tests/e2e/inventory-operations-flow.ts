@@ -8,8 +8,8 @@ export async function exerciseInventoryOperations(page: Page) {
   await nav.getByRole('button', { name: 'Traslados', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Traslados', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '+ Nuevo traslado', exact: true }).click();
-  await dialog.getByLabel('Origen').selectOption({ label: 'Bodega de venta' });
-  await dialog.getByLabel('Destino').selectOption({ label: 'Bodega E2E' });
+  await dialog.getByLabel('Origen').selectOption({ label: 'Centro · Bodega de venta' });
+  await dialog.getByLabel('Destino').selectOption({ label: 'Centro · Bodega E2E' });
   await dialog.getByLabel('Artículo 1').selectOption({ label: 'Leche de prueba (ml)' });
   await dialog.getByLabel('Cantidad').fill('100');
   await dialog.getByLabel('Motivo del cambio').fill('Traslado sintético para verificación');

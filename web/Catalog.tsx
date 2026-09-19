@@ -94,11 +94,11 @@ function RecipeForm({ product, original, items, branchId, close, saved }: { prod
 interface Stock { itemId: string; name: string; reference: string; baseUnit: string; quantity: string; minimum: string; low: boolean }
 interface Movement { id: string; itemId: string; warehouseId: string; kind: string; quantity: string; reversesId: string | null; reason: string; createdAt: string; entry: { quantity: string; unit: string; conversion: { factor: string; source: string } | null } | null }
 interface CostReconciliation { id: string; itemId: string; warehouseId: string; unitCost: string; effectiveFrom: string; reason: string; createdAt: string }
-export function Inventory({ me, branchId }: { me: Me; branchId: string }) {
+export function Inventory({ me, branchId, initialWarehouse = '' }: { me: Me; branchId: string; initialWarehouse?: string }) {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]); const [selected, setSelected] = useState(''); const [stock, setStock] = useState<Stock[]>([]); const [moves, setMoves] = useState<Movement[]>([]); const [costs, setCosts] = useState<Record<string, string | null>>({}); const [reconciliations, setReconciliations] = useState<CostReconciliation[]>([]); const [error, setError] = useState('');
   const [form, setForm] = useState<{ kind: 'item' | 'initial' | 'minimum' | 'reverse' | 'reconcile'; stock?: Stock; move?: Movement } | null>(null);
   const manage = me.user.actions.includes('inventory.manage'); const owner = me.user.role === 'owner' && me.user.actions.includes('cost.read'); const canWriteCost = me.user.role === 'owner' && me.user.actions.includes('cost.write');
-  useEffect(() => { void api<BranchDetail>(`/branches/${branchId}`).then(d => { setWarehouses(d.warehouses); setSelected(d.warehouses.find(w => w.isDefault)?.id ?? d.warehouses[0]?.id ?? ''); }).catch(e => setError(e.message)); }, [branchId]);
+  useEffect(() => { void api<BranchDetail>(`/branches/${branchId}`).then(d => { setWarehouses(d.warehouses); setSelected(d.warehouses.find(w => w.id === initialWarehouse)?.id ?? d.warehouses.find(w => w.isDefault)?.id ?? d.warehouses[0]?.id ?? ''); }).catch(e => setError(e.message)); }, [branchId, initialWarehouse]);
   const refreshId = useRef(0);
   async function refresh() {
     if (!selected) return; const generation = ++refreshId.current;

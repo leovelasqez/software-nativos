@@ -1,0 +1,5 @@
+/* Both entry points share the same cascade, including scoped Caja rules. */
+@import url('./font.css');
+@import url('./styles.css');
+@import url('./pos.css');
+@import url('./design.css');

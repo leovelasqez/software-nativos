@@ -59,7 +59,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await expect(page.getByText('Esta pantalla no envía mensajes', { exact: false })).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: 'Resumen', exact: true }).click();
 
-  await mkdir('docs/evidence/unified-web/regression/regression/foundation-regression', { recursive: true });
+  await mkdir('test-results/unified-web/regression/regression/foundation-regression', { recursive: true });
   for (const viewport of [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'mobile', width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     for (const dark of [false, true]) {
@@ -69,7 +69,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
       const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(report.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-      await page.screenshot({ path: `docs/evidence/unified-web/regression/regression/foundation-regression/${viewport.name}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
+      await page.screenshot({ path: `test-results/unified-web/regression/regression/foundation-regression/${viewport.name}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
       await page.reload(); await expect(page.locator('html')).toHaveAttribute('data-theme', dark ? 'dark' : 'light');
       await expect(page.getByRole('heading', { name: 'Hola, Equipo' })).toBeVisible();
     }
@@ -83,7 +83,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   const formReport = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(formReport.violations.map(v => v.id)).toEqual([]);
-  await page.screenshot({ path: 'docs/evidence/unified-web/regression/regression/foundation-regression/mobile-form.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/unified-web/regression/regression/foundation-regression/mobile-form.png', fullPage: true });
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Mostrar navegación' }).click();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();

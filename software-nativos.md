@@ -23,7 +23,7 @@ Operación inicial:
 
 ## 2. Diseño visual
 
-- Tomar la paleta de Alegra como referencia, sustituyendo su verde principal por `#00bf63`.
+- Aplicar la propuesta visual aprobada el 19-09-2026: fondo gris muy claro, tarjetas blancas, Inter e iconos lineales, conservando `#00bf63`. Oscuro gris carbón con superficies más claras y acentos verdes. Sustituye la referencia anterior a Alegra; ver `specs/017-visual-redesign/`.
 - Mantener la identidad de Nativos y la navegación lateral por módulos.
 - Incluir un interruptor visible de modo claro/oscuro. Conservar el modo elegido al navegar entre módulos y aplicar el tema a formularios, tablas, comprobantes y ventanas emergentes.
 - Mantener contraste legible, navegación por teclado y adaptación a pantallas pequeñas.

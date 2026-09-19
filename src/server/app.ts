@@ -4,6 +4,7 @@ import { registerCustomers } from './customers-api.ts';
 import { registerPos } from './pos-api.ts';
 import { registerCatalog } from './catalog-api.ts';
 import { registerReports } from './reports-api.ts';
+import { registerDashboard } from './dashboard-api.ts';
 import { registerBackups } from './backup-api.ts';
 import { registerAgents } from './agent-api.ts';
 import { registerNotifications } from './notifications-api.ts';
@@ -33,6 +34,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   await app.register(rateLimit, { global: false });
   registerCatalog(app, pool);
   registerReports(app, pool);
+  registerDashboard(app, pool);
   registerBackups(app, pool, backupDirectory, backupRestoreDatabase, backupRestoreConnection);
   registerAgents(app, pool);
   registerNotifications(app, pool);

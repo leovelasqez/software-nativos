@@ -40,7 +40,7 @@ export async function exerciseCatalog(page: Page, password: string) {
   await nav('Productos'); await expect(page.getByText(/Habilitado · v1/)).toBeVisible();
   await page.getByRole('button', { name: 'Editar Batido de prueba', exact: true }).click(); await dialog.getByLabel('Precio final (COP)').fill('13000'); await reason(); await save('Guardar producto'); await expect(page.getByText(/Habilitado · v2/)).toBeVisible();
   await page.reload(); await nav('Productos'); await expect(page.getByRole('heading', { name: 'Batido de prueba', exact: true })).toBeVisible();
-  await mkdir('docs/evidence/unified-web/regression/regression', { recursive: true });
+  await mkdir('test-results/unified-web/regression/regression', { recursive: true });
   for (const viewport of [{ width: 1440, height: 1000, name: 'desktop' }, { width: 390, height: 844, name: 'mobile' }]) {
     await page.setViewportSize(viewport);
     for (const dark of [false, true]) {
@@ -51,18 +51,18 @@ export async function exerciseCatalog(page: Page, password: string) {
         await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
         const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(report.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-        await page.screenshot({ path: `docs/evidence/unified-web/regression/regression/${viewport.name}-${dark ? 'dark' : 'light'}-${name.toLowerCase()}.png`, fullPage: true });
+        await page.screenshot({ path: `test-results/unified-web/regression/regression/${viewport.name}-${dark ? 'dark' : 'light'}-${name.toLowerCase()}.png`, fullPage: true });
       }
     }
   }
   await nav('Productos'); await page.getByRole('button', { name: '+ Nuevo producto', exact: true }).click();
   const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(report.violations.map(v => v.id)).toEqual([]);
-  await page.screenshot({ path: 'docs/evidence/unified-web/regression/regression/mobile-product-form.png', fullPage: true }); await page.keyboard.press('Escape');
+  await page.screenshot({ path: 'test-results/unified-web/regression/regression/mobile-product-form.png', fullPage: true }); await page.keyboard.press('Escape');
   await nav('Recetas'); await page.getByLabel('Producto preparado', { exact: true }).selectOption({ label: 'Batido de prueba · 12 onzas' });
   await page.getByRole('button', { name: 'Crear versión desde v2', exact: true }).click();
   await expect(dialog.getByLabel('Nombre de receta')).toBeFocused();
   const recipeReport = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(recipeReport.violations.map(v => v.id)).toEqual([]);
-  await page.screenshot({ path: 'docs/evidence/unified-web/regression/regression/mobile-recipe-form.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/unified-web/regression/regression/mobile-recipe-form.png', fullPage: true });
   await dialog.getByRole('button', { name: 'Guardar receta', exact: true }).scrollIntoViewIfNeeded(); await expect(dialog.getByRole('button', { name: 'Guardar receta', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await nav('Inventario'); await page.getByRole('button', { name: 'Revertir inicial', exact: true }).click(); await reason(); await save('Guardar registro');
