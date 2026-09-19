@@ -4,6 +4,7 @@ export { defaultActions } from './permissions.ts';
 const offline = new Set<Action>(['data.read', 'order.write', 'sale.discount', 'sale.cancel',
   'sale.charge', 'sale.refund', 'shift.open', 'shift.close']);
 const recovery = new Set<Action>(['data.read', 'order.write', 'shift.close']);
+export const MAX_CLOCK_SKEW_MS = 5_000;
 export interface AccessRequest {
   principal: unknown; action: unknown; branchId: unknown; deviceId: unknown;
   mode: 'online' | 'offline';
@@ -35,7 +36,7 @@ export function authorize(request: AccessRequest): AccessDecision {
   const { nowMs, lastObservedAtMs } = request;
   if (!validTime(nowMs) || !validTime(lastObservedAtMs)) return deny('invalid_context');
   if (recovery.has(action)) return { allowed: true };
-  if (nowMs < Math.max(g.validatedAtMs, lastObservedAtMs)) return deny('clock_untrusted');
+  if (nowMs + MAX_CLOCK_SKEW_MS < Math.max(g.validatedAtMs, lastObservedAtMs)) return deny('clock_untrusted');
   if (nowMs >= g.expiresAtMs) return deny('offline_expired');
   return { allowed: true };
 }

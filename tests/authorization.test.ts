@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { authorize, defaultActions, publicProduct } from '../src/authorization.ts';
+import { authorize, defaultActions, MAX_CLOCK_SKEW_MS, publicProduct } from '../src/authorization.ts';
 import { isGrant, isPrincipal, WEEK_MS } from '../src/contracts.ts';
 import type { Action, OfflineGrant, Principal, Role } from '../src/contracts.ts';
 
@@ -79,7 +79,8 @@ test('AC-007-06: cobra hasta el último ms, bloquea al límite exacto y después
   }
 });
 test('AC-007-03/06: reloj regresivo bloquea cobro, conserva recuperación autorizada', () => {
-  for (const r of [{ ...request(), nowMs: start - 1 }, { ...request(), lastObservedAtMs: start + 2 }]) {
+  assert.equal(authorize({ ...request(), nowMs: start - MAX_CLOCK_SKEW_MS }).allowed, true);
+  for (const r of [{ ...request(), nowMs: start - MAX_CLOCK_SKEW_MS - 1 }, { ...request(), lastObservedAtMs: start + MAX_CLOCK_SKEW_MS + 2 }]) {
     assert.deepEqual(authorize(r), { allowed: false, reason: 'clock_untrusted' });
     assert.equal(authorize({ ...r, action: 'data.read' }).allowed, true);
   }
@@ -123,6 +124,6 @@ test('AC-007-03: duración inválida, versión y fechas fuera de contrato rechaz
 
 
 test('REQ-004-06/REQ-007-03: devolución exige permiso vigente y no es recuperación tras siete días',()=>{
-  for(const role of ['owner','manager'] as const){const r={...request('sale.refund'),principal:principal(role),verifiedGrant:{...grant(),actions:defaultActions(role)}};assert.equal(authorize(r).allowed,true);assert.deepEqual(authorize({...r,nowMs:start+WEEK_MS}),{allowed:false,reason:'offline_expired'});assert.deepEqual(authorize({...r,lastObservedAtMs:start+2}),{allowed:false,reason:'clock_untrusted'});}
+  for(const role of ['owner','manager'] as const){const r={...request('sale.refund'),principal:principal(role),verifiedGrant:{...grant(),actions:defaultActions(role)}};assert.equal(authorize(r).allowed,true);assert.deepEqual(authorize({...r,nowMs:start+WEEK_MS}),{allowed:false,reason:'offline_expired'});assert.deepEqual(authorize({...r,lastObservedAtMs:start+MAX_CLOCK_SKEW_MS+2}),{allowed:false,reason:'clock_untrusted'});}
   assert.equal(authorize(request('sale.refund')).allowed,false);
 });
