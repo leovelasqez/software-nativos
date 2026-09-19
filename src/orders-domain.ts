@@ -128,7 +128,7 @@ export function validateSave(old: OrderV2 | null, proposed: OrderV2, snapshots: 
   return { ...proposed, revision: proposed.revision+1 };
 }
 export function cancelLines(order: OrderV2, event: Extract<CommandEvent,{kind:'order.cancel'}>, snapshots: Snapshot[]) {
-  if (!event.lines.length || new Set(event.lines.map(l => l.lineId)).size !== event.lines.length || event.reason.trim().length < 3) fail('Selecciona líneas y registra un motivo.');
+  if ((!event.lines.length && order.lines.length > 0) || new Set(event.lines.map(l => l.lineId)).size !== event.lines.length || event.reason.trim().length < 3) fail('Selecciona líneas y registra un motivo.');
   const remaining = [...order.lines]; const wasted: LineV2[] = [];
   for (const pick of event.lines) {
     const index = remaining.findIndex(l => l.id === pick.lineId); if (index < 0) fail('La línea ya no está pendiente.'); const l = remaining[index]!;

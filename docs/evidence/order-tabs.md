@@ -1,0 +1,27 @@
+# AC-016-08 — Pestañas de pedidos abiertos
+
+Implementado y verificado localmente el 19-09-2026. Autorización: sustituir el desplegable de pedidos por el formato de pestañas inferior de la captura de Alegra y permitir cerrarlos. Se conserva el diseño Nativos del resto de la pantalla. Sin commit, push ni despliegue de este cambio; no se operó sobre los pedidos de producción.
+
+## Comportamiento
+
+- Pestañas inferiores con Venta principal, números estables o nombre/mesa, indicador de líneas, importe en tooltip, + y cierre individual.
+- Flechas, Home/End y Supr; foco y selección conservados. La barra se desplaza sin mover el catálogo, también con muchas ventas. En móvil no cubre Cobrar.
+- Confirmación de vacío mediante order.cancel, sin borrarlo del historial ni provocar consumo o cobros. Al cerrar otra pestaña se mantiene la activa; al cerrar la activa se elige una vecina.
+- El cierre de pedidos con productos cancela todo lo pendiente: exige motivo y permite indicar cuántas unidades enviadas ya se prepararon, conservando el desperdicio existente. Cancelación parcial de líneas sigue disponible por Quitar.
+- No hay migración de base de datos ni cambio de schemas: v2/v3 ya permitían lines vacío; se restringe en dominio a pedidos que tampoco tienen líneas. Selección y cierres se conservan en IndexedDB/outbox.
+
+## Verificación reproducible
+
+- `npm.cmd run typecheck`: aprobado.
+- `npm.cmd test`: 50 pruebas aprobadas; incluye cierre vacío, revisión/motivo, rechazo de selección vacía con productos, numeración estable y selección vecina.
+- `node --test tests/integration/orders.test.ts`: 8 pruebas aprobadas. Nuevo escenario verifica cierre offline, repetición del mismo ID, reinicio, aceptación PostgreSQL y cero cambios en ventas/inventario.
+- `npm.cmd run build`: aprobado.
+- `npm.cmd run test:e2e`: prueba integral compuesta aprobada (2,6 minutos en ejecución final). Edge real, PostgreSQL sintético, service worker e IndexedDB; ocho pestañas adicionales, teclado/foco, confirmación descartada, cierre inactivo offline, recarga, sincronización, cierre activo, cierre de pedido con 12 líneas y regreso al original. Conserva regresión de cobros, división, preparación/desperdicio, devoluciones, puntos y recuperación offline. Axe sin infracciones en las vistas comprobadas.
+- Escritorio 1366×768, tablet 1024×768 y móvil 390×844 en claro/oscuro; catálogo largo y pedido largo, sin desbordar documento ni tapar cobro.
+- Revisión directa adicional con Playwright CLI y otra base sintética en 4322: activar una caja nueva, + desde venta virtual, cerrar ambas pestañas vacías, recargar y comprobar una venta nueva disponible con 0 pendientes y sin resucitar las anteriores. La revisión visual motivó ajustar el desplazamiento de la pestaña activa al redimensionar para conservar visible su botón de cierre.
+
+## Capturas
+
+[Escritorio](order-tabs/desktop-light.png), [oscuro](order-tabs/desktop-dark.png), [móvil](order-tabs/mobile-light.png), [pedido móvil oscuro](order-tabs/mobile-order-dark.png) y [muchas pestañas](order-tabs/open-order-tabs.png). Datos exclusivamente sintéticos.
+
+La semántica usa tablist con aria-owns para separar los botones de cierre de las pestañas, conforme a [WAI-ARIA](https://www.w3.org/TR/wai-aria/#tab). No se anidan controles interactivos ni se ocultan cierres a tecnologías de asistencia. La verificación automática no sustituye pruebas con cada lector de pantalla.

@@ -8,6 +8,8 @@ Un origen: `/` Administración, `/caja` ventas/turnos/comprobantes/comandas. Aut
 
 ## Persistencia
 
+AC-016-08: el estado de Caja deriva `orderNumbers` del historial completo del actor en el perfil (incluidos pedidos cerrados) y la venta virtual actual. Permite nombres de pestaña estables sin modificar metadatos comerciales. Cerrar una pestaña usa `order.cancel`; conserva el pedido cerrado y su evento. Una cancelación de otra pestaña conserva la selección; al cerrar la activa se selecciona una vecina abierta. No cambia la versión de IndexedDB ni la envoltura de sincronización.
+
 IndexedDB `nativos-caja`, versión 1, almacén `state`. Agregado comercial cifrado AES-GCM con IV aleatorio de 96 bits y clave de 256 bits no exportable en el mismo almacén. No guardar contraseñas en claro ni credenciales en localStorage. El cifrado no representa aislamiento frente a JavaScript del mismo origen, extensiones privilegiadas o control del perfil. Clave y agregado se escriben juntos; pérdida de la clave impide recuperación local.
 
 Cada comando toma Web Lock exclusivo `nativos-caja-writer`, vuelve a leer el agregado, comprueba sesión/concesión, revisión, turno y permisos, calcula con el dominio compartido y escribe la nueva versión en una sola transacción IndexedDB con durabilidad `strict`. Solo el evento complete confirma éxito al usuario. Abort/cuota conserva el estado anterior. Lecturas también pasan por el lock para evitar ver una intención intermedia. Clonar el agregado no representa commit. Segunda pestaña con revisión antigua recibe conflicto; misma operación/intención devuelve respuesta guardada.

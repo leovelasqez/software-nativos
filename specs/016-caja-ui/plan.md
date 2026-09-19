@@ -14,4 +14,8 @@ Sin cambios a contratos browser-pos-v1, orders-v3 ni loyalty-v1. Sin migraciones
 
 ## Pruebas
 
+### Extensión de pestañas (AC-016-08)
+
+OrderTabs.tsx reemplaza el selector con una barra inferior desplazable, selección por teclado y cierre independiente. El motor deriva números estables del historial de pedidos del actor (incluidos cerrados) sin migración ni campos comerciales nuevos. Cerrar conserva la selección activa cuando el objetivo es otra pestaña. order.cancel ya admite lines vacío en los schemas v2/v3; el dominio lo acepta exclusivamente si el pedido también está vacío, conservando motivo, revisión, autorización e idempotencia. No se borra ningún pedido ni operación. La venta nueva virtual no requiere cancelar datos inexistentes; + la guarda antes de abrir una segunda pestaña. Pruebas de dominio, integración central y regresión de navegador sobre datos sintéticos.
+
 Tests unitarios para búsqueda y resumen de pagos con efectivo/digital combinados, insuficiencia, exceso digital, entradas inválidas e importe exacto. E2E de UI y regresión de Caja, división, puntos, offline y reapertura existentes. Revisar capturas reales y axe, foco/teclado, scroll y visibilidad de cobro. Ejecutar typecheck, tests, integración y build. No acredita hardware ni despliegue.

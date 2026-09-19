@@ -6,7 +6,41 @@ import { randomUUID } from 'node:crypto';
 export async function exerciseCajaUi(page: Page) {
   const root = 'test-results/caja-ui';
   await mkdir(root, {recursive:true});
-  const initialOrder = await page.getByLabel('Pedido abierto').inputValue();
+  const initialOrder = await page.getByRole('tab',{selected:true}).getAttribute('data-order-id');
+  // AC-016-08: real IndexedDB/outbox, not mocked UI state.
+  const emptyTabs:string[]=[];
+  for(let i=0;i<8;i++){
+    await page.getByRole('button',{name:'+ Nuevo pedido',exact:true}).click();
+    await expect(page.getByRole('tab')).toHaveCount(i+2);
+    emptyTabs.push((await page.getByRole('tab',{selected:true}).getAttribute('data-order-id'))!);
+  }
+  const tab=(id:string)=>page.locator(`[role="tab"][data-order-id="${id}"]`);
+  await tab(initialOrder!).click();await expect(page.getByRole('region',{name:'Pedido'})).toContainText('2 × Batido');
+  await tab(initialOrder!).press('ArrowRight');await expect(tab(emptyTabs[0]!)).toHaveAttribute('aria-selected','true');
+  await expect(tab(emptyTabs[0]!)).toBeFocused();
+  await page.keyboard.press('End');await expect(tab(emptyTabs[7]!)).toHaveAttribute('aria-selected','true');
+  await expect(tab(emptyTabs[7]!)).toBeFocused();await expect(tab(emptyTabs[7]!)).toBeInViewport();
+  await page.keyboard.press('Home');await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
+  await tab(emptyTabs[0]!).locator('..').getByRole('button',{name:/Cerrar/}).click();
+  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(tab(emptyTabs[0]!)).toBeVisible();
+  await page.context().setOffline(true);
+  await tab(emptyTabs[0]!).locator('..').getByRole('button',{name:/Cerrar/}).click();
+  await page.getByRole('button',{name:'Cerrar pedido vacío',exact:true}).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(tab(emptyTabs[0]!)).toHaveCount(0);await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
+  await page.reload();await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
+  await expect(tab(emptyTabs[0]!)).toHaveCount(0);await expect(page.getByRole('region',{name:'Pedido'})).toContainText('2 × Batido');
+  await page.context().setOffline(false);
+  await page.getByRole('button',{name:'Sincronizar',exact:true}).click();await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
+  await page.screenshot({path:`${root}/open-order-tabs.png`});
+  await tab(emptyTabs[1]!).click();
+  for(const id of emptyTabs.slice(1)){
+    await tab(id).locator('..').getByRole('button',{name:/Cerrar/}).click();
+    await page.getByRole('button',{name:'Cerrar pedido vacío',exact:true}).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();await expect(tab(id)).toHaveCount(0);
+  }
+  await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
   // Synthetic long catalog, created through the same authenticated API as ProductForm.
   for (let i=0;i<30;i++) {
     const response = await page.request.post('/api/products', { headers:{origin:'http://127.0.0.1:4320','X-Nativos-Request':'1'}, data:{
@@ -49,6 +83,11 @@ export async function exerciseCajaUi(page: Page) {
         await expect(charge).toBeInViewport();
       } else {
         await expect(search).toBeInViewport();await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeInViewport();
+        const tabs=await page.locator('.pos-order-tabs').boundingBox();
+        const charge=await page.getByRole('button',{name:'Cobrar',exact:true}).boundingBox();
+        expect(charge!.y+charge!.height).toBeLessThanOrEqual(tabs!.y);
+        await expect(page.getByRole('tab',{selected:true}).locator('..').getByRole('button',{name:/Cerrar/})).toBeInViewport();
+        await expect(page.getByRole('button',{name:'+ Nuevo pedido',exact:true})).toBeInViewport();
       }
       const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
       expect(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);
@@ -86,9 +125,9 @@ export async function exerciseCajaUi(page: Page) {
   await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeFocused();
   await page.setViewportSize({width:1366,height:768});
   // Restore original order; unprepared cancellation leaves shift totals unchanged.
-  await page.getByRole('button',{name:'Cancelar venta',exact:true}).click();
+  await page.getByRole('tab',{selected:true}).locator('..').getByRole('button',{name:/Cerrar/}).click();
   await dialog.getByLabel('Motivo',{exact:true}).fill('Fin de revisión UI sintética');
   await dialog.getByRole('button',{name:'Confirmar cancelación'}).click();
   await expect(dialog).not.toBeVisible();
-  await page.getByLabel('Pedido abierto').selectOption(initialOrder);
+  await page.locator(`[role="tab"][data-order-id="${initialOrder}"]`).click();
 }

@@ -5,6 +5,18 @@ import type { OrderContext, SaleV2 } from '../src/orders-domain.ts';
 import type { Snapshot } from '../src/pos-domain.ts';
 const snapshot:Snapshot={id:'snapshot',createdAtMs:1,deviceId:'device',branchId:'centro',warehouseId:'warehouse',serverSequence:0,stock:[],recipes:[],products:[{id:'product',name:'Sintético',reference:'TEST',type:'finished',category:'Pruebas',presentation:'Unidad',unit:'unit',price:'10000',tax:null,description:'',version:1,activeRecipeVersion:null,sellable:true}]};
 const make=()=>({...upgradeOrder({id:'order',revision:1,snapshotId:'snapshot',lines:[]}),lines:[{...emptyLine({id:'line',productId:'product',snapshotId:'snapshot',quantity:'3',optionIds:[]}),discount:{kind:'percent' as const,value:'10'}}]});
+test('AC-016-08: cerrar vacío conserva revisión, motivo y auditoría sin consumo ni cobro',()=>{
+  const order={...make(),lines:[]};
+  const context:OrderContext={id:'close-empty',receiptNumber:'unused',actorId:'actor',actorName:'Prueba',branchId:'centro',deviceId:'device',order,snapshots:[snapshot],customer:null,originalSale:null,refunds:[]};
+  const event={kind:'order.cancel' as const,orderId:order.id,revision:order.revision,lines:[],reason:'Cierre de pedido vacío',occurredAtMs:2,shiftId:null};
+  const result=applyOrderEvent(event,context);
+  assert.equal(result.order!.closed,true);assert.equal(result.order!.revision,2);
+  assert.deepEqual(result.movements,[]);assert.equal(result.sale,null);assert.equal(result.refund,null);assert.equal(result.cashDelta,'0');
+  assert.throws(()=>applyOrderEvent(event,{...context,order:result.order}),/ya no está abierto/);
+  assert.throws(()=>applyOrderEvent({...event,revision:0},context),/pedido cambió/);
+  assert.throws(()=>applyOrderEvent({...event,reason:''},context),/motivo/);
+  assert.throws(()=>applyOrderEvent(event,{...context,order:make()}),/Selecciona líneas/);
+});
 test('AC-004-02/04/10: dividir cantidades, descuento y dos medios con cambio solo efectivo',()=>{
   const order=make();const r=checkout(order,[{lineId:'line',quantity:'1'}],[snapshot],{kind:'percent',value:'10'},'0',[{method:'nequi',received:'5000'},{method:'cash',received:'10000'}]);
   assert.equal(r.sale.products,'9000');assert.equal(r.sale.tip,'900');assert.equal(r.sale.total,'9900');assert.equal(r.sale.cashApplied,'4900');assert.equal(r.sale.change,'5100');assert.equal(r.order.lines[0]!.quantity,'2');assert.equal(r.order.lines[0]!.discount.value,'2000');assert.equal(r.sale.lines[0]!.taxAmount,null);

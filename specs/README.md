@@ -135,4 +135,6 @@ REQ-015-01 a 04 / AC-015-01 a 04: [spec](015-caja-branch-profiles/spec.md), [pla
 
 ## Mantenimiento 016 — Interfaz de Caja
 
+Extensión del 19-09-2026, REQ/AC-016-08: pestañas inferiores, nombres estables, cierre confirmado de vacíos y cancelación de pedidos con productos. Dominio, integración PostgreSQL y navegador/IndexedDB verificados con datos sintéticos; [evidencia](../docs/evidence/order-tabs.md). Sin publicación de este cambio.
+
 REQ-016-01 a 07 / AC-016-01 a 07: [especificación](016-caja-ui/spec.md), [plan](016-caja-ui/plan.md) y [tareas](016-caja-ui/tasks.md). Cabecera compacta, catálogo filtrable, pedido visible, cobro progresivo y resumen exacto de pagos. Verificada localmente; [evidencia y capturas](../docs/evidence/caja-ui.md).

@@ -62,6 +62,27 @@ test('Incremento 4 — pedidos, clientes, cancelación, división y devolución 
       const login=await req('POST','/api/login',{login:'cashier-orders',password});cookie=`nativos_session=${login.cookies[0]!.value}`;assert.equal((await req('GET',`/api/customers/${customerId}/history?branchId=milan`)).statusCode,403);
     });
 
+    await t.test('AC-016-08: cierre vacío offline, reintento, reinicio y aceptación central sin efectos',async()=>{
+      const empty=upgradeOrder({id:randomUUID(),revision:0,snapshotId:engine!.stateV2('owner-orders').snapshot!.id,lines:[]});
+      const inventoryBefore=(await db.pool.query('SELECT count(*) FROM inventory_movements')).rows[0].count;
+      const salesBefore=(await db.pool.query('SELECT count(*) FROM pos_sales')).rows[0].count;
+      offline=true;
+      await send({kind:'order.save',order:empty});
+      const event:CommandEvent={kind:'order.cancel',orderId:empty.id,revision:1,lines:[],reason:'Cierre de pestaña vacía'};
+      const id=randomUUID();const result=await send(event,id);
+      assert.deepEqual(await send(event,id),result);
+      assert.equal(engine!.orders.get(empty.id)!.closed,true);
+      engine!.close();engine=await open();
+      await engine.login('owner-orders',password);
+      assert.equal(engine.orders.get(empty.id)!.closed,true);
+      assert.deepEqual(await send(event,id),result);
+      offline=false;await engine.sync();
+      assert.equal(engine.store.pending().length,0,engine.message);
+      assert.equal((await db.pool.query('SELECT data FROM pos_orders_v2 WHERE id=$1',[empty.id])).rows[0].data.closed,true);
+      assert.equal((await db.pool.query('SELECT count(*) FROM inventory_movements')).rows[0].count,inventoryBefore);
+      assert.equal((await db.pool.query('SELECT count(*) FROM pos_sales')).rows[0].count,salesBefore);
+    });
+
     await t.test('REQ-007-01: migra pedido v1 pendiente sin perder identidad ni duplicar cobro',async()=>{
       const old=engine!.store.newOrder(engine!.access('owner-orders','data.read').grant.actorId);old.lines=[{id:randomUUID(),productId,snapshotId:old.snapshotId,quantity:'1',optionIds:[]}];await engine!.saveOrder('owner-orders',old);
       const saved=engine!.store.order(engine!.access('owner-orders','data.read').grant.actorId)!;engine!.close();engine=await open();await engine.login('owner-orders',password);
