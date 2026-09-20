@@ -44,7 +44,7 @@ Resumen, Ventas, Productos e Inventario, Recetas, Compras y Proveedores, Caja e 
 
 - Atender mostrador, mesas, pedidos abiertos y domicilios registrados manualmente.
 - Conservar pedidos antes de cobrar y permitir dividir cuentas por productos.
-- Mostrar los pedidos abiertos en pestañas inferiores como la referencia de Alegra del 19-09-2026, con + para agregar y × para cerrar con confirmación, incluidos los vacíos. Conservar el resto del diseño Nativos aprobado y la auditoría de cancelación.
+- Mostrar los pedidos abiertos en pestañas inferiores como la referencia de Alegra del 19-09-2026, con + para agregar, acción para renombrar y × para cerrar. Los pedidos vacíos se cierran inmediatamente, sin aviso; solo los que tienen productos solicitan confirmación y motivo. Cerrar la única pestaña debe registrar su cierre y abrir una venta nueva. Conservar el resto del diseño Nativos aprobado y la auditoría de cancelación.
 - Cada cobro de una cuenta dividida tendrá su cliente, comprobante y acumulación de puntos por los productos pagados en ese cobro.
 - Imprimir comandas con presentación, cantidades, adicionales, sustituciones y notas.
 - El envío a preparación no descuenta inventario: el descuento se realiza al cobrar.

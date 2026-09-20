@@ -40,6 +40,12 @@ export async function exercisePos(page: Page, password: string) {
   await page.setViewportSize({width:1440,height:1000});
   await nav('Venta');
   await page.getByRole('button',{name:'Abrir turno',exact:true}).click();await dialog.getByLabel('Base de efectivo (COP)').fill('50000');await dialog.getByRole('button',{name:'Confirmar apertura'}).click();await expect(dialog).not.toBeVisible();
+  const virtualOrder=page.getByRole('tab',{selected:true});const virtualOrderId=await virtualOrder.getAttribute('data-order-id');
+  await virtualOrder.locator('..').getByRole('button',{name:/Cerrar/}).click();await expect(dialog).not.toBeVisible();
+  await expect(page.locator(`[role="tab"][data-order-id="${virtualOrderId}"]`)).toHaveCount(0);
+  const freshOrder=page.getByRole('tab',{selected:true});await freshOrder.locator('..').getByRole('button',{name:/Cambiar nombre/}).click();
+  await dialog.getByLabel('Nombre de la pestaña').fill('Venta mostrador E2E');await dialog.getByRole('button',{name:'Guardar nombre',exact:true}).click();await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('tab',{name:'Venta mostrador E2E',exact:true})).toHaveAttribute('aria-selected','true');
   await page.getByRole('button',{name:'+ Nuevo cliente',exact:true}).click();await dialog.getByLabel('Nombre del cliente').fill('Cliente E2E');await dialog.getByLabel('Documento',{exact:true}).fill('E2E-CLIENT');await dialog.getByLabel('Celular').fill('3000000000');await dialog.getByRole('button',{name:'Guardar y seleccionar cliente'}).click();await expect(dialog).not.toBeVisible();
   await page.getByRole('button',{name:'Datos del pedido'}).click();await dialog.getByLabel('Atención').selectOption('delivery');await dialog.getByLabel('Dirección del domicilio').fill('Dirección sintética');await dialog.getByLabel('Envío pendiente (COP)').fill('3000');await dialog.getByLabel('Nombre del pedido').fill('Domicilio E2E');await dialog.getByRole('button',{name:'Guardar pedido',exact:true}).click();await expect(dialog).not.toBeVisible();
   await page.getByRole('button').filter({hasText:'Batido de prueba'}).click();await dialog.getByLabel('Cantidad',{exact:true}).fill('3');await dialog.getByLabel(/Leche adicional/).check();await dialog.getByLabel('Tipo de descuento').selectOption('percent');await dialog.getByLabel('Descuento',{exact:true}).fill('10');await dialog.getByLabel('Notas de preparación').fill('Sin hielo · prueba');await dialog.getByRole('button',{name:'Guardar en pedido'}).click();await expect(dialog).not.toBeVisible();

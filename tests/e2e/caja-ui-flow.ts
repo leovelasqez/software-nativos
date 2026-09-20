@@ -22,22 +22,19 @@ export async function exerciseCajaUi(page: Page) {
   await expect(tab(emptyTabs[7]!)).toBeFocused();await expect(tab(emptyTabs[7]!)).toBeInViewport();
   await page.keyboard.press('Home');await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
   await tab(emptyTabs[0]!).locator('..').getByRole('button',{name:/Cerrar/}).click();
-  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(tab(emptyTabs[0]!)).toBeVisible();
+  await expect(page.getByRole('dialog')).not.toBeVisible();await expect(tab(emptyTabs[0]!)).toHaveCount(0);
   await page.context().setOffline(true);
-  await tab(emptyTabs[0]!).locator('..').getByRole('button',{name:/Cerrar/}).click();
-  await page.getByRole('button',{name:'Cerrar pedido vacío',exact:true}).click();
+  await tab(emptyTabs[1]!).locator('..').getByRole('button',{name:/Cerrar/}).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(tab(emptyTabs[0]!)).toHaveCount(0);await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
+  await expect(tab(emptyTabs[1]!)).toHaveCount(0);await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
   await page.reload();await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
-  await expect(tab(emptyTabs[0]!)).toHaveCount(0);await expect(page.getByRole('region',{name:'Pedido'})).toContainText('2 × Batido');
+  await expect(tab(emptyTabs[0]!)).toHaveCount(0);await expect(tab(emptyTabs[1]!)).toHaveCount(0);await expect(page.getByRole('region',{name:'Pedido'})).toContainText('2 × Batido');
   await page.context().setOffline(false);
   await page.getByRole('button',{name:'Sincronizar',exact:true}).click();await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
   await page.screenshot({path:`${root}/open-order-tabs.png`});
-  await tab(emptyTabs[1]!).click();
-  for(const id of emptyTabs.slice(1)){
+  await tab(emptyTabs[2]!).click();
+  for(const id of emptyTabs.slice(2)){
     await tab(id).locator('..').getByRole('button',{name:/Cerrar/}).click();
-    await page.getByRole('button',{name:'Cerrar pedido vacío',exact:true}).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();await expect(tab(id)).toHaveCount(0);
   }
   await expect(tab(initialOrder!)).toHaveAttribute('aria-selected','true');
