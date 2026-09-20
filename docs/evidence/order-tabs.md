@@ -1,12 +1,13 @@
 # AC-016-08 — Pestañas de pedidos abiertos
 
-Implementado y verificado localmente el 19-09-2026. Autorización: sustituir el desplegable de pedidos por el formato de pestañas inferior de la captura de Alegra y permitir cerrarlos. Se conserva el diseño Nativos del resto de la pantalla. Sin commit, push ni despliegue de este cambio; no se operó sobre los pedidos de producción.
+Implementado y verificado inicialmente el 19-09-2026; la primera versión se publicó el 20-09-2026. El ajuste solicitado el 20-09-2026 permite cerrar la única venta virtual, elimina la confirmación para vacíos y agrega cambio de nombre. Se conserva el diseño Nativos del resto de la pantalla y no se operó sobre pedidos reales durante las pruebas.
 
 ## Comportamiento
 
-- Pestañas inferiores con Venta principal, números estables o nombre/mesa, indicador de líneas, importe en tooltip, + y cierre individual.
-- Flechas, Home/End y Supr; foco y selección conservados. La barra se desplaza sin mover el catálogo, también con muchas ventas. En móvil no cubre Cobrar.
-- Confirmación de vacío mediante order.cancel, sin borrarlo del historial ni provocar consumo o cobros. Al cerrar otra pestaña se mantiene la activa; al cerrar la activa se elige una vecina.
+- Pestañas inferiores con Venta principal, números estables o nombre/mesa, indicador de líneas, importe en tooltip, +, lápiz para renombrar y cierre individual.
+- Flechas, Home/End, F2 y Supr; foco y selección conservados. La barra se desplaza sin mover el catálogo, también con muchas ventas. En móvil no cubre Cobrar.
+- Un pedido vacío se cierra inmediatamente mediante `order.cancel`, sin diálogo, borrado, consumo ni cobro. Si la única venta aún es virtual, se guarda y cancela secuencialmente para registrar el cierre, avanzar el número y mostrar una venta nueva. Al cerrar otra pestaña se mantiene la activa; al cerrar la activa se elige una vecina.
+- El nombre editable reutiliza `OrderV2.label` y `order.save`; no agrega campos ni migraciones y se conserva offline.
 - El cierre de pedidos con productos cancela todo lo pendiente: exige motivo y permite indicar cuántas unidades enviadas ya se prepararon, conservando el desperdicio existente. Cancelación parcial de líneas sigue disponible por Quitar.
 - No hay migración de base de datos ni cambio de schemas: v2/v3 ya permitían lines vacío; se restringe en dominio a pedidos que tampoco tienen líneas. Selección y cierres se conservan en IndexedDB/outbox.
 
@@ -16,7 +17,8 @@ Implementado y verificado localmente el 19-09-2026. Autorización: sustituir el 
 - `npm.cmd test`: 50 pruebas aprobadas; incluye cierre vacío, revisión/motivo, rechazo de selección vacía con productos, numeración estable y selección vecina.
 - `node --test tests/integration/orders.test.ts`: 8 pruebas aprobadas. Nuevo escenario verifica cierre offline, repetición del mismo ID, reinicio, aceptación PostgreSQL y cero cambios en ventas/inventario.
 - `npm.cmd run build`: aprobado.
-- `npm.cmd run test:e2e`: prueba integral compuesta aprobada (2,6 minutos en ejecución final). Edge real, PostgreSQL sintético, service worker e IndexedDB; ocho pestañas adicionales, teclado/foco, confirmación descartada, cierre inactivo offline, recarga, sincronización, cierre activo, cierre de pedido con 12 líneas y regreso al original. Conserva regresión de cobros, división, preparación/desperdicio, devoluciones, puntos y recuperación offline. Axe sin infracciones en las vistas comprobadas.
+- `npm.cmd run check`: TypeScript, 50/50 pruebas unitarias, 59/59 integraciones seriales y build aprobados en un worktree limpio.
+- `npm.cmd run test:e2e`: prueba integral compuesta aprobada en la ejecución final (1,8 minutos). Edge real, PostgreSQL sintético, service worker e IndexedDB; ocho pestañas adicionales, cierre vacío inmediato online/offline, recarga, cierre de la única venta virtual, número nuevo y cambio de nombre. Conserva regresión de cobros, división, preparación/desperdicio, devoluciones, puntos y recuperación offline. Axe sin infracciones en las vistas comprobadas.
 - Escritorio 1366×768, tablet 1024×768 y móvil 390×844 en claro/oscuro; catálogo largo y pedido largo, sin desbordar documento ni tapar cobro.
 - Revisión directa adicional con Playwright CLI y otra base sintética en 4322: activar una caja nueva, + desde venta virtual, cerrar ambas pestañas vacías, recargar y comprobar una venta nueva disponible con 0 pendientes y sin resucitar las anteriores. La revisión visual motivó ajustar el desplazamiento de la pestaña activa al redimensionar para conservar visible su botón de cierre.
 
