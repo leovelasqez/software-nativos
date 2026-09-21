@@ -30,6 +30,7 @@ Implementado y verificado inicialmente el 19-09-2026; la primera versión se pub
 - Revisión visual directa de cero ventas en escritorio 1440 px y móvil 390 px: mensaje claro, + visible y sin superposición. Axe sin infracciones en ambos tamaños.
 - Capturas sintéticas: [cero ventas escritorio](order-tabs/no-open-sales-1440.png) y [cero ventas móvil](order-tabs/no-open-sales-390.png).
 - No se manipularon pedidos reales ni se borraron datos del navegador.
+- Producción: revisión `e1ad685`, despliegue Railway `8d48eacb-2ad4-4ee2-a91c-206bd268d68a` en SUCCESS el 21-09-2026. `/health` y `/caja` respondieron 200; HTML entrega `pos-D3Eru9vQ.js`, con el estado «No hay ventas abiertas» y la ruta `/v2/dismiss-draft`. Verificación productiva de entrega de versión, sin operar ventas reales.
 
 ### Capturas anteriores
 
