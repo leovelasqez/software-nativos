@@ -9,6 +9,6 @@
 | TASK-016-05 | Regresiones, navegador y evidencia visual | 01–07 | Completada |
 | TASK-016-06 | Pestañas inferiores, cierre seguro de vacíos y selección persistente; regresiones y capturas | 08/07 | Completada localmente |
 | TASK-016-07 | Cierre inmediato de vacíos, cierre de la única venta virtual y cambio de nombre accesible | 08 | Completada y verificada |
-| TASK-016-08 | Cerrar última pestaña sin reemplazo; persistir cero ventas offline y crear una sola mediante + | 08 | En validación |
+| TASK-016-08 | Cerrar última pestaña sin reemplazo; persistir cero ventas offline y crear una sola mediante + | 08 | Completada y verificada |
 
 Evidencia: [comprobaciones, escenarios y capturas](../../docs/evidence/caja-ui.md).
