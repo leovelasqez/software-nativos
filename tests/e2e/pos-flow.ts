@@ -41,8 +41,32 @@ export async function exercisePos(page: Page, password: string) {
   await nav('Venta');
   await page.getByRole('button',{name:'Abrir turno',exact:true}).click();await dialog.getByLabel('Base de efectivo (COP)').fill('50000');await dialog.getByRole('button',{name:'Confirmar apertura'}).click();await expect(dialog).not.toBeVisible();
   const virtualOrder=page.getByRole('tab',{selected:true});const virtualOrderId=await virtualOrder.getAttribute('data-order-id');
+  const virtualLabel=await virtualOrder.getAttribute('aria-label');
   await virtualOrder.locator('..').getByRole('button',{name:/Cerrar/}).click();await expect(dialog).not.toBeVisible();
   await expect(page.locator(`[role="tab"][data-order-id="${virtualOrderId}"]`)).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'No hay ventas abiertas'})).toBeVisible();
+  await page.context().setOffline(true);await page.reload();
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await page.getByRole('button',{name:'+ Nuevo pedido',exact:true}).click();
+  await expect(page.getByRole('tab')).toHaveCount(1);
+  await expect(page.getByRole('tab',{selected:true})).toHaveAttribute('aria-label',virtualLabel!);
+  await page.getByRole('tab',{selected:true}).locator('..').getByRole('button',{name:/Cerrar/}).click();
+  await expect(page.getByRole('tab')).toHaveCount(0);await page.reload();
+  await expect(page.getByRole('heading',{name:'No hay ventas abiertas'})).toBeVisible();
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  for(const width of [390,1440]){
+    await page.setViewportSize({width,height:900});
+    await expect(page.getByRole('button',{name:'+ Nuevo pedido',exact:true})).toBeInViewport();
+    expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(v=>v.id)).toEqual([]);
+    await page.screenshot({path:`${root}/no-open-sales-${width}.png`});
+  }
+  await page.context().setOffline(false);
+  await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
+  await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await page.getByRole('button',{name:'+ Nuevo pedido',exact:true}).click();
+  await expect(page.getByRole('tab')).toHaveCount(1);
   const freshOrder=page.getByRole('tab',{selected:true});await freshOrder.locator('..').getByRole('button',{name:/Cambiar nombre/}).click();
   await dialog.getByLabel('Nombre de la pestaña').fill('Venta mostrador E2E');await dialog.getByRole('button',{name:'Guardar nombre',exact:true}).click();await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('tab',{name:'Venta mostrador E2E',exact:true})).toHaveAttribute('aria-selected','true');
