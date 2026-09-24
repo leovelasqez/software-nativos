@@ -21,4 +21,8 @@ Solicitud: corregir el bloqueo `already_enrolled` y permitir que el dueño abra 
 
 Pedidos y operaciones locales no se copian entre navegadores. Los pendientes anteriores siguen en el navegador de origen y conservan su token para sincronizar. Un turno de otro navegador se cierra allí; la autorización de este cambio no implica cerrar turnos ni registrar ventas reales. Aperturas simultáneas durante carreras/cortes de red pueden requerir conciliación; la unicidad central nunca se elimina.
 
-Despliegue: pendiente de verificar en Railway.
+## Publicación verificada
+
+Railway `nativos-web`, ambiente `production`, despliegue `b614f22c-4398-45cc-9f5d-6871275f71c8`: SUCCESS. Artefacto del commit `daa67d9`; sin los cambios de Excel no confirmados. Healthcheck del despliegue correcto y `/health` respondió HTTP 200 con `ok: true`; `/caja` entregó `pos-BeH9lcyz.js`.
+
+En la sesión del navegador de Codex que mostraba `already_enrolled`, se recargó la versión nueva, se activó Centro y se alternó a Milán. Ambas mostraron «Nueva venta», «Turno cerrado» y «Sincronizado 0 pendientes». Se volvió a Centro. No se abrieron turnos, cobraron ventas ni modificaron existencias durante esta comprobación. Chrome quedó sin sesión iniciada; su compatibilidad con los datos existentes se cubrió mediante migración y pruebas, sin obtener ni copiar credenciales del usuario.
