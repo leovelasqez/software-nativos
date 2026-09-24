@@ -1,0 +1,66 @@
+/* Keep operational details available without taking space from the sale. */
+.pos-shell .topbar{min-height:48px;padding:6px 16px;gap:12px}
+.pos-shell .pos-sync{gap:10px;margin-left:auto;flex-wrap:nowrap}
+.pos-status-details{position:relative}
+.pos-status-details>summary{cursor:pointer;font-size:12px;line-height:1.4;padding:8px 0}
+.pos-stock-warning{color:var(--warning)}
+.pos-status-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:8;width:360px;max-width:calc(100vw - 32px);max-height:70dvh;overflow:auto;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px #0002;display:grid;gap:12px;color:var(--ink)}
+.pos-status-panel h2{font-size:15px}
+.pos-status-panel p{font-size:12px;line-height:1.5}
+.pos-status-panel .notice{margin:0}
+.pos-status-panel .pos-help[open]{max-height:none;overflow:visible}
+.pos-shell .pos-sale-heading{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.pos-shell .pos-order-lines{overflow:visible;flex:1 0 auto;min-height:0}
+.pos-shell .pos-order-line{padding:6px 14px;gap:2px}
+.pos-shell .pos-order-line p{line-height:1.3}
+.pos-shell .pos-line-controls .text-button{min-height:28px;padding:4px 0}
+.pos-quantity-stepper{display:inline-flex;align-items:center;flex-shrink:0;border:1px solid var(--line);border-radius:7px;background:var(--bg);overflow:hidden}
+.pos-quantity-stepper>button{display:grid;place-items:center;min-width:28px;min-height:26px;padding:2px 5px;background:transparent;color:var(--accent);font-size:18px;line-height:1;border-radius:0}
+.pos-quantity-stepper>.pos-quantity-value{min-width:30px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pos-quantity-stepper>button:hover:not(:disabled){background:var(--soft)}
+.pos-quantity-stepper>button:focus-visible{outline-offset:-3px}
+.pos-shell .pos-order .section-heading{padding:10px 14px 4px}
+.pos-shell .pos-order-meta{padding:0 14px 6px;gap:4px 10px}
+.pos-shell .order-meta-button{padding:4px 0}
+.pos-shell .pos-total{padding:5px 14px}
+.pos-shell .pos-pay{padding:0 12px 10px;gap:6px}
+.pos-shell .pos-pay>.primary{min-height:42px}
+.pos-shell .pos-secondary-actions .secondary{min-height:32px;padding:6px 8px}
+
+@media(min-width:801px){
+  .pos-shell{grid-template-columns:160px minmax(0,1fr)}
+  .pos-shell .sidebar{padding-inline:10px}
+  .pos-shell .sidebar .brand{padding:0 8px}
+  .pos-shell .sidebar .brand>span{font-size:30px}
+  .pos-shell .sidebar .brand small{font-size:7px;letter-spacing:1.4px}
+  .pos-shell .content.is-sale{padding:10px 14px;gap:8px;overflow:auto;container-type:size}
+  /* Long orders expand the workspace instead of hiding lines in a nested scroller. */
+  .pos-shell .pos-grid{grid-template-columns:minmax(0,1fr) minmax(370px,400px);gap:14px;align-items:start;flex:1 0 auto;min-height:100cqh}
+  .pos-shell .pos-catalog{position:sticky;top:0;height:100cqh;min-height:300px}
+  .pos-shell .pos-order{min-height:100cqh}
+  .pos-shell .pos-product{min-height:154px;padding:12px;gap:4px}
+  .pos-shell .pos-product .product-symbol{display:none}
+  .pos-shell .pos-product{grid-template-rows:auto 1fr auto auto}
+  .pos-shell .pos-product b{padding-right:28px}
+  .pos-shell .pos-products{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .pos-shell .pos-catalog .panel-toolbar{padding-bottom:8px}
+  .pos-shell .pos-categories>button{min-height:32px;padding:6px 10px}
+  .pos-shell .pos-result-count{padding-bottom:6px}
+}
+@media(min-width:801px) and (max-width:1150px){
+  .pos-shell{grid-template-columns:144px minmax(0,1fr)}
+  .pos-shell .topbar{gap:8px;padding-inline:12px;flex-wrap:wrap}
+  .pos-shell .pos-shift-status{font-size:11px}
+  .pos-shell .pos-grid{grid-template-columns:minmax(0,1fr) 360px;gap:10px}
+  .pos-shell .pos-products{grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}
+  .pos-stock-warning{display:block}
+}
+@media(max-width:800px){
+  .pos-shell .topbar{gap:4px 10px;padding:6px 12px}
+  .pos-shell .pos-shift-status{order:0;width:auto;margin-right:auto;font-size:11px}
+  .pos-shell .pos-sync{order:3;width:100%;margin:0;justify-content:space-between}
+  .pos-status-panel{position:fixed;left:12px;right:12px;top:auto;width:auto;max-width:none;margin-top:8px}
+  .pos-shell .pos-order-line{padding:12px 14px}
+  .pos-shell .pos-line-controls .text-button{min-height:36px}
+  .pos-quantity-stepper>button{min-width:34px;min-height:34px}
+}

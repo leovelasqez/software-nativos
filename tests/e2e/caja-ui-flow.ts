@@ -63,6 +63,14 @@ export async function exerciseCajaUi(page: Page) {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   }
   await page.getByRole('button',{name:'Limpiar',exact:true}).click();
+  const quickQuantity=page.getByRole('button',{name:'Cantidad de Café de revisión 01',exact:true});
+  await expect(page.getByRole('button',{name:'Disminuir cantidad de Café de revisión 01',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Aumentar cantidad de Café de revisión 01',exact:true}).click();
+  await expect(quickQuantity).toHaveText('2');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page.getByRole('button',{name:'Disminuir cantidad de Café de revisión 01',exact:true}).click();
+  await expect(quickQuantity).toHaveText('1');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button',{name:'Cantidad de Café de revisión 01',exact:true}).click();
   await expect(page.getByRole('dialog').getByLabel('Cantidad',{exact:true})).toBeFocused();
   await page.keyboard.press('Escape');
@@ -74,9 +82,11 @@ export async function exerciseCajaUi(page: Page) {
       if((await toggle.getAttribute('aria-checked')==='true')!==dark)await toggle.click();
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
       if(viewport.width>800){
-        const charge=page.getByRole('button',{name:'Cobrar pedido',exact:true});await expect(charge).toBeInViewport();
+        const charge=page.getByRole('button',{name:'Cobrar pedido',exact:true});
+        // Long orders grow naturally; no lines are trapped in an internal scroller.
+        expect(await page.locator('.pos-order-lines').evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBeTruthy();
         await page.locator('.pos-products').evaluate(el=>el.scrollTop=el.scrollHeight);
-        await page.locator('.pos-order-lines').evaluate(el=>el.scrollTop=el.scrollHeight);
+        await charge.scrollIntoViewIfNeeded();
         await expect(charge).toBeInViewport();
       } else {
         await expect(search).toBeInViewport();await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeInViewport();
@@ -89,6 +99,7 @@ export async function exerciseCajaUi(page: Page) {
       const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
       expect(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);
       await page.screenshot({path:`${root}/${viewport.name}-${dark?'dark':'light'}.png`});
+      if(viewport.width>800)await page.locator('#pos-main').evaluate(el=>el.scrollTop=0);
       if(viewport.width<=800){
         await page.getByRole('button',{name:'Pedido (12)',exact:true}).click();
         await expect(page.getByRole('region',{name:'Pedido'})).toBeVisible();
