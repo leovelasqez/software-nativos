@@ -33,3 +33,12 @@ Comprobación pública posterior: /health respondió HTTP 200 con ok=true; /caja
 /sw.js también coincide con el generado localmente. Se comprobó el arranque de npm start sin errores. Esta comprobación acredita la publicación del artefacto probado; no se hicieron operaciones comerciales en el sitio real.
 
 Si un navegador conserva la interfaz anterior, cerrar las pestañas del sistema y volver a abrirlo permite activar la actualización offline. No borrar los datos del sitio ni IndexedDB.
+
+
+## Quitar productos sin confirmación — AC-016-10
+
+Solicitud posterior del usuario: evitar el formulario al quitar un producto. Commit `30e01a5`: las líneas con sentQuantity=0 se retiran mediante order.cancel con motivo automático y preparedQuantity=0. Las enviadas mantienen la captura de preparación/desperdicio; la cancelación de la venta completa conserva su flujo.
+
+Verificación sobre checkout limpio: typecheck, 8 pruebas de pedidos/UI, build y recorrido completo E2E correctos (1/1, 2,5 min). El caso nuevo elimina una línea offline sin modal, verifica 11 líneas restantes y total 55.000, recarga y confirma persistencia antes de restaurar la línea de prueba.
+
+Publicación manual en nativos-web / production: `f32a4775-10c0-44a6-8e65-7adf8719b490`, SUCCESS y healthcheck aprobado. /health y /caja respondieron HTTP 200; HTML y los cuatro recursos de Caja coinciden byte a byte con el build validado, incluido pos-CwWPXlZt.js. No se registraron operaciones comerciales en producción durante la comprobación.
