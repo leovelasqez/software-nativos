@@ -37,3 +37,7 @@ Extiende 001 (sucursales, bodegas y equipos), 003 (libro por bodega), 004/006 (c
 ## Evidencia
 
 Implementación, comprobación local y límites: [evidencia 015](../../docs/evidence/caja-branch-profiles.md). La aprobación física de T80A y T82E sigue pendiente según [hardware-acceptance](../../docs/operations/hardware-acceptance.md).
+
+## Actualización prevalente del 24-09-2026
+
+La solicitud del dueño permite abrir ambas cajas sin exclusividad de navegador y alternarlas con turno abierto. [Spec 018](../018-caja-access/spec.md) sustituye esas dos restricciones de REQ-015-02/AC-015-01. Continúan conexión, sincronización, permisos y aislamiento por perfil.

@@ -138,3 +138,7 @@ REQ-015-01 a 04 / AC-015-01 a 04: [spec](015-caja-branch-profiles/spec.md), [pla
 Extensión del 19-09-2026 y ajuste solicitado el 20-09-2026, REQ/AC-016-08: pestañas inferiores, nombres estables y editables, cierre inmediato de vacíos —incluida la única venta virtual— y confirmación solo para pedidos con productos. Dominio, integración PostgreSQL y navegador/IndexedDB verificados con datos sintéticos; [evidencia](../docs/evidence/order-tabs.md).
 
 REQ-016-01 a 07 / AC-016-01 a 07: [especificación](016-caja-ui/spec.md), [plan](016-caja-ui/plan.md) y [tareas](016-caja-ui/tasks.md). Cabecera compacta, catálogo filtrable, pedido visible, cobro progresivo y resumen exacto de pagos. Verificada localmente; [evidencia y capturas](../docs/evidence/caja-ui.md).
+
+## Mantenimiento 018 — Acceso a ambas cajas
+
+[Spec 018](018-caja-access/spec.md), plan y tareas: varios navegadores por caja, secuencia y acuses por instalación, conservación de tokens anteriores y cambio de sucursal con turno abierto. Solicitud del 24-09-2026. Pruebas: `tests/integration/caja-access.test.ts` y `tests/e2e/caja-access-flow.ts`.

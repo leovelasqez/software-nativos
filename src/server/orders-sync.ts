@@ -22,7 +22,7 @@ export async function handleOrdersSync(c:PoolClient,o:Operation,payload:unknown,
   if(row&&(row.device_id!==o.deviceId||row.actor_id!==o.actorId))throw new ApiError(403,'scope_denied','El pedido pertenece a otro equipo o usuario.');
   const order=row?.data as OrderV2|null;
   if(['sale.split','sale.refund'].includes(payload.kind)){
-    const shift=(await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND closed_at IS NULL',[payload.shiftId,o.deviceId,o.actorId])).rows[0];
+    const shift=(await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND installation_id=$4 AND closed_at IS NULL',[payload.shiftId,o.deviceId,o.actorId,installationId])).rows[0];
     if(!shift||new Date(shift.opened_at).getTime()>payload.occurredAtMs)throw new ApiError(409,'shift_conflict','El turno no está abierto o no te pertenece.');
   }
   const snapshots=(await c.query('SELECT data FROM pos_snapshots WHERE device_id=$1',[o.deviceId])).rows.map(r=>r.data as Snapshot).filter(s=>s.branchId===o.branchId&&s.createdAtMs<=payload.occurredAtMs);

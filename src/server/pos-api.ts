@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
 import { audit, principal, transaction } from './db.ts';
 import type { Actor, UserRow } from './db.ts';
-import { ApiError, authenticate, requireAccess, tokenHash, notFound } from './security.ts';
+import { ApiError, authenticate, requireAccess, requireAdmin, tokenHash, notFound } from './security.ts';
 import { routeSchema } from './api-contract.ts';
 import { isOperation, WEEK_MS } from '../contracts.ts';
 import type { Operation } from '../contracts.ts';
@@ -51,12 +51,11 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
   }
   app.post('/api/pos/enroll', { schema: routeSchema('/api/pos/enroll', 'post') }, req => tx(async c => {
     const actor = await authenticate(c, req);
+    requireAdmin(actor);
     const b = req.body as { deviceId: string; installationId: string };
     const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [b.deviceId])).rows[0]; if (!device) throw notFound(); requireAccess(actor, device.branch_id);
-    const old = (await c.query('SELECT installation_id FROM pos_terminals WHERE device_id=$1', [device.id])).rows[0];
-    if (old && old.installation_id !== b.installationId) throw new ApiError(409, 'already_enrolled', 'Esta caja está vinculada a otra instalación. Conserva sus pendientes antes de reemplazarla.');
     const token = randomBytes(32).toString('base64url');
-    await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3) ON CONFLICT(device_id) DO UPDATE SET token_hash=$3', [device.id, b.installationId, tokenHash(token)]);
+    await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3) ON CONFLICT(device_id,installation_id) DO UPDATE SET token_hash=$3', [device.id, b.installationId, tokenHash(token)]);
     await audit(c, actor, 'pos.enrolled', 'Vinculación de instalación local', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
     return { deviceId: device.id, branchId: device.branch_id, installationId: b.installationId, token, publicKey: (await key(c)).public_key };
   }));
@@ -76,11 +75,12 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     requireAccess(actor, device.branch_id); const now = Date.now();
     const authorization: Authorization = { principal: principal(actor.user), actorName: actor.user.name,
       grant: { version: 1, grantId: randomUUID(), actorId: actor.user.id, branchId: device.branch_id, deviceId: device.device_id, validatedAtMs: now, expiresAtMs: now + WEEK_MS, actions: actor.user.actions.filter(a => ['data.read','order.write','sale.charge','shift.open','shift.close','sale.discount','sale.cancel','sale.refund','cash.movement'].includes(a)) } };
-    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c) };
+    const openShift = (await c.query('SELECT s.id,u.name AS "actorName" FROM pos_shifts s JOIN app_users u ON u.id=s.actor_id WHERE s.device_id=$1 AND s.closed_at IS NULL', [device.device_id])).rows[0] ?? null;
+    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift };
   }));
   app.post('/api/pos/redemption/cancel',{schema:{body:loyaltyContract.cancel}},req=>tx(async c=>{
     const b=req.body as {operationId:string;deviceId:string;signed:Signed};const device=await terminal(c,req,b.deviceId);const a=verifyAuthorization(b.signed,(await key(c)).public_key);if(a.grant.deviceId!==device.device_id||a.grant.branchId!==device.branch_id)throw new ApiError(403,'scope_denied','Concesión de otra caja.');
-    const old=(await c.query('SELECT response FROM pos_receipts WHERE operation_id=$1 AND device_id=$2',[b.operationId,b.deviceId])).rows[0];if(old)return {committed:true,response:old.response};
+    const old=(await c.query('SELECT response,installation_id FROM pos_receipts WHERE operation_id=$1 AND device_id=$2',[b.operationId,b.deviceId])).rows[0];if(old){if(old.installation_id!==device.installation_id)throw new ApiError(403,'scope_denied','Operación de otro navegador.');return {committed:true,response:old.response};}
     const prior=(await c.query('SELECT * FROM loyalty_cancellations WHERE operation_id=$1',[b.operationId])).rows[0];if(prior&&(prior.device_id!==b.deviceId||prior.actor_id!==a.grant.actorId))throw new ApiError(403,'scope_denied','Operación de otro usuario.');
     await c.query('INSERT INTO loyalty_cancellations VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[b.operationId,b.deviceId,a.grant.actorId]);return {committed:false};
   }));
@@ -91,7 +91,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     if ((await c.query('SELECT 1 FROM loyalty_cancellations WHERE operation_id=$1',[o.operationId])).rowCount) throw new ApiError(409,'redemption_cancelled','El canje fue cancelado antes de cobrarse.');
     const fingerprint = payloadHash(JSON.stringify(o) + b.payload + b.signed.document + b.signed.signature);
     const old = (await c.query('SELECT * FROM pos_receipts WHERE operation_id=$1', [o.operationId])).rows[0];
-    if (old) { if (old.fingerprint !== fingerprint) throw new ApiError(409, 'operation_conflict', 'La operación ya existe con otro contenido.'); return old.response; }
+    if (old) { if (old.device_id !== o.deviceId || old.installation_id !== device.installation_id) throw new ApiError(403, 'scope_denied', 'Operación de otro navegador.'); if (old.fingerprint !== fingerprint) throw new ApiError(409, 'operation_conflict', 'La operación ya existe con otro contenido.'); return old.response; }
     if (o.sequence <= Number(device.last_sequence)) throw new ApiError(409, 'sequence_conflict', 'La secuencia ya fue utilizada por otra operación.');
     if (o.sequence !== Number(device.last_sequence) + 1 || o.previousOperationId !== device.last_operation_id) throw new ApiError(409, 'predecessor_required', 'Se requiere la operación previa de esta caja.');
     let authorization: Authorization;
@@ -102,8 +102,8 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     if (o.payloadVersion === 2 || o.payloadVersion === 3) {
       if(o.payloadVersion===3&&(payload as {loyalty?:{redeemedPoints:string}}).loyalty?.redeemedPoints!=='0'&&(payload as {loyalty?:unknown}).loyalty){if(Date.now()>=grant.expiresAtMs)throw new ApiError(403,'grant_expired','Revalida el acceso para canjear.');}
       const response = await handleOrdersSync(c,o,payload,authorization,device.installation_id);
-      await c.query('INSERT INTO pos_receipts(operation_id,device_id,sequence,fingerprint,response) VALUES($1,$2,$3,$4,$5)',[o.operationId,o.deviceId,o.sequence,fingerprint,JSON.stringify(response)]);
-      await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1',[o.deviceId,o.sequence,o.operationId]); return response;
+      await c.query('INSERT INTO pos_receipts(operation_id,device_id,sequence,fingerprint,response,installation_id) VALUES($1,$2,$3,$4,$5,$6)',[o.operationId,o.deviceId,o.sequence,fingerprint,JSON.stringify(response),device.installation_id]);
+      await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1 AND installation_id=$4',[o.deviceId,o.sequence,o.operationId,device.installation_id]); return response;
     }
     if (!isPosEvent(payload)) throw new ApiError(422, 'invalid_payload', 'Formato de operación inválido.');
     if (!grant.actions.includes(payload.kind) || !isWithinGrantClock(payload.occurredAtMs, grant.validatedAtMs) || payload.occurredAtMs > Date.now() + 300_000 || payload.kind !== 'shift.close' && payload.occurredAtMs >= grant.expiresAtMs) throw new ApiError(403, 'grant_denied', 'La operación está fuera de la autorización registrada.');
@@ -112,9 +112,9 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const actor: Actor = { user, deviceId: o.deviceId, tokenHash: '' }; const occurred = new Date(payload.occurredAtMs);
     if (payload.kind === 'shift.open') {
       if ((await c.query('SELECT 1 FROM pos_shifts WHERE device_id=$1 AND closed_at IS NULL', [o.deviceId])).rowCount) throw new ApiError(409, 'shift_conflict', 'La caja ya tiene un turno activo.');
-      await c.query('INSERT INTO pos_shifts(id,device_id,branch_id,actor_id,opening_cash,opened_at) VALUES($1,$2,$3,$4,$5,$6)', [payload.shiftId, o.deviceId, o.branchId, o.actorId, payload.openingCash, occurred]);
+      await c.query('INSERT INTO pos_shifts(id,device_id,branch_id,actor_id,opening_cash,opened_at,installation_id) VALUES($1,$2,$3,$4,$5,$6,$7)', [payload.shiftId, o.deviceId, o.branchId, o.actorId, payload.openingCash, occurred,device.installation_id]);
     } else {
-      const shift = (await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND closed_at IS NULL', [payload.shiftId, o.deviceId, o.actorId])).rows[0];
+      const shift = (await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND installation_id=$4 AND closed_at IS NULL', [payload.shiftId, o.deviceId, o.actorId,device.installation_id])).rows[0];
       if (!shift) throw new ApiError(409, 'shift_conflict', 'El turno no pertenece al usuario o ya está cerrado.');
       if (occurred.getTime() < shift.opened_at.getTime()) throw new ApiError(422, 'invalid_time', 'La operación precede a la apertura.');
       if (payload.kind === 'sale.charge') {
@@ -147,8 +147,8 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
       }
     }
     const response = { kind: 'accepted', receipt: o, reviewRequired };
-    await c.query('INSERT INTO pos_receipts(operation_id,device_id,sequence,fingerprint,response) VALUES($1,$2,$3,$4,$5)', [o.operationId, o.deviceId, o.sequence, fingerprint, JSON.stringify(response)]);
-    await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1', [o.deviceId, o.sequence, o.operationId]);
+    await c.query('INSERT INTO pos_receipts(operation_id,device_id,sequence,fingerprint,response,installation_id) VALUES($1,$2,$3,$4,$5,$6)', [o.operationId, o.deviceId, o.sequence, fingerprint, JSON.stringify(response),device.installation_id]);
+    await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1 AND installation_id=$4', [o.deviceId, o.sequence, o.operationId,device.installation_id]);
     await audit(c, actor, payload.kind, 'Operación confirmada en caja local', { operationId: o.operationId, shiftId: payload.shiftId, reviewRequired, receipt: o }, o.branchId, [o.branchId]);
     return response;
   }));

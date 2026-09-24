@@ -822,11 +822,35 @@
                     "loyalty": {
                       "type": "object",
                       "additionalProperties": true
+                    },
+                    "openShift": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "actorName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "actorName"
+                          ]
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "signed",
-                    "snapshot"
+                    "snapshot",
+                    "openShift"
                   ]
                 }
               }

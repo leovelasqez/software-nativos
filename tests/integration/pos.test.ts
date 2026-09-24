@@ -38,12 +38,12 @@ test('Incremento 3 — PostgreSQL, SQLite y DPAPI reales; recuperación y sincro
     preparedId = (await req('POST', '/api/products', draftProduct('PREP', 'prepared'))).json().id;
     const recipe = await req('POST', `/api/products/${preparedId}/recipes`, { ...common(), name: 'Receta sintética', instructions: '', state: 'active', expectedActiveVersion: 0, lines: [{ id: 'ingredient', itemId: rawId, quantity: '10', unit: 'g', conversion: null, kind: 'ingredient' }], options: [{ id: 'extra', name: 'Adicional sintético', kind: 'addition', replacesLineId: null, price: '5', line: { id: 'extra-line', itemId: rawId, quantity: '2', unit: 'g', conversion: null, kind: 'ingredient' } }] }); assert.equal(recipe.statusCode, 200, recipe.body);
     engine = await openEngine();
-    await t.test('Activación única, firma, catálogo sin costos y custodia cifrada', async () => {
+    await t.test('Activación por navegador, firma, catálogo sin costos y custodia cifrada', async () => {
       const r = await engine!.login('owner-pos', password); assert.equal(r.needsEnrollment, true); await engine!.enroll(detail.devices[0].id, 'owner-pos');
       original = engine!.state('owner-pos').snapshot!; assert.ok(original.products.some(p => p.id === preparedId));
       assert.doesNotMatch(JSON.stringify(original), /unitCost|password|privateKey/);
       const encrypted = await readFile(join(directory, 'terminal/vault.dpapi'), 'utf8'); assert.ok(!encrypted.includes(engine!.vault.data.terminal!.token)); assert.ok(!encrypted.includes('owner-pos'));
-      const second = await req('POST', '/api/pos/enroll', { deviceId: detail.devices[0].id, installationId: randomUUID() }); assert.equal(second.statusCode, 409);
+      const second = await req('POST', '/api/pos/enroll', { deviceId: detail.devices[0].id, installationId: randomUUID() }); assert.equal(second.statusCode, 200);
     });
     await t.test('Pedido y consumo: guardar no descuenta; rollback previo al commit no deja cobro parcial', async () => {
       await engine!.execute('owner-pos', 'shift.open', { operationId: randomUUID(), openingCash: '500' });

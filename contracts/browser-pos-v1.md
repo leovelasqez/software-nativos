@@ -41,3 +41,9 @@ Solo servidor de desarrollo habilita `/api/local-transition` GET y POST `{target
 No hay puente de lectura de archivos en producción. Impresión silenciosa, cajón y restauración operativa siguen pendientes de ensayo real desde navegador.
 
 Referencias técnicas: [transacciones IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/transaction), [importación de claves Web Crypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey).
+
+## Acceso desde varios navegadores — 24-09-2026
+
+REQ/AC-018-01 a 04 sustituyen la vinculación exclusiva y el bloqueo de cambio por turno abierto. El dueño activa cada pareja caja/instalación; tokens, cursores y pendientes anteriores permanecen vigentes. El token determina la instalación de `/pos/authorize`, `/pos/sync` y sus acuses. La respuesta de autorización incluye `openShift: {id, actorName} | null`. Las secuencias son independientes por caja/instalación; un acuse no puede recuperarse desde otra instalación. Turnos históricos conservan su instalación y los nuevos la registran. La unicidad del turno activo continúa por caja. Antes de abrir online, el navegador consulta el turno central y avisa si pertenece a otro perfil. Una apertura offline concurrente continúa requiriendo conciliación al reconectar.
+
+El selector permite alternar turnos abiertos de sucursales diferentes después de sincronizar; conserva perfiles aislados y restaura el anterior si falla el destino. Los datos locales no se replican entre navegadores. Ningún pendiente se elimina al activar otro navegador. No cambia IndexedDB, el formato de operación ni los comprobantes históricos.

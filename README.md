@@ -63,3 +63,7 @@ Check valida TypeScript, reglas de dominio, PostgreSQL real y regresiones de ada
 Los planes históricos se conservan; para trabajo nuevo prevalece DEC-021. Antes del incremento 6 se verifica esta transición. Después: compras, traslados, conteos, informes, Excel, costeo promedio y respaldos. WhatsApp/API-MCP e importación/lanzamiento conservan su orden posterior.
 
 Impresión física de 80 mm y cajones USB siguen pendientes. Deben ensayarse desde navegador antes de operar; no prometer impresión silenciosa ni apertura de cajón por una prueba visual. DEC-009/GO-03 fueron descartadas y la fiscalidad externa no bloquea esta versión. Railway y PITR están desplegados, pero la restauración aislada y la política operativa de recuperación no están terminadas; tampoco hay integración bancaria ni autorización de ventas reales.
+
+## Actualización de acceso a Caja — 24-09-2026
+
+El dueño puede activar Centro y Milán desde varios navegadores sin reemplazar las activaciones anteriores. Cada navegador conserva sus pedidos y pendientes; las operaciones sincronizan con secuencias independientes. El selector permite cambiar de sucursal con el turno abierto, después de sincronizar, y recuperarlo al volver. Un turno ya abierto en otro navegador debe cerrarse allí antes de abrir otro en esa misma caja. Los datos sin sincronizar siguen en el navegador de origen. Ver `specs/018-caja-access/`.

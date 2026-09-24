@@ -137,3 +137,7 @@ Diseño de DEC-006/007 concretado en contracts/loyalty-v1.md y planes increment-
 ## DEC-021 — Sitio web único (15-09-2026)
 
 Usuario sustituye Administración web + Caja Electron por un sitio web y confirma siete días offline. Nueva dirección: React/PWA, IndexedDB, Web Locks y Web Crypto; servidor modular PostgreSQL existente. El cliente no requiere Node, SQLite ni Electron instalados. La instalación PWA es opcional. La evidencia 0–5 describe la arquitectura anterior; preservar contratos/datos y verificar nuevos adaptadores antes de declararlos equivalentes. Ver specs/012-unified-web. Impresión/cajón y recuperación deben validarse en navegador; no prometer sincronización con todas las pestañas cerradas.
+
+## DEC-022 — Caja accesible desde varios navegadores (24-09-2026)
+
+El usuario solicita abrir Centro y Milán sin restricción de navegador. Sustituye la instalación exclusiva de DEC-018 y el bloqueo de cambio con turno abierto de spec 015. Cada pareja caja/instalación conserva token y cadena causal propia; los acuses antiguos se asocian a su instalación sin cambiar su contenido. Se conserva un turno activo por caja y la titularidad del navegador que lo abrió. Cambiar de sucursal archiva el perfil completo y permite volver a su turno. No se copian datos locales entre navegadores ni se descartan pendientes. Ver spec 018.

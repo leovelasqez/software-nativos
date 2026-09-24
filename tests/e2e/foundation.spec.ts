@@ -1,4 +1,5 @@
 import {exerciseBrowser} from './browser-flow.ts';
+import {exerciseCajaAccess} from './caja-access-flow.ts';
 import { exerciseLoyalty } from './loyalty-flow.ts';
 import { test, expect } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
@@ -100,6 +101,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await exerciseCatalog(page, password);
   await exerciseInventoryOperations(page);
   await exercisePurchases(page);
+  await exerciseCajaAccess(page,password);
   await exercisePos(page, password);
   await page.goto('http://127.0.0.1:4320/'); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
   await exerciseLoyalty(page);
