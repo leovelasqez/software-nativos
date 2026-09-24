@@ -30,3 +30,5 @@ Extiende 001/004/005/006/012/015 y DEC-021. No agrega API ni migración. Se reut
 Actualización del 24-09-2026: cabecera unificada, estado de conexión e inventario desplegable, catálogo y pedido ampliados, controles de cantidad. El usuario autorizó expresamente commit, subida a GitHub y despliegue manual en Railway.
 
 Extensión del 24-09-2026 publicada en Railway y verificada: [evidencia](../../docs/evidence/caja-space-2026-09-24.md).
+
+REQ-016-10 / AC-016-10 (solicitud posterior del 24-09-2026): Quitar retira inmediatamente toda la línea no enviada, sin formulario, confirmación ni motivo manual. Usar order.cancel con motivo automático y preparedQuantity=0 para conservar auditoría, revisión e idempotencia; actualizar total y persistir offline. Para líneas enviadas se conserva el registro de preparación/desperdicio. Cancelar la venta completa conserva su flujo.

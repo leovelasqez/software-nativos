@@ -22,3 +22,5 @@ Evidencia: [comprobaciones, escenarios y capturas](../../docs/evidence/caja-ui.m
 | TASK-016-11 | Verificación del checkout limpio y publicación manual en Railway | 01/07/09 | Completada; 50 unitarias, 63 integraciones, E2E y Railway SUCCESS |
 
 Evidencia de la extensión y publicación: [Caja, 24-09-2026](../../docs/evidence/caja-space-2026-09-24.md).
+
+| TASK-016-12 | Quitar líneas no enviadas sin confirmación, manteniendo auditoría y persistencia | 10 | En implementación |

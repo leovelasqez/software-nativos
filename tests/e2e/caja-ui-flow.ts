@@ -71,6 +71,23 @@ export async function exerciseCajaUi(page: Page) {
   await page.getByRole('button',{name:'Disminuir cantidad de Café de revisión 01',exact:true}).click();
   await expect(quickQuantity).toHaveText('1');
   await expect(page.getByRole('dialog')).not.toBeVisible();
+  // AC-016-10: immediate removal survives offline reload and keeps the other lines.
+  await page.context().setOffline(true);
+  await page.getByRole('button',{name:'Quitar Café de revisión 12',exact:true}).click();
+  await expect(page.locator('.pos-order-line')).toHaveCount(11);
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.pos-total')).toContainText('55.000');
+  await page.reload();
+  await expect(page.locator('.pos-order-line')).toHaveCount(11);
+  await expect(page.getByRole('button',{name:'Quitar Café de revisión 12',exact:true})).toHaveCount(0);
+  await page.context().setOffline(false);
+  await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
+  await search.fill('UI-CAFE-12');
+  await page.locator('.pos-product').filter({hasText:'Café de revisión 12'}).click();
+  await page.getByRole('button',{name:'Guardar en pedido',exact:true}).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.pos-order-line')).toHaveCount(12);
+  await page.getByRole('button',{name:'Limpiar',exact:true}).click();
   await page.getByRole('button',{name:'Cantidad de Café de revisión 01',exact:true}).click();
   await expect(page.getByRole('dialog').getByLabel('Cantidad',{exact:true})).toBeFocused();
   await page.keyboard.press('Escape');
