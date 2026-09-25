@@ -1,0 +1,31 @@
+{
+  "verifiedAt": "2026-09-25T19:17:18.018Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "commit": "f7f6e1df3e23a3b5b86b8012408672e65ba840b5",
+  "deploymentId": "2aee9834-8f58-4590-bc17-306340b2fd0f",
+  "healthStatus": 200,
+  "healthBody": "{\"ok\":true}",
+  "cajaStatus": 200,
+  "assets": [
+    {
+      "name": "admin-CAMztddP.js",
+      "sha256": "d1d3bd323e9ad4acab541a596e8f00b1c64abd83b1489f2f03d7179727950b1c",
+      "matches": true
+    },
+    {
+      "name": "client-DeT-TlBs.js",
+      "sha256": "2317a787972da7abb0989bc914f0fbbeeea40f3475928ad6a8eb02801c416f1a",
+      "matches": true
+    },
+    {
+      "name": "engine-C5KbD390.js",
+      "sha256": "f07b7cfa533ff615384d17602c5db87c873e7cbc83170c2f7519644ce8520309",
+      "matches": true
+    },
+    {
+      "name": "pos-CqjV7boM.js",
+      "sha256": "c38eee6e4a36b433ee8dbb09f6b7dea45696130c2bf81cf105294c5345a9a83f",
+      "matches": true
+    }
+  ]
+}

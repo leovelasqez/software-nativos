@@ -29,3 +29,11 @@ Continuar requiere conexión. Antes de cerrar, sincronizar todos los equipos que
 | A vuelve a Milán y cierra contando 200 | Turno de la otra sucursal intacto |
 
 Las operaciones anteriores son sintéticas locales. No se abrieron, cerraron ni cobraron turnos comerciales para validar esta corrección.
+
+## Publicación
+
+Commit funcional `f7f6e1df3e23a3b5b86b8012408672e65ba840b5`, enviado a `origin/main`. Railway, servicio `nativos-web`, entorno `production`: despliegue `2aee9834-8f58-4590-bc17-306340b2fd0f` en estado `SUCCESS`.
+
+Verificación del 25-09-2026 19:17 UTC: `/health` devuelve 200 y `{"ok":true}`; `/caja` devuelve 200 y referencia la entrada compilada verificada. Los cuatro archivos JavaScript publicados coinciden por SHA-256 con la compilación probada. Detalle en [deployment.json](deployment.json). La comprobación funcional con dos usuarios de navegador se hizo con datos sintéticos; la comprobación en producción se limita a disponibilidad y versión, sin modificar turnos comerciales.
+
+Capturas revisadas: escritorio y móvil, tema claro/oscuro, botón de continuación visible sin desbordamiento horizontal. Última ejecución de la suite principal: `1 passed (2.2m)`.
