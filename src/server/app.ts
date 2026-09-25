@@ -1,3 +1,4 @@
+import { registerExcelImport } from './excel-import-api.ts';
 import { registerLoyalty } from './loyalty-api.ts';
 import Fastify from 'fastify';
 import { registerCustomers } from './customers-api.ts';
@@ -33,6 +34,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
   registerCatalog(app, pool);
+  registerExcelImport(app, pool);
   registerReports(app, pool);
   registerDashboard(app, pool);
   registerBackups(app, pool, backupDirectory, backupRestoreDatabase, backupRestoreConnection);

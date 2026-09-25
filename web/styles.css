@@ -12,3 +12,9 @@
 .loyalty-overview{padding:24px;display:grid;gap:12px}.loyalty-overview>button{justify-self:start}
 
 .loyalty-checkout{display:grid;gap:12px;padding:18px;border:1px solid var(--line);border-radius:12px}.loyalty-checkout>button{justify-self:start}
+
+.catalog-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+.catalog-import fieldset { display: grid; gap: 1rem; }
+.import-table-scroll { overflow: auto; max-height: 320px; margin-block: 1rem; }
+.import-table-scroll table { width: 100%; border-collapse: collapse; }
+.import-table-scroll th, .import-table-scroll td { text-align: left; padding: .6rem; vertical-align: top; overflow-wrap: anywhere; }

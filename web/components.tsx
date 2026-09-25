@@ -13,7 +13,7 @@ export function ThemeToggle() {
 export function Notice({ children, error = false }: { children: ReactNode; error?: boolean }) {
   return <div className={error ? 'notice error' : 'notice'} role={error ? 'alert' : 'status'}>{children}</div>;
 }
-export function Dialog({ title, onClose, children, eyebrow = 'ADMINISTRACIÓN', className = '', focusSelector }: { focusSelector?: string; className?: string; eyebrow?: string; title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({ title, onClose, children, eyebrow = 'ADMINISTRACIÓN', className = '', focusSelector, canClose = true }: { canClose?: boolean; focusSelector?: string; className?: string; eyebrow?: string; title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const el = ref.current!;
@@ -23,8 +23,8 @@ export function Dialog({ title, onClose, children, eyebrow = 'ADMINISTRACIÓN', 
     el.querySelector<HTMLElement>(focusSelector ?? 'input:not([type="checkbox"]),select,textarea')?.focus({ preventScroll: true });
     return () => { el.close(); queueMicrotask(() => { if (trigger?.isConnected) trigger.focus({preventScroll:true}); }); };
   }, []);
-  return <dialog className={className} ref={ref} aria-labelledby="dialog-title" onCancel={onClose} onClose={onClose}>
-    <header className="dialog-header"><div><span className="eyebrow">{eyebrow}</span><h2 id="dialog-title">{title}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" onClick={onClose}><Icon name="close"/></button></header>{children}</dialog>;
+  return <dialog className={className} ref={ref} aria-labelledby="dialog-title" onCancel={e => { if (!canClose) e.preventDefault(); else onClose(); }} onClose={onClose}>
+    <header className="dialog-header"><div><span className="eyebrow">{eyebrow}</span><h2 id="dialog-title">{title}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" disabled={!canClose} onClick={onClose}><Icon name="close"/></button></header>{children}</dialog>;
 }
 export function SaveForm({ children, onSave, label = 'Guardar cambios', footer, disabled = false }: { children: ReactNode; onSave: (data: FormData) => Promise<void>; label?: string; footer?: ReactNode; disabled?: boolean }) {
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);

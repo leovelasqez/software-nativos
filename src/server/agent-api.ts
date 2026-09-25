@@ -1,3 +1,4 @@
+import { insertCatalogRows } from './catalog-import-store.ts';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { FastifyInstance } from 'fastify';
@@ -240,14 +241,7 @@ export function registerAgents(app: FastifyInstance, pool: Pool) {
     if (checked.errors.length || !checked.input) throw new ApiError(422, 'invalid_import', 'Corrige las filas indicadas por la vista previa.');
     const importId = randomUUID();
     await c.query('INSERT INTO agent_catalog_imports(id,operation_id,actor_id,branch_id,data) VALUES($1,$2,$3,$4,$5)', [importId, input.operationId, actor.user.id, input.branchId, JSON.stringify({ reason: input.reason, rows: checked.rows.map(row => ({ row: row.row, productId: row.product.id, recipeId: row.recipe?.id ?? null })) })]);
-    const products: { row: number; productId: string; recipeId: string | null; version: number }[] = [];
-    for (const row of checked.rows) {
-      await c.query('INSERT INTO catalog_products(id,reference,kind,current_version,active_recipe_version) VALUES($1,$2,$3,1,$4)', [row.product.id, row.product.reference, row.product.type, row.recipe ? 1 : null]);
-      await c.query('INSERT INTO product_versions(product_id,version,data) VALUES($1,1,$2)', [row.product.id, JSON.stringify(row.product)]);
-      if (row.product.type === 'finished') await c.query("INSERT INTO inventory_items(id,name,reference,kind,base_unit) VALUES($1,$2,$3,'finished','unit')", [row.product.id, row.product.name, row.product.reference]);
-      if (row.recipe) await c.query('INSERT INTO recipe_versions(id,product_id,version,data) VALUES($1,$2,1,$3)', [row.recipe.id, row.product.id, JSON.stringify(row.recipe)]);
-      products.push({ row: row.row, productId: row.product.id, recipeId: row.recipe?.id ?? null, version: 1 });
-    }
+    const products = await insertCatalogRows(c, checked.rows);
     const response = { importId, operationId: input.operationId, products };
     await c.query('INSERT INTO catalog_operations(id,actor_id,fingerprint,response) VALUES($1,$2,$3,$4)', [input.operationId, actor.user.id, fingerprint, JSON.stringify(response)]);
     await audit(c, actor, 'agent.catalog_imported', input.reason, { importId, operationId: input.operationId, rows: products.length }, input.branchId, [input.branchId]);
