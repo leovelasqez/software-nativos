@@ -26,6 +26,8 @@ Las instrucciones nuevas del usuario prevalecen. Si cambian el alcance, actualiz
 
 El 25-09-2026 el usuario autoriza expresamente hacer commit, push y desplegar en Railway las correcciones verificadas de NAT-UAT-01/02/03. Esta autorización cubre publicar la versión en el servicio existente `nativos-web`, entorno `production`, y comprobar su salud. No implica modificar datos comerciales, configurar integraciones externas ni sustituir las comprobaciones físicas pendientes.
 
+En la continuación de esa corrección del sistema publicado, el usuario reporta el bloqueo de caja en otro computador y elige la opción 1: continuar el mismo turno. Aplicar AC-018-05/06/07 conservando responsable, base, movimientos y pendientes. La corrección se verifica con datos sintéticos y se entrega en el mismo repositorio/servicio; no abrir, cerrar ni registrar movimientos en los turnos comerciales para probarla.
+
 ## Contexto del negocio
 
 - Nativos opera en Milán y Centro, con una caja por local.

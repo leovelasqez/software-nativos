@@ -17,6 +17,7 @@ import { handleOrdersSync } from './orders-sync.ts';
 import { CatalogError, decimal, formatted } from '../catalog.ts';
 import { queueShiftClosed } from './notifications-api.ts';
 import { isWithinGrantClock } from '../authorization.ts';
+import { sharedShifts } from './shift-continuation.ts';
 
 async function key(c: PoolClient) {
   let row = (await c.query('SELECT * FROM pos_signing_key')).rows[0] as { public_key: string; private_key: string } | undefined;
@@ -75,8 +76,21 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     requireAccess(actor, device.branch_id); const now = Date.now();
     const authorization: Authorization = { principal: principal(actor.user), actorName: actor.user.name,
       grant: { version: 1, grantId: randomUUID(), actorId: actor.user.id, branchId: device.branch_id, deviceId: device.device_id, validatedAtMs: now, expiresAtMs: now + WEEK_MS, actions: actor.user.actions.filter(a => ['data.read','order.write','sale.charge','shift.open','shift.close','sale.discount','sale.cancel','sale.refund','cash.movement'].includes(a)) } };
-    const openShift = (await c.query('SELECT s.id,u.name AS "actorName" FROM pos_shifts s JOIN app_users u ON u.id=s.actor_id WHERE s.device_id=$1 AND s.closed_at IS NULL', [device.device_id])).rows[0] ?? null;
-    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift };
+    const openShift = (await c.query('SELECT s.id,s.actor_id AS "actorId",u.name AS "actorName" FROM pos_shifts s JOIN app_users u ON u.id=s.actor_id WHERE s.device_id=$1 AND s.closed_at IS NULL', [device.device_id])).rows[0] ?? null;
+    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift, sharedShifts:await sharedShifts(c,device.device_id,device.installation_id,actor.user.id) };
+  }));
+  app.post('/api/pos/shift/resume', {schema:routeSchema('/api/pos/shift/resume','post')}, req=>tx(async c=>{
+    const actor=await authenticate(c,req),b=req.body as {deviceId:string;shiftId:string};
+    const device=await terminal(c,req,b.deviceId);
+    requireAccess(actor,device.branch_id,'shift.open');requireAccess(actor,device.branch_id,'sale.charge');
+    const shift=(await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND closed_at IS NULL',[b.shiftId,device.device_id])).rows[0];
+    if(!shift)throw new ApiError(409,'shift_conflict','El turno ya está cerrado o pertenece a otra caja.');
+    if(shift.actor_id!==actor.user.id)throw new ApiError(403,'scope_denied','Inicia sesión con el responsable del turno para continuarlo.');
+    if(shift.installation_id!==device.installation_id&&!shift.resumed_installations.includes(device.installation_id)){
+      await c.query('UPDATE pos_shifts SET resumed_installations=array_append(resumed_installations,$2) WHERE id=$1',[shift.id,device.installation_id]);
+      await audit(c,actor,'pos.shift.resumed','Continuación del mismo turno en otro navegador',{shiftId:shift.id,installationId:device.installation_id},device.branch_id);
+    }
+    return {id:shift.id};
   }));
   app.post('/api/pos/redemption/cancel',{schema:{body:loyaltyContract.cancel}},req=>tx(async c=>{
     const b=req.body as {operationId:string;deviceId:string;signed:Signed};const device=await terminal(c,req,b.deviceId);const a=verifyAuthorization(b.signed,(await key(c)).public_key);if(a.grant.deviceId!==device.device_id||a.grant.branchId!==device.branch_id)throw new ApiError(403,'scope_denied','Concesión de otra caja.');
@@ -114,7 +128,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
       if ((await c.query('SELECT 1 FROM pos_shifts WHERE device_id=$1 AND closed_at IS NULL', [o.deviceId])).rowCount) throw new ApiError(409, 'shift_conflict', 'La caja ya tiene un turno activo.');
       await c.query('INSERT INTO pos_shifts(id,device_id,branch_id,actor_id,opening_cash,opened_at,installation_id) VALUES($1,$2,$3,$4,$5,$6,$7)', [payload.shiftId, o.deviceId, o.branchId, o.actorId, payload.openingCash, occurred,device.installation_id]);
     } else {
-      const shift = (await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND installation_id=$4 AND closed_at IS NULL', [payload.shiftId, o.deviceId, o.actorId,device.installation_id])).rows[0];
+      const shift = (await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND (installation_id=$4 OR $4=ANY(resumed_installations)) AND closed_at IS NULL', [payload.shiftId, o.deviceId, o.actorId,device.installation_id])).rows[0];
       if (!shift) throw new ApiError(409, 'shift_conflict', 'El turno no pertenece al usuario o ya está cerrado.');
       if (occurred.getTime() < shift.opened_at.getTime()) throw new ApiError(422, 'invalid_time', 'La operación precede a la apertura.');
       if (payload.kind === 'sale.charge') {

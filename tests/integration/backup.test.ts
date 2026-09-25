@@ -23,6 +23,7 @@ test('AC-011-04/06 — dueño crea y verifica respaldo lógico; artefacto altera
     await db.pool.query("INSERT INTO inventory_items(id,name,reference,kind,base_unit) VALUES('backup-item','Artículo sintético','BK-1','raw','g')");
     await db.pool.query("INSERT INTO inventory_cost_reconciliations(id,warehouse_id,item_id,actor_id,unit_cost,effective_from,reason) VALUES('backup-cost','centro-venta','backup-item',$1,2,'2026-09-25','Conciliación sintética')",[actor]);
     await db.pool.query("INSERT INTO pos_shifts(id,device_id,branch_id,actor_id,opening_cash,opened_at) VALUES('backup-shift','centro-caja','centro',$1,150000,now())",[actor]);
+    await db.pool.query("UPDATE pos_shifts SET resumed_installations=ARRAY['backup-resumed'] WHERE id='backup-shift'");
     await db.pool.query("INSERT INTO pos_sales(id,order_id,shift_id,device_id,branch_id,actor_id,receipt_number,data,cash_applied,occurred_at,review_required) VALUES('backup-sale','backup-order','backup-shift','centro-caja','centro',$1,'backup-receipt','{}',10000,now(),false)",[actor]);
     await db.pool.query("INSERT INTO pos_order_events(id,device_id,actor_id,data) VALUES('backup-event','centro-caja',$1,'{}')",[actor]);
     await db.pool.query("INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reason,sale_id,event_id) VALUES('backup-movement','backup-item','centro-venta','sale',-100,'Venta sintética','backup-sale','backup-event')");
@@ -32,6 +33,7 @@ test('AC-011-04/06 — dueño crea y verifica respaldo lógico; artefacto altera
     const databaseTables = (await db.pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'schema_migrations'")).rows.map(row=>row.tablename).sort();
     assert.deepEqual(Object.keys(snapshot.rows).sort(),databaseTables, 'Every business table must be covered');
     assert.equal(snapshot.rows.inventory_cost_reconciliations.length,1);
+    assert.deepEqual(snapshot.rows.pos_shifts[0].resumed_installations,['backup-resumed']);
     const listed = await app.inject({ method: 'GET', url: '/api/backups', headers: { host: '127.0.0.1:4360', cookie: headers.cookie } }); assert.equal(listed.statusCode, 200); assert.deepEqual(listed.json().items.map((item: { id: string }) => item.id), [manifest.id]);
     const verified = await app.inject({ method: 'POST', url: `/api/backups/${manifest.id}/verify`, headers }); assert.equal(verified.statusCode, 200, verified.body);
     const missingConfirmation = await app.inject({ method: 'POST', url: `/api/backups/${manifest.id}/restore-check`, headers }); assert.equal(missingConfirmation.statusCode, 400, missingConfirmation.body);

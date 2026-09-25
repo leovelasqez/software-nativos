@@ -77,12 +77,39 @@ test('AC-018-01/02/04 — migración, navegadores independientes, permisos y tur
       assert.equal((await send(milan,{kind:'shift.open',shiftId:randomUUID(),openingCash:'700'})).r.statusCode,200);
       assert.equal((await db.pool.query('SELECT count(*) FROM pos_shifts WHERE closed_at IS NULL')).rows[0].count,'2');
     });
+    await t.test('AC-018-05/06/07 — continuar, sincronizar pendientes sin duplicar y cerrar el mismo turno',async()=>{
+      const shiftId=(await authorize(first)).openShift.id;
+      const movement=(amount:string)=>({kind:'cash.movement',shiftId,movementId:randomUUID(),class:'income',method:'cash',amount,reason:'Prueba de continuación',reversesMovementId:null});
+      const pending=envelope(first,movement('100'));
+      assert.equal((await send(second,movement('50'))).r.statusCode,409);
+      assert.equal((await request('/api/pos/shift/resume',{deviceId:milan.deviceId,shiftId},milan.token)).statusCode,409);
+      for(let i=0;i<2;i++)assert.equal((await request('/api/pos/shift/resume',{deviceId:second.deviceId,shiftId},second.token)).statusCode,200);
+      assert.equal((await db.pool.query("SELECT count(*) FROM audit_events WHERE action='pos.shift.resumed'")).rows[0].count,'1');
+      let remote=(await authorize(second)).sharedShifts[0];
+      assert.equal(remote.shift.id,shiftId);assert.equal(remote.shift.openingCash,'500');assert.equal(remote.shift.expected,'500');
+      assert.equal((await request('/api/pos/sync',pending,first.token)).statusCode,200);first.sequence++;first.previous=pending.operation.operationId;
+      assert.equal((await request('/api/pos/sync',pending,first.token)).statusCode,200);
+      const added=await send(second,movement('50'));assert.equal(added.r.statusCode,200,added.r.body);
+      assert.equal((await request('/api/pos/sync',added.body,second.token)).statusCode,200);
+      for(const client of [first,second]){remote=(await authorize(client)).sharedShifts[0];assert.equal(remote.shift.expected,'650');assert.equal(remote.cashMovements.length,2);}
+      const late=envelope(first,movement('25'));
+      const closed=await send(second,{kind:'shift.close',shiftId,counted:'650'});assert.equal(closed.r.statusCode,200,closed.r.body);
+      remote=(await authorize(first)).sharedShifts[0];assert.ok(remote.shift.closedAtMs);assert.equal(remote.shift.expected,'650');assert.equal(remote.shift.difference,'0');
+      assert.equal((await authorize(first)).openShift,null);
+      assert.equal((await request('/api/pos/sync',late,first.token)).statusCode,409);
+      assert.equal((await authorize(first)).snapshot.serverSequence,first.sequence);
+      assert.equal((await db.pool.query('SELECT count(*) FROM pos_cash_movements WHERE shift_id=$1',[shiftId])).rows[0].count,'2');
+      const persisted=(await db.pool.query('SELECT * FROM pos_shifts WHERE id=$1',[shiftId])).rows[0];
+      assert.equal(persisted.installation_id,first.installationId);assert.deepEqual(persisted.resumed_installations,[second.installationId]);
+    });
     await t.test('Activar otro navegador requiere dueño; sucursal y equipo conservan permisos',async()=>{
+      const ownShift=randomUUID();assert.equal((await send(first,{kind:'shift.open',shiftId:ownShift,openingCash:'0'})).r.statusCode,200);
       const user=await request('/api/users',{name:'Cajero prueba',login:'access-cashier',password,role:'cashier',branchIds:['centro'],reason:'Prueba de acceso'});assert.equal(user.statusCode,201,user.body);
       const login=await request('/api/login',{login:'access-cashier',password});cookie=`nativos_session=${login.cookies[0]!.value}`;
       assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:randomUUID()})).statusCode,403);
       assert.equal((await request('/api/pos/authorize',{deviceId:'milan-caja',previous:null},milan.token)).statusCode,403);
       assert.equal((await request('/api/pos/authorize',{deviceId:'centro-caja',previous:null},'x'.repeat(43))).statusCode,403);
+      assert.equal((await request('/api/pos/shift/resume',{deviceId:second.deviceId,shiftId:ownShift},second.token)).statusCode,403);
     });
   }finally{await app.close();await db.stop();}
 });

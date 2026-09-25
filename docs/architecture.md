@@ -4,6 +4,8 @@ Estado: transición al sitio web único autorizada el 15-09-2026 (DEC-021). Los 
 
 ## Arquitectura vigente
 
+Actualización de Caja, 25-09-2026: [spec 018](../specs/018-caja-access/spec.md), AC-018-05/06/07, permite al mismo responsable continuar un turno desde otra instalación activada. Una membresía explícita en `pos_shifts` preserva el turno y las cadenas de sincronización por instalación. `/pos/authorize` proyecta el libro central; IndexedDB lo incorpora solamente sin operaciones propias pendientes. El cliente agrega los movimientos locales aún ausentes de esa proyección por identificador, incluso si el acuse llegó antes de la descarga siguiente. El cierre compartido necesita conexión; los conflictos tardíos conservan la cola para conciliación.
+
 Un sitio React/TypeScript y API modular Node/PostgreSQL. Administración en `/`, Caja en `/caja`, misma cookie de sesión y navegación. El navegador guarda Caja en IndexedDB con transacciones estrictas y Web Locks entre pestañas. Web Crypto verifica las concesiones Ed25519 centrales y cifra el agregado con AES-GCM y clave no exportable; verificador offline PBKDF2 con sal por usuario. Esta custodia no equivale a DPAPI ni protege ante control total del perfil o JavaScript del mismo origen.
 
 El service worker precarga solamente HTML/JS/CSS públicos; las respuestas API, sesiones y costos no se cachean. Actualizaciones esperan al cierre de clientes; no borran IndexedDB. La cola conserva protocolo v1/v2/v3 y un acuse exacto. Sin conexión se recupera el sitio en el mismo origen/perfil; administración y canje siguen online. El sitio cerrado no garantiza sincronización en segundo plano.

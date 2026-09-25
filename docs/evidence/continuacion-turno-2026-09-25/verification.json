@@ -1,0 +1,26 @@
+{
+  "unitTests": 56,
+  "browserSuite": "foundation.spec.ts: 1 passed (2.2m), two independent Edge contexts",
+  "verifiedAt": "2026-09-25T14:14:32.2703571-05:00",
+  "integrationTests": 66,
+  "assets": [
+    {
+      "sha256": "d1d3bd323e9ad4acab541a596e8f00b1c64abd83b1489f2f03d7179727950b1c",
+      "name": "admin-CAMztddP.js"
+    },
+    {
+      "sha256": "2317a787972da7abb0989bc914f0fbbeeea40f3475928ad6a8eb02801c416f1a",
+      "name": "client-DeT-TlBs.js"
+    },
+    {
+      "sha256": "f07b7cfa533ff615384d17602c5db87c873e7cbc83170c2f7519644ce8520309",
+      "name": "engine-C5KbD390.js"
+    },
+    {
+      "sha256": "c38eee6e4a36b433ee8dbb09f6b7dea45696130c2bf81cf105294c5345a9a83f",
+      "name": "pos-CqjV7boM.js"
+    }
+  ],
+  "baseCommit": "bdff9d117862b5c5aabf99bfa8660f45c2b61ba2",
+  "focusedIntegrationTests": 6
+}
