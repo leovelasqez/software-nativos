@@ -1,0 +1,296 @@
+{
+  "id": "8490e223-c6f0-4a4b-a05a-e85900dd9a47",
+  "destination": "uat_restore_check",
+  "coverage": "server-synchronized-only",
+  "reconciled": true,
+  "tables": [
+    {
+      "table": "branches",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "warehouses",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "devices",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "app_users",
+      "sourceRows": 3,
+      "restoredRows": 3,
+      "contentMatches": true
+    },
+    {
+      "table": "sessions",
+      "sourceRows": 4,
+      "restoredRows": 4,
+      "contentMatches": true
+    },
+    {
+      "table": "login_attempts",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "audit_events",
+      "sourceRows": 188,
+      "restoredRows": 188,
+      "contentMatches": true
+    },
+    {
+      "table": "catalog_products",
+      "sourceRows": 254,
+      "restoredRows": 254,
+      "contentMatches": true
+    },
+    {
+      "table": "product_versions",
+      "sourceRows": 254,
+      "restoredRows": 254,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_items",
+      "sourceRows": 9,
+      "restoredRows": 9,
+      "contentMatches": true
+    },
+    {
+      "table": "recipe_versions",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_minimums",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "catalog_operations",
+      "sourceRows": 156,
+      "restoredRows": 156,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_signing_key",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_terminals",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_snapshots",
+      "sourceRows": 15,
+      "restoredRows": 15,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_shifts",
+      "sourceRows": 121,
+      "restoredRows": 121,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_sales",
+      "sourceRows": 4,
+      "restoredRows": 4,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_receipts",
+      "sourceRows": 24,
+      "restoredRows": 24,
+      "contentMatches": true
+    },
+    {
+      "table": "customers",
+      "sourceRows": 120,
+      "restoredRows": 120,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_orders_v2",
+      "sourceRows": 6,
+      "restoredRows": 6,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_order_events",
+      "sourceRows": 19,
+      "restoredRows": 19,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_refunds",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "loyalty_rules",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "loyalty_members",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "loyalty_ledger",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "loyalty_cancellations",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "suppliers",
+      "sourceRows": 121,
+      "restoredRows": 121,
+      "contentMatches": true
+    },
+    {
+      "table": "purchases",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "purchase_lines",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_transfers",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_transfer_lines",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_transfer_events",
+      "sourceRows": 6,
+      "restoredRows": 6,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_transfer_event_lines",
+      "sourceRows": 6,
+      "restoredRows": 6,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_counts",
+      "sourceRows": 3,
+      "restoredRows": 3,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_count_lines",
+      "sourceRows": 3,
+      "restoredRows": 3,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_internal_consumptions",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_internal_consumption_lines",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "pos_cash_movements",
+      "sourceRows": 3,
+      "restoredRows": 3,
+      "contentMatches": true
+    },
+    {
+      "table": "agent_credentials",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "agent_inventory_imports",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "agent_catalog_imports",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "notification_intents",
+      "sourceRows": 2,
+      "restoredRows": 2,
+      "contentMatches": true
+    },
+    {
+      "table": "notification_attempts",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "notification_operations",
+      "sourceRows": 0,
+      "restoredRows": 0,
+      "contentMatches": true
+    },
+    {
+      "table": "excel_catalog_imports",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_cost_reconciliations",
+      "sourceRows": 1,
+      "restoredRows": 1,
+      "contentMatches": true
+    },
+    {
+      "table": "inventory_movements",
+      "sourceRows": 33,
+      "restoredRows": 33,
+      "contentMatches": true
+    }
+  ]
+}

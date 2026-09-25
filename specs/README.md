@@ -142,3 +142,7 @@ REQ-016-01 a 07 / AC-016-01 a 07: [especificación](016-caja-ui/spec.md), [plan]
 ## Mantenimiento 018 — Acceso a ambas cajas
 
 [Spec 018](018-caja-access/spec.md), plan y tareas: varios navegadores por caja, secuencia y acuses por instalación, conservación de tokens anteriores y cambio de sucursal con turno abierto. Solicitud del 24-09-2026. Pruebas: `tests/integration/caja-access.test.ts` y `tests/e2e/caja-access-flow.ts`.
+
+## Correcciones de aceptación — 25-09-2026
+
+NAT-UAT-01/02/03: AC-003-09/10/11 y REQ-003-04 incluyen operaciones de terminados en interfaz y servidor; AC-008-05 garantiza selectores paginados completos; AC-011-04/06 restaura dependencias y concilia contenido de las 48 tablas. [Evidencia de corrección](../docs/evidence/correccion-flujos-2026-09-25.md): 18 casos adicionales de navegador aprobados, regresiones de integración y límites operativos. Estado: implementado y verificado localmente, sin nuevo despliegue por este trabajo.

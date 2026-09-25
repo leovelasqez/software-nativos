@@ -39,4 +39,6 @@ Libro de movimientos, saldo derivado, conversión y relación con compra/venta/d
 - AC-003-10 → REQ-003-02. Dado un traslado despachado, cuando se recibe parcialmente y se reintenta la misma recepción, entonces el destino aumenta solo por las unidades recibidas una vez y no supera las despachadas.
 - AC-003-11 → REQ-003-01/02. Dado un conteo físico diferente al saldo, cuando se confirma con motivo, entonces se conserva conteo y se agrega un ajuste causal sin editar el libro anterior.
 
+Precisión UAT del 25-09-2026: AC-003-09/10/11 y el consumo interno de REQ-003-04 se aplican también a productos terminados. Comprar tres unidades agrega tres; despachar dos y recibir una más una conserva los saldos de ambas bodegas; conteo y consumo registran movimientos causales sin crear ventas. Los permisos, la conversión de unidades y los reintentos conservan sus reglas.
+
 Costeo promedio, valoración de salidas y márgenes siguen bloqueados por DEC-005; ver el plan de incremento 6 y `contracts/inventory-operations-v1.md`.

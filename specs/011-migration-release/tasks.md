@@ -9,3 +9,5 @@ Estado: completado en respaldo/restauración local; política externa bloqueada 
 | TASK-INC6-BKP-03 | Restauración aislada y conciliación sintética | AC-011-04/06 | 02 | Base sintética restaurada | Verificado — confirmación explícita, destino nuevo, migración, restauración y conciliación en `backup.test.ts` |
 | TASK-INC6-BKP-04 | Registro operativo y evidencia | REQ-011-04 | 02–03 | Evidencia y límites documentados | Verificado — pantalla de dueño, auditoría y evidencia de límites actualizada |
 | TASK-INC6-BKP-05 | Retención/ubicación externa/RPO-RTO | REQ-011-04 | DEC-012 | Decisión operativa aprobada | Bloqueado |
+
+- [x] TASK-UAT-BKP-01 — Corregir NAT-UAT-01, coherencia de instantánea, cobertura de costos y conciliación de contenido; verificar restauración transaccional con referencias comerciales (AC-011-04/06). Integración con rollback y navegador con 48 tablas conciliadas; [evidencia](../../docs/evidence/correccion-flujos-2026-09-25.md). Sin certificación de PITR externo.

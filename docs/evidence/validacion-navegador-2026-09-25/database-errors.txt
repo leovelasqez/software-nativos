@@ -1,0 +1,2 @@
+2026-09-25 09:33:52.513 -05 [22968] ERROR:  insert or update on table "inventory_movements" violates foreign key constraint "inventory_movements_sale_id_fkey"
+2026-09-25 09:33:52.513 -05 [22968] DETAIL:  Key (sale_id)=(9e400f0c-1376-4b5b-b11c-df86b5a0c37c) is not present in table "pos_sales".

@@ -24,6 +24,8 @@ La implementación local está autorizada por el usuario desde el 13-09-2026. Es
 
 Las instrucciones nuevas del usuario prevalecen. Si cambian el alcance, actualiza el plan y estas instrucciones cuando sea pertinente. No recuperes reglas descartadas de versiones anteriores.
 
+El 25-09-2026 el usuario autoriza expresamente hacer commit, push y desplegar en Railway las correcciones verificadas de NAT-UAT-01/02/03. Esta autorización cubre publicar la versión en el servicio existente `nativos-web`, entorno `production`, y comprobar su salud. No implica modificar datos comerciales, configurar integraciones externas ni sustituir las comprobaciones físicas pendientes.
+
 ## Contexto del negocio
 
 - Nativos opera en Milán y Centro, con una caja por local.

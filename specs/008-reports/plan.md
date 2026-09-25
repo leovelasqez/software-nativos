@@ -23,3 +23,7 @@ No duplica hechos comerciales: lee libros y comprobantes inmutables existentes. 
 ## Pruebas y riesgos
 
 Probar 120 filas con página de 20 y exportación completa; permisos de cajero; filtros de sucursal; separación de propina/domicilio/devolución; coincidencia pantalla-Excel; y aviso de antigüedad de sucursal. DEC-005 bloquea solo columnas de costo/margen; DEC-012 exige medir volumen y retención antes de optimizar o prometer escalabilidad.
+
+## Correcciones de aceptación — 25-09-2026
+
+NAT-UAT-03 / REQ-008-01/04: reutilizar la paginación completa del catálogo para productos, clientes y proveedores, conservar el alcance por sede y descartar respuestas de la sede anterior. Verificar catálogos mayores de 100 entradas y filtrado/exportación del producto que queda fuera de la primera página.

@@ -1,0 +1,61 @@
+Ir al contenido
+nativos.
+VIDA Y BIENESTAR
+TU ESPACIO
+Resumen
+Caja y ventas
+Sucursales y bodegas
+Productos
+Recetas
+Inventario
+Compras y proveedores
+Traslados
+Conteos y ajustes
+Clientes
+Fidelización
+Informes
+Usuarios y roles
+Auditoría
+Notificaciones
+Respaldo y recuperación
+Módulos en preparación
+P
+PRUEBA UAT Dueño
+Dueño
+Conteos y ajustes
+Sucursal
+Centro
+Milán
+Claro
+INVENTARIO FÍSICO
+Conteos y ajustes
+
+El sistema conserva la diferencia como ajuste causal; no modifica movimientos anteriores.
+
++ Consumo interno
++ Registrar conteo
+Bodega
+Bodega de venta
+
+Registra cantidades en su unidad base. El saldo esperado se calcula en el servidor al confirmar.
+
+ADMINISTRACIÓN
+Registrar conteo físico
+
+Incluye solo artículos que acabas de contar.
+
+Artículo 1
+Selecciona
+PRUEBA L (ml)
+PRUEBA L2 (ml)
+PRUEBA P (g)
+PRUEBA V (unit)
+PRUEBA A (g)
+Cantidad contada
+Unidad
++ Agregar artículo
+Motivo del cambio
+Los cambios quedan registrados.
+Confirmar conteo
+Nativos · Vida y bienestar
+Administración y Caja · Sitio web

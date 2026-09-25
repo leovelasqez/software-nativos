@@ -27,3 +27,5 @@ Definir filtros, semántica de fechas/turnos, inclusión de anulaciones y devolu
 ## Incremento 6 — alcance preparado
 
 El incremento implementará las consultas y exportaciones que no dependan de costos, junto con la antigüedad de sincronización por sucursal. Costos, costo de ventas y margen permanecen pendientes de DEC-005; retención y estrategia de gran volumen permanecen sujetas a DEC-012. Ver `plan.md`, `tasks.md` y `../../contracts/reports-v1.md`.
+
+- AC-008-05 → REQ-008-01/04. Con más de 100 productos, clientes o proveedores autorizados, los selectores permiten elegir registros de cualquier página; al cambiar de sede no quedan opciones de la anterior y la consulta/exportación conserva el filtro elegido.

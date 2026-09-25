@@ -33,3 +33,8 @@ Un encargado solo puede registrar y consultar compras de su sucursal, incluidos 
 Contratos previstos: `contracts/inventory-operations-v1.md` y su esquema OpenAPI/JSON. Exponen filtros paginados, errores 400/401/403/404/409 y respuestas sin costos cuando el actor no posee `purchase.read` en la sucursal solicitada. Las conversiones se validan con el mismo dominio de catálogo; no se infieren empaques ni densidades.
 
 Pruebas requeridas antes de marcar esta fase: conversión de kg a g; compra de encargado de su local con auditoría; rechazo de compra fuera de sucursal/cajero; despacho, recepción parcial y reintento; conteo que produce ajuste trazable; rollback cuando falla la auditoría; y flujo web con teclado, móvil y ambos temas. DEC-005 bloquea únicamente la tarea de valoración promedio.
+
+## Correcciones de aceptación — 25-09-2026
+
+Autorización: el usuario solicita corregir los fallos encontrados y repetir las pruebas.
+NAT-UAT-02 / REQ-003-01/02 / AC-003-09/10/11: incluir productos terminados activos en los selectores de compras, traslados y conteos/consumo; conservar filtros de archivo, permisos y unidades existentes. Verificar cada operación completa en navegador y saldos en servidor.

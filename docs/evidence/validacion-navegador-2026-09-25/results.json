@@ -1,0 +1,126 @@
+{
+  "runId": "2026-09-25T14-32-47-117Z",
+  "origin": "http://127.0.0.1:59189",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "B02",
+      "name": "Terminado, cambio, consulta de copia y consumo único",
+      "state": "PASS",
+      "detail": "T 10→8; efectivo neto 10000; cambio 10000; una venta después de copia/sincronización.",
+      "seconds": 1.043
+    },
+    {
+      "id": "B03",
+      "name": "Comanda, sustitución y adicional con consumo exacto",
+      "state": "PASS",
+      "detail": "Comanda sin consumo. Cobro13000: P900 L2000 L2 800 V9 A180.",
+      "seconds": 1.715
+    },
+    {
+      "id": "B06",
+      "name": "Cliente, domicilio, descuento, propina y canje: total 21800",
+      "state": "PASS",
+      "detail": "Pedido preservado al crear cliente. Total21800, propina1800, envío3000, 17 puntos; saldo417.",
+      "seconds": 3.324
+    },
+    {
+      "id": "B08",
+      "name": "Cancelar tres preparados: dos desperdiciados y uno sin consumo",
+      "state": "PASS",
+      "detail": "Consumo por desperdicio200g, sin venta; reintento de sync no duplica.",
+      "seconds": 1.25
+    },
+    {
+      "id": "B17",
+      "name": "Archivar/restaurar conserva ventas y existencias",
+      "state": "PASS",
+      "detail": "Archivo y restauración por UI; saldo e historia de ventas idénticos.",
+      "seconds": 0.695
+    },
+    {
+      "id": "B20",
+      "name": "Conciliación de costo desconocido con historia conservada",
+      "state": "PASS",
+      "detail": "Costo actual2; sin cambio de existencias ni ventas previas.",
+      "seconds": 1.262
+    },
+    {
+      "id": "B15-T",
+      "name": "Conteo físico de producto terminado",
+      "state": "FAIL",
+      "detail": "Producto terminado PRUEBA T no aparece en los artículos contables del formulario",
+      "seconds": 0.632
+    },
+    {
+      "id": "B14-T",
+      "name": "Traslado de producto terminado",
+      "state": "FAIL",
+      "detail": "Producto terminado PRUEBA T no aparece en los artículos trasladables",
+      "seconds": 0.521
+    },
+    {
+      "id": "B19",
+      "name": "Excel descarga todas las filas, además de las veinte visibles",
+      "state": "PASS",
+      "detail": "Pantalla20 filas; Excel121 filas completas en Contexto/Datos/Totales. Fixture volumétrica preparada, descarga por UI.",
+      "seconds": 1.396
+    },
+    {
+      "id": "BX01",
+      "name": "Importación Excel: vista previa, alta y referencia duplicada",
+      "state": "PASS",
+      "detail": "Vista previa sin altas; confirmación2 productos/1receta/2insumos; duplicado rechazado sin nuevas altas.",
+      "seconds": 1.31
+    },
+    {
+      "id": "B21",
+      "name": "Cajero y encargado: restricciones visibles y compras de su sede",
+      "state": "PASS",
+      "detail": "Roles limitados a Centro sin costos/ajustes de puntos. Encargado compra1000g en unidad base; cajero sin acción de compra.",
+      "seconds": 5.529
+    },
+    {
+      "id": "B13-T",
+      "name": "Compra de producto terminado",
+      "state": "FAIL",
+      "detail": "Producto terminado PRUEBA T no aparece en los artículos comprables",
+      "seconds": 0.64
+    },
+    {
+      "id": "B14-R",
+      "name": "Insumo: despacho, dos recepciones y rechazo del exceso",
+      "state": "PASS",
+      "detail": "Salida10; entrada6+4; intento excedente5 cuando faltaban4 rechazado, sin movimiento.",
+      "seconds": 1.8
+    },
+    {
+      "id": "B15-R",
+      "name": "Insumo: conteo causal y consumo interno sin venta",
+      "state": "PASS",
+      "detail": "A 180→178 por conteo→176 por consumo interno; sin venta.",
+      "seconds": 1.239
+    },
+    {
+      "id": "B16",
+      "name": "Venta con existencia negativa y alerta",
+      "state": "PASS",
+      "detail": "P50g; venta consume100g; saldo-50g, alerta visible, sin doble consumo al sincronizar.",
+      "seconds": 1.99
+    },
+    {
+      "id": "B12",
+      "name": "Retiro, contrapartida y cierre offline con diferencia",
+      "state": "PASS",
+      "detail": "Base150000+cobros54800-retiro50000=154800; gasto1000 y contrapartida conservados; contado148800, diferencia-6000. Cierre offline sincronizado, movimientos offline bloqueados.",
+      "seconds": 16.764
+    },
+    {
+      "id": "B24",
+      "name": "Crear, verificar y restaurar respaldo aislado desde navegador",
+      "state": "FAIL",
+      "detail": "{\"code\":\"invalid_reference\",\"message\":\"Revisa las referencias y los permisos.\"}\n\n400 !== 200\n",
+      "seconds": 3.218
+    }
+  ]
+}

@@ -8,6 +8,8 @@ Toda mutación contiene `branchId`, UUID `operationId` y `reason` no vacío de a
 
 Importes y cantidades son cadenas decimales positivas con hasta seis posiciones. Las unidades de entrada se convierten con `toBase`; g/kg y ml/l son implícitas, otra conversión exige factor positivo y fuente. El contrato nunca transmite costo promedio, costo de receta o margen a un rol sin acceso explícito.
 
+Compras, traslados, conteos y consumos internos aceptan materias primas, consumibles y productos terminados registrados como artículos de inventario. Los terminados conservan su unidad base y los mismos controles de permisos, sucursal, conversión e idempotencia.
+
 ## Recursos
 
 - `POST /api/suppliers`: crea proveedor con nombre, documento/contacto opcionales y sucursal propietaria.

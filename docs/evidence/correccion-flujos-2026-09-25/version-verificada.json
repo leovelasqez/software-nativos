@@ -1,0 +1,48 @@
+{
+  "baseCommit": "601ef7010fef6b9b7fb74f90194d160133d6ff97",
+  "browserRun": "2026-09-25T15-04-50-429Z",
+  "environment": "local-synthetic",
+  "deployed": false,
+  "files": [
+    {
+      "path": "src/server/backup-api.ts",
+      "sha256": "3e638a8abb7b34b71753f8960d53fab9797a494facf8a0e274717cff4ea47191"
+    },
+    {
+      "path": "src/server/catalog-api.ts",
+      "sha256": "1950657506e00a7c448bdd798c3d19292c256d2ad796d44c4f6290670e13fa34"
+    },
+    {
+      "path": "web/Catalog.tsx",
+      "sha256": "24f446be0f9ab6baedc7f43959991c7c3fa3c4ad22741a2dbcdab8c91b88e427"
+    },
+    {
+      "path": "web/Purchases.tsx",
+      "sha256": "9766961df2c794aaedd9547a6a3846f324fdf0ddff6833f4427aac4c71e546be"
+    },
+    {
+      "path": "web/InventoryOperations.tsx",
+      "sha256": "4cc08761dca9fb1af11c2f218a5646fa0cfbd64975fb0d1b21470c3b4dba6dcf"
+    },
+    {
+      "path": "web/Reports.tsx",
+      "sha256": "1c9f1d80b728909df7f03563acf543b98fee4057fdcf042cb7eab4e410c789ec"
+    },
+    {
+      "path": "tests/integration/backup.test.ts",
+      "sha256": "42eec48cdb8e240f88c9d744f58807f9f2253be46eb7fb52e6fcfc2596d41988"
+    },
+    {
+      "path": "tests/integration/catalog.test.ts",
+      "sha256": "277f8f6481af9b0dd6fbe5d76b82902341c6e72dd70e30b101eb3d7cfe3571d3"
+    },
+    {
+      "path": "scripts/validate-workflows.ts",
+      "sha256": "91e1bef601ef74e76d7b9ae18fd161150dc15e59a910047136403e70dac656c6"
+    },
+    {
+      "path": "package.json",
+      "sha256": "9da3f1704ac95538e78a9231034bca7c54f129e25635987c644b350d4c4b56eb"
+    }
+  ]
+}

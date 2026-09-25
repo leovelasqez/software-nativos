@@ -1,0 +1,80 @@
+Ir al contenido
+nativos.
+VIDA Y BIENESTAR
+TU ESPACIO
+Resumen
+Caja y ventas
+Sucursales y bodegas
+Productos
+Recetas
+Inventario
+Compras y proveedores
+Traslados
+Conteos y ajustes
+Clientes
+Fidelización
+Informes
+Usuarios y roles
+Auditoría
+Notificaciones
+Respaldo y recuperación
+Módulos en preparación
+P
+PRUEBA UAT Dueño
+Dueño
+Compras y proveedores
+Sucursal
+Centro
+Milán
+Claro
+ABASTECIMIENTO
+Compras y proveedores
+
+Compras pagadas de esta sucursal y sus entradas de inventario.
+
++ Proveedor
++ Registrar compra
+Compras registradas
+1 compra
+EFECTIVO
+PRUEBA proveedor UAT
+
+25/09/2026, 12:00 p. m. · Bodega de venta
+
+1 artículo
+$ 2.000
+ADMINISTRACIÓN
+Registrar compra pagada
+Proveedor
+Selecciona un proveedor
+PRUEBA proveedor UAT
+Bodega de entrada
+Bodega de venta
+Fecha de compra
+Medio registrado
+Efectivo
+Transferencia
+Tarjeta
+Otro
+Artículo 1
+Selecciona un artículo
+PRUEBA L (ml)
+Vaso sintético (unit)
+PRUEBA L2 (ml)
+PRUEBA P (g)
+PRUEBA V (unit)
+PRUEBA A (g)
+Mango sintético (g)
+Cantidad 1
+Unidad
+Precio unitario 1 (COP)
++ Agregar artículo
+Importe pagado (debe coincidir con las líneas)
+
+Suma de líneas actual: $ 0. El importe se valida en el servidor.
+
+Motivo del cambio
+Los cambios quedan registrados.
+Registrar compra
+Nativos · Vida y bienestar
+Administración y Caja · Sitio web

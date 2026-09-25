@@ -227,7 +227,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     let total = 0n;
     const lines = b.lines.map(line => {
       const item = items.get(line.itemId); if (!item) throw notFound();
-      if (!line || typeof line.unit !== 'string' || item.kind === 'finished') throw new CatalogError('Selecciona una materia prima o consumible y su unidad.');
+      if (!line || typeof line.unit !== 'string') throw new CatalogError('Selecciona un artículo y su unidad.');
       const baseQuantity = toBase(line.quantity, line.unit, item.baseUnit, line.conversion);
       if (decimal(line.quantity) <= 0n || decimal(line.unitPrice) < 0n) throw new CatalogError('Cantidad y precio inválidos.');
       const lineTotal = multiply(line.quantity, line.unitPrice); total += decimal(lineTotal);
@@ -274,7 +274,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     requireAccess(actor, target.branch_id, 'inventory.manage');
     if (b.sourceWarehouseId === b.targetWarehouseId) throw new CatalogError('El origen y destino del traslado deben ser distintos.');
     const items = new Map((await c.query<Item>(itemSelect + ' WHERE id=ANY($1::text[])', [b.lines.map(l => l.itemId)])).rows.map(i => [i.id, i]));
-    const lines = b.lines.map(line => { const item = items.get(line.itemId); if (!item || item.kind === 'finished') throw new CatalogError('Selecciona una materia prima o consumible.'); const baseQuantity = toBase(line.quantity, line.unit, item.baseUnit, line.conversion); if (decimal(baseQuantity) <= 0n) throw new CatalogError('La cantidad debe ser mayor que cero.'); return { ...line, baseQuantity }; });
+    const lines = b.lines.map(line => { const item = items.get(line.itemId); if (!item) throw new CatalogError('Selecciona un artículo de inventario.'); const baseQuantity = toBase(line.quantity, line.unit, item.baseUnit, line.conversion); if (decimal(baseQuantity) <= 0n) throw new CatalogError('La cantidad debe ser mayor que cero.'); return { ...line, baseQuantity }; });
     const id = randomUUID(); await c.query('INSERT INTO inventory_transfers(id,source_warehouse_id,target_warehouse_id,actor_id,data) VALUES($1,$2,$3,$4,$5)', [id, b.sourceWarehouseId, b.targetWarehouseId, actor.user.id, JSON.stringify({ reason: b.reason })]);
     const persisted = lines.map(line => ({ ...line, id: randomUUID() }));
     for (const line of persisted) await c.query('INSERT INTO inventory_transfer_lines(id,transfer_id,item_id,base_quantity,entry) VALUES($1,$2,$3,$4,$5)', [line.id, id, line.itemId, line.baseQuantity, JSON.stringify({ quantity: line.quantity, unit: line.unit, conversion: line.conversion })]);
@@ -314,7 +314,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
     const b = req.body as Common & { lines: { itemId: string; quantity: string; unit: string; conversion: { factor: string; source: string } | null }[] }; const warehouseId = (req.params as Params).id; await warehouse(c, warehouseId, b.branchId);
     if (!Array.isArray(b.lines) || !b.lines.length || b.lines.length > 100 || new Set(b.lines.map(l => l.itemId)).size !== b.lines.length) throw new CatalogError('Incluye artículos distintos para el consumo interno.');
     const items = new Map((await c.query<Item>(itemSelect + ' WHERE id=ANY($1::text[])', [b.lines.map(l => l.itemId)])).rows.map(i => [i.id, i]));
-    const lines = b.lines.map(line => { const item = items.get(line.itemId); if (!item || item.kind === 'finished') throw new CatalogError('Selecciona una materia prima o consumible.'); const baseQuantity = toBase(line.quantity, line.unit, item.baseUnit, line.conversion); if (decimal(baseQuantity) <= 0n) throw new CatalogError('La cantidad debe ser mayor que cero.'); return { ...line, baseQuantity }; });
+    const lines = b.lines.map(line => { const item = items.get(line.itemId); if (!item) throw new CatalogError('Selecciona un artículo de inventario.'); const baseQuantity = toBase(line.quantity, line.unit, item.baseUnit, line.conversion); if (decimal(baseQuantity) <= 0n) throw new CatalogError('La cantidad debe ser mayor que cero.'); return { ...line, baseQuantity }; });
     const id = randomUUID(); await c.query('INSERT INTO inventory_internal_consumptions(id,warehouse_id,actor_id,data) VALUES($1,$2,$3,$4)', [id, warehouseId, actor.user.id, JSON.stringify({ reason: b.reason })]);
     for (const line of lines) { const lineId = randomUUID(); await c.query('INSERT INTO inventory_internal_consumption_lines(id,consumption_id,item_id,base_quantity,entry) VALUES($1,$2,$3,$4,$5)', [lineId, id, line.itemId, line.baseQuantity, JSON.stringify({ quantity: line.quantity, unit: line.unit, conversion: line.conversion })]); await c.query(`INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,internal_consumption_id,reason,entry) VALUES($1,$2,$3,'internal_consumption',-$4::numeric,$5,$6,$7)`, [randomUUID(), line.itemId, warehouseId, line.baseQuantity, id, b.reason, JSON.stringify({ consumptionId: id, lineId })]); }
     return { id, warehouseId, lines: lines.map(({ itemId, baseQuantity }) => ({ itemId, baseQuantity })) };

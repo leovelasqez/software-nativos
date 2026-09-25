@@ -15,3 +15,11 @@ La política definitiva de ubicación externa, retención, RPO/RTO y presupuesto
 ## Pruebas y riesgos
 
 Ensayar crear → verificar → restaurar una base sintética recién migrada → conciliar conteos y hashes; rechazo de manifiesto alterado y de destino no vacío; permisos de dueño; y evidencia de qué operaciones offline no se recuperan. El hardware y migración real pertenecen a incremento 8.
+
+## Correcciones de aceptación — 25-09-2026
+
+NAT-UAT-01 / REQ-011-04 / AC-011-04/06: tomar una instantánea transaccional coherente; incluir conciliaciones de costos; restaurar tablas en orden de dependencias y movimientos al final, preservando referencias y contrapartidas. Reemplazar solo las semillas de una base recién creada dentro de una transacción; mantener restricciones de integridad. Conciliar conteos y contenido, no solo conteos. Un respaldo que omite tablas requeridas se rechaza como incompleto. Un error revierte la carga del destino aislado y lo conserva para diagnóstico; nunca borra o reemplaza una base existente. Repetir con operaciones comerciales sintéticas y comprobar que la base activa sigue igual.
+
+## Publicación autorizada — 25-09-2026
+
+Después de aprobar la validación local, el usuario solicita commit, push y despliegue en Railway. Publicar la versión probada desde `main` en `nativos-web` / `production`, conservando base, variables y volumen existentes. Comprobar el estado `SUCCESS`, `/health`, Administración y Caja; contrastar la versión desplegada con Git y los recursos publicados. Esta entrega no incorpora migraciones nuevas ni datos sintéticos a producción. Las evidencias locales de corrección conservan su fecha y alcance originales.

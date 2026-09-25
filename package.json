@@ -15,6 +15,7 @@
     "dev": "npm run build && node scripts/dev.ts",
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.ts",
     "test:e2e": "playwright test",
+    "test:workflows": "npm run build && node scripts/validate-workflows.ts",
     "start:local": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1",
     "start:pilot": "npm run build && node scripts/pilot.ts",
     "legacy:pos-server": "node scripts/pos.ts"

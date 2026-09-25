@@ -9,3 +9,5 @@ Estado: completado salvo costo/margen bloqueado por DEC-005. Ver `plan.md` y `sp
 | TASK-INC6-REP-03 | Generador XLSX completo y descargable | REQ-008-03/04; AC-008-01/04 | 02 | Prueba 120/20 y archivo validado | Verificado — `reports.test.ts` valida XLSX 120/20 |
 | TASK-INC6-REP-04 | Pantalla de informes y evidencia accesible | REQ-008-01/03/04 | 02–03 | E2E, temas, móvil, teclado | Verificado — E2E abre Informes y descarga el XLSX |
 | TASK-INC6-REP-05 | Costos/margen promedio | REQ-008-02; AC-008-02/04 | DEC-005 | Decisión, pruebas y contrato ampliado | Bloqueado |
+
+- [x] TASK-UAT-REP-01 — Corregir NAT-UAT-03 y verificar selectores completos en navegador (REQ-008-01/04; AC-008-05). Catálogo 254/120/120, filtro, Excel y sede verificados; [evidencia](../../docs/evidence/correccion-flujos-2026-09-25.md).

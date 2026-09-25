@@ -9,7 +9,7 @@ import { ApiError, authenticate, requireAdmin } from './security.ts';
 
 const tables = [
   'branches', 'warehouses', 'devices', 'app_users', 'sessions', 'login_attempts', 'audit_events',
-  'catalog_products', 'product_versions', 'inventory_items', 'recipe_versions', 'inventory_movements',
+  'catalog_products', 'product_versions', 'inventory_items', 'recipe_versions',
   'inventory_minimums', 'catalog_operations', 'pos_signing_key', 'pos_terminals', 'pos_snapshots',
   'pos_shifts', 'pos_sales', 'pos_receipts', 'customers', 'pos_orders_v2', 'pos_order_events', 'pos_refunds',
   'loyalty_rules', 'loyalty_members', 'loyalty_ledger', 'loyalty_cancellations', 'suppliers', 'purchases',
@@ -17,7 +17,7 @@ const tables = [
   'inventory_transfer_event_lines', 'inventory_counts', 'inventory_count_lines',
   'inventory_internal_consumptions', 'inventory_internal_consumption_lines', 'pos_cash_movements',
   'agent_credentials', 'agent_inventory_imports', 'agent_catalog_imports', 'notification_intents', 'notification_attempts', 'notification_operations',
-  'excel_catalog_imports',
+  'excel_catalog_imports', 'inventory_cost_reconciliations', 'inventory_movements',
 ] as const;
 
 type Manifest = {
@@ -33,6 +33,16 @@ function quoteIdentifier(value: string) { return `"${value.replaceAll('"', '""')
 function validDatabase(value: unknown): value is string { return typeof value === 'string' && /^[a-z][a-z0-9_]{2,50}$/.test(value); }
 
 type Snapshot = { version: 1; id: string; coverage: 'server-synchronized-only'; schemaVersion: string; migrations: string[]; rows: Record<string, Record<string, unknown>[]> };
+
+function canonical(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)]));
+  return value;
+}
+function contentHash(rows: Record<string, unknown>[]) {
+  return digest(Buffer.from(JSON.stringify(rows.map(row => JSON.stringify(canonical(row))).sort())));
+}
 
 export function registerBackups(app: FastifyInstance, pool: Pool, directory?: string, restoreDatabase?: string, restoreConnection?: PoolConfig) {
   const root = directory ? resolve(directory) : null;
@@ -70,9 +80,13 @@ export function registerBackups(app: FastifyInstance, pool: Pool, directory?: st
 
   app.post('/api/backups', async (req, reply) => {
     available(); const actor = await authenticate(pool, req); requireAdmin(actor); await mkdir(root!, { recursive: true, mode: 0o700 });
-    const rows: Record<string, unknown[]> = {};
-    for (const table of tables) rows[table] = (await pool.query(`SELECT * FROM ${table}`)).rows;
-    const migrations = (await pool.query<{ name: string }>('SELECT name FROM schema_migrations ORDER BY name')).rows.map(row => row.name);
+    const { rows, migrations } = await transaction(pool, async c => {
+      await c.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
+      const rows: Snapshot['rows'] = {};
+      for (const table of tables) rows[table] = (await c.query(`SELECT * FROM ${table}`)).rows;
+      const migrations = (await c.query<{ name: string }>('SELECT name FROM schema_migrations ORDER BY name')).rows.map(row => row.name);
+      return { rows, migrations };
+    });
     const id = randomUUID(); const createdAt = new Date().toISOString();
     const body = Buffer.from(JSON.stringify({ version: 1, id, createdAt, coverage: 'server-synchronized-only', schemaVersion: migrations.at(-1) ?? 'none', migrations, rows }), 'utf8');
     const target = file(root!, id); const temp = `${target}.tmp`;
@@ -102,27 +116,38 @@ export function registerBackups(app: FastifyInstance, pool: Pool, directory?: st
       throw new ApiError(409, 'restore_destination_exists', 'La base destino ya existe; no se vaciará ni sustituirá.');
     const snapshot = await verifiedBody(manifest); const sourceTables = Object.keys(snapshot.rows);
     if (sourceTables.some(table => !tables.includes(table as typeof tables[number]))) throw new ApiError(409, 'backup_invalid', 'El respaldo contiene una tabla no admitida.');
+    if (tables.some(table => !Array.isArray(snapshot.rows[table]))) throw new ApiError(409, 'backup_incomplete', 'El respaldo omite tablas necesarias. Crea un respaldo nuevo antes de restaurar.');
     await pool.query(`CREATE DATABASE ${quoteIdentifier(restoreDatabase)}`);
     const restored = new RestorePool({ ...restoreConnection, database: restoreDatabase, max: 4 });
     try {
       await migrate(restored);
       const restoredMigrations = (await restored.query<{ name: string }>('SELECT name FROM schema_migrations ORDER BY name')).rows.map(row => row.name);
       if (JSON.stringify(restoredMigrations) !== JSON.stringify(snapshot.migrations)) throw new ApiError(409, 'schema_mismatch', 'La versión del esquema del respaldo no coincide con el destino aislado.');
-      for (const table of tables) {
-        const rows = snapshot.rows[table] ?? [];
-        for (const row of rows.sort((a, b) => Number(Boolean(a.reverses_id)) - Number(Boolean(b.reverses_id)))) {
-          const columns = Object.keys(row); if (!columns.length) continue;
-          const values = columns.map(column => row[column]);
-          await restored.query(`INSERT INTO ${table}(${columns.map(quoteIdentifier).join(',')}) ${table === 'audit_events' ? 'OVERRIDING SYSTEM VALUE' : ''} VALUES(${columns.map((_, index) => `$${index + 1}`).join(',')}) ON CONFLICT DO NOTHING`, values);
+      const reconciliation = await transaction(restored, async c => {
+        // Only this newly created, isolated destination contains migration seeds.
+        // Replace them so initial rule timestamps and edited branch/device data survive.
+        await c.query('DELETE FROM devices; DELETE FROM warehouses; DELETE FROM branches');
+        await c.query('ALTER TABLE loyalty_rules DISABLE TRIGGER loyalty_rule_immutable');
+        await c.query('DELETE FROM loyalty_rules');
+        await c.query('ALTER TABLE loyalty_rules ENABLE TRIGGER loyalty_rule_immutable');
+        for (const table of tables) {
+          const rows = snapshot.rows[table] ?? [];
+          for (const row of rows.sort((a, b) => Number(Boolean(a.reverses_id)) - Number(Boolean(b.reverses_id)))) {
+            const columns = Object.keys(row); if (!columns.length) continue;
+            const values = columns.map(column => row[column]);
+            await c.query(`INSERT INTO ${table}(${columns.map(quoteIdentifier).join(',')}) ${table === 'audit_events' ? 'OVERRIDING SYSTEM VALUE' : ''} VALUES(${columns.map((_, index) => `$${index + 1}`).join(',')})`, values);
+          }
         }
-      }
-      await restored.query("SELECT setval(pg_get_serial_sequence('audit_events','id'),COALESCE((SELECT max(id) FROM audit_events),1),true)");
-      const reconciliation = [] as { table: string; sourceRows: number; restoredRows: number }[];
-      for (const table of tables) {
-        const restoredRows = Number((await restored.query<{ count: string }>(`SELECT count(*) FROM ${table}`)).rows[0]!.count);
-        const sourceRows = (snapshot.rows[table] ?? []).length; reconciliation.push({ table, sourceRows, restoredRows });
-      }
-      if (reconciliation.some(row => row.sourceRows !== row.restoredRows)) throw new ApiError(409, 'restore_mismatch', 'La conciliación de la base aislada no coincide con el respaldo.');
+        await c.query("SELECT setval(pg_get_serial_sequence('audit_events','id'),COALESCE((SELECT max(id) FROM audit_events),1),true)");
+        const reconciliation = [] as { table: string; sourceRows: number; restoredRows: number; contentMatches: boolean }[];
+        for (const table of tables) {
+          const actual = (await c.query(`SELECT * FROM ${table}`)).rows;
+          const expected = snapshot.rows[table]!;
+          reconciliation.push({ table, sourceRows: expected.length, restoredRows: actual.length, contentMatches: contentHash(expected) === contentHash(actual) });
+        }
+        if (reconciliation.some(row => row.sourceRows !== row.restoredRows || !row.contentMatches)) throw new ApiError(409, 'restore_mismatch', 'La conciliación de la base aislada no coincide con el respaldo.');
+        return reconciliation;
+      });
       await transaction(pool, async c => { await audit(c, actor, 'backup.restore_checked', 'Restauración aislada verificada', { id, destination: restoreDatabase, tables: reconciliation.length }); });
       return { id, destination: restoreDatabase, coverage: manifest.coverage, reconciled: true, tables: reconciliation };
     } finally { await restored.end(); }

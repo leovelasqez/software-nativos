@@ -1,0 +1,20 @@
+[
+  {
+    "path": "/api/local-transition",
+    "status": 404,
+    "code": "not_found",
+    "message": "Ruta no disponible."
+  },
+  {
+    "path": "/api/transfers/e3e9a75e-12b4-408c-92c3-bb6c48111d9d/receive",
+    "status": 400,
+    "code": "catalog_invalid",
+    "message": "La recepción excede lo despachado."
+  },
+  {
+    "path": "/api/backups/12709ef1-4e2c-4336-80a7-53501ea4be4b/restore-check",
+    "status": 400,
+    "code": "invalid_reference",
+    "message": "Revisa las referencias y los permisos."
+  }
+]

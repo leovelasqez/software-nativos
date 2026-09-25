@@ -1,0 +1,53 @@
+Ir al contenido
+nativos.
+VIDA Y BIENESTAR
+TU ESPACIO
+Resumen
+Caja y ventas
+Sucursales y bodegas
+Productos
+Recetas
+Inventario
+Compras y proveedores
+Traslados
+Conteos y ajustes
+Clientes
+Fidelización
+Informes
+Usuarios y roles
+Auditoría
+Notificaciones
+Respaldo y recuperación
+Módulos en preparación
+P
+PRUEBA UAT Dueño
+Dueño
+Respaldo y recuperación
+Sucursal
+Centro
+Milán
+Claro
+RECUPERACIÓN LOCAL
+Respaldo y recuperación
+
+Incluye solo hechos confirmados por el servidor. No reemplaza una copia externa ni protege operaciones pendientes de Caja.
+
+Crear respaldo
+Revisa las referencias y los permisos.
+Integridad verificada con SHA-256.
+
+Los respaldos se guardan localmente. La retención, ubicación externa, RPO y RTO requieren la decisión DEC-012.
+
+Creado	Esquema	Tamaño	Integridad	Acciones
+25/09/2026, 9:33 a. m.	021-pos-multiple-installations.sql	227.0 KB	Verificado	Verificar Ensayar restauración
+ADMINISTRACIÓN
+Ensayar restauración aislada
+
+Se creará una base sintética nueva y se conciliará con este respaldo. Nunca se reemplaza la base activa; si el destino ya existe, se rechaza.
+
+Escribe
+RESTORE 12709ef1-4e2c-4336-80a7-53501ea4be4b
+para confirmar
+CancelarRestaurar y conciliar
+Nativos · Vida y bienestar
+Administración y Caja · Sitio web

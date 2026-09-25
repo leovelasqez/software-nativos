@@ -187,6 +187,38 @@ test('Incremento 2 — catálogo, recetas y existencias en PostgreSQL real', { t
       assert.equal((await req('GET', `/api/warehouses/${warehouse}/stock?branchId=centro`, undefined, manager)).json().items.find((i: { itemId: string }) => i.itemId === rawId).quantity, '700.000000');
       assert.equal((await db.pool.query("SELECT count(*) FROM inventory_movements WHERE kind='internal_consumption'" )).rows[0].count, '1');
     });
+    await t.test('NAT-UAT-02: terminados admiten compra, traslado, conteo y consumo con permisos e idempotencia', async () => {
+      const supplier = await req('POST', '/api/suppliers', { ...common(), name: 'Proveedor terminados', document: '', contact: '' }, manager);
+      assert.equal(supplier.statusCode, 200, supplier.body);
+      const purchase = { ...common(), supplierId: supplier.json().id, warehouseId: warehouse, purchasedOn: '2026-09-25', paymentMethod: 'transferencia', paidAmount: '6000', lines: [{ itemId: finishedId, quantity: '3', unit: 'unit', conversion: null, unitPrice: '2000' }] };
+      assert.equal((await req('POST', '/api/purchases', purchase, cashier)).statusCode, 403);
+      assert.equal((await req('POST', '/api/purchases', { ...purchase, ...common(), lines: [{ ...purchase.lines[0], unit: 'kg' }] }, manager)).statusCode, 400);
+      const bought = await req('POST', '/api/purchases', purchase, manager); assert.equal(bought.statusCode, 200, bought.body);
+      assert.deepEqual((await req('POST', '/api/purchases', purchase, manager)).json(), bought.json());
+      const balance = async (id: string) => Number((await req('GET', `/api/warehouses/${id}/stock?branchId=centro`, undefined, manager)).json().items.find((item: { itemId: string }) => item.itemId === finishedId)?.quantity ?? 0);
+      assert.equal(await balance(warehouse), 3);
+      const target = randomUUID(); await db.pool.query('INSERT INTO warehouses(id,branch_id,name,is_default) VALUES($1,$2,$3,false)', [target, 'centro', 'Destino terminados']);
+      const draft = { ...common(), sourceWarehouseId: warehouse, targetWarehouseId: target, lines: [{ itemId: finishedId, quantity: '2', unit: 'unit', conversion: null }] };
+      assert.equal((await req('POST', '/api/transfers', draft, cashier)).statusCode, 403);
+      const transfer = await req('POST', '/api/transfers', draft, manager); assert.equal(transfer.statusCode, 200, transfer.body);
+      const dispatch = common(); const sent = await req('POST', `/api/transfers/${transfer.json().id}/dispatch`, dispatch, manager); assert.equal(sent.statusCode, 200, sent.body);
+      assert.deepEqual((await req('POST', `/api/transfers/${transfer.json().id}/dispatch`, dispatch, manager)).json(), sent.json());
+      assert.equal(await balance(warehouse), 1); assert.equal(await balance(target), 0);
+      for (let received = 1; received <= 2; received++) {
+        const receipt = { ...common(), lines: [{ lineId: transfer.json().lines[0].id, quantity: '1' }] };
+        const response = await req('POST', `/api/transfers/${transfer.json().id}/receive`, receipt, manager); assert.equal(response.statusCode, 200, response.body);
+        assert.deepEqual((await req('POST', `/api/transfers/${transfer.json().id}/receive`, receipt, manager)).json(), response.json());
+        assert.equal(await balance(target), received);
+      }
+      for (const [action, quantity, expected] of [['counts', '4', 4], ['internal-consumptions', '1', 3]] as const) {
+        const body = { ...common(), lines: [{ itemId: finishedId, quantity, unit: 'unit', conversion: null }] };
+        const url = `/api/warehouses/${warehouse}/${action}`;
+        assert.equal((await req('POST', url, body, cashier)).statusCode, 403);
+        const response = await req('POST', url, body, manager); assert.equal(response.statusCode, 200, response.body);
+        assert.deepEqual((await req('POST', url, body, manager)).json(), response.json()); assert.equal(await balance(warehouse), expected);
+      }
+      assert.equal((await db.pool.query('SELECT count(*) FROM inventory_movements WHERE item_id=$1', [finishedId])).rows[0].count, '6');
+    });
     await t.test('AC-003-08: auditoría atómica, rollback de datos/idempotencia y libro protegido', async () => {
       await db.pool.query("CREATE FUNCTION fail_catalog_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test failure'; END $$; CREATE TRIGGER fail_catalog_audit BEFORE INSERT ON audit_events FOR EACH STATEMENT EXECUTE FUNCTION fail_catalog_audit();");
       const body = { ...product(), reference: 'ROLLBACK-TEST' };

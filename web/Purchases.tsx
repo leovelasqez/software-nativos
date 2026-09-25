@@ -32,7 +32,7 @@ export function Purchases({ me, branchId }: { me: Me; branchId: string }) {
         allPages<Supplier>(`/suppliers?branchId=${branchId}`), allPages<Item>(`/items?branchId=${branchId}`), allPages<Purchase>(`/purchases?branchId=${branchId}`), api<BranchDetail>(`/branches/${branchId}`),
       ]);
       if (generation !== refreshId.current) return;
-      setSuppliers(s); setItems(i.filter(i => i.kind !== 'finished')); setPurchases(p); setWarehouses(branch.warehouses); setError('');
+      setSuppliers(s); setItems(i); setPurchases(p); setWarehouses(branch.warehouses); setError('');
     } catch (e) { if (generation === refreshId.current) setError((e as Error).message); }
   }
   useEffect(() => { void refresh(); return () => { refreshId.current++; }; }, [branchId]);

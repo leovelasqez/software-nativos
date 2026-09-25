@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Heading, Notice } from './components.tsx';
 import { api, date } from './api.ts';
+import { allPages } from './Catalog.tsx';
 import { reportColumns, reportLabel, reportValue } from './report-format.ts';
 
 const kinds = [{ id: 'sales', name: 'Ventas' }, { id: 'cash', name: 'Caja' }, { id: 'inventory', name: 'Inventario' }, { id: 'purchases', name: 'Compras' }, { id: 'waste', name: 'Desperdicio y consumo' }, { id: 'loyalty', name: 'Fidelización' }];
@@ -16,7 +17,11 @@ function RecordDetails({ value }: { value: Record<string, unknown> }) {
 
 export function Reports({ branchId }: { branchId: string }) {
   const [kind, setKind] = useState('sales'); const [from, setFrom] = useState(''); const [to, setTo] = useState('');
-  const [productId, setProductId] = useState(''); const [customerId, setCustomerId] = useState(''); const [supplierId, setSupplierId] = useState(''); const [paymentMethod, setPaymentMethod] = useState('');
+  const emptyFilters = { productId: '', customerId: '', supplierId: '' };
+  const [selection, setSelection] = useState({ branchId, ...emptyFilters });
+  const { productId, customerId, supplierId } = selection.branchId === branchId ? selection : emptyFilters;
+  function selectFilter(key: keyof typeof emptyFilters, value: string) { setSelection(previous => ({ ...(previous.branchId === branchId ? previous : emptyFilters), branchId, [key]: value })); }
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [products, setProducts] = useState<Choice[]>([]); const [customers, setCustomers] = useState<Choice[]>([]); const [suppliers, setSuppliers] = useState<Choice[]>([]);
   const [report, setReport] = useState<Report | null>(null); const [error, setError] = useState(''); const [loading,setLoading] = useState(false); const generation=useRef(0);
   const query = () => new URLSearchParams({ branchId, limit: '20', ...(from ? { from } : {}), ...(to ? { to } : {}), ...((kind === 'sales' || kind === 'waste') && productId ? { productId } : {}), ...((kind === 'sales' || kind === 'loyalty') && customerId ? { customerId } : {}), ...(kind === 'purchases' && supplierId ? { supplierId } : {}), ...((kind === 'sales' || kind === 'purchases') && paymentMethod ? { paymentMethod } : {}) });
@@ -34,17 +39,17 @@ export function Reports({ branchId }: { branchId: string }) {
     } catch (e) { setError((e as Error).message); }
   }
   useEffect(() => { void load(); return()=>{generation.current++;}; }, [branchId, kind]);
-  useEffect(() => { let active=true; void Promise.all([api<{ items: Choice[] }>(`/products?branchId=${branchId}&limit=100`), api<{ items: Choice[] }>(`/customers?branchId=${branchId}`)]).then(([product, customer]) => { if(active){setProducts(product.items); setCustomers(customer.items);} }).catch(() => { if(active){setProducts([]); setCustomers([]);} }); return()=>{active=false;}; }, [branchId]);
-  useEffect(() => { let active=true; void api<{ items: Choice[] }>(`/suppliers?branchId=${branchId}`).then(result => {if(active)setSuppliers(result.items);}).catch(() => {if(active)setSuppliers([]);}); return()=>{active=false;}; }, [branchId]);
+  useEffect(() => { let active=true; setProducts([]); setCustomers([]); void Promise.all([allPages<Choice>(`/products?branchId=${branchId}`), allPages<Choice>(`/customers?branchId=${branchId}`, null)]).then(([product, customer]) => { if(active){setProducts(product); setCustomers(customer);} }).catch(() => { if(active){setProducts([]); setCustomers([]);} }); return()=>{active=false;}; }, [branchId]);
+  useEffect(() => { let active=true; setSuppliers([]); void allPages<Choice>(`/suppliers?branchId=${branchId}`).then(result => {if(active)setSuppliers(result);}).catch(() => {if(active)setSuppliers([]);}); return()=>{active=false;}; }, [branchId]);
   const columns=(reportColumns[kind]??[]).filter(key=>report?.items.some(item=>item[key]!==undefined));
   return <><Heading eyebrow="CONSULTA ONLINE" title="Informes">Consulta ventas, inventario y movimientos confirmados. Las operaciones offline aparecen después de sincronizarse.</Heading>
     <section className="panel report-filters"><div className="fields">
       <label>Informe<select value={kind} onChange={e => setKind(e.target.value)}>{kinds.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
       <label>Desde<input type="date" value={from} onChange={e => setFrom(e.target.value)} /></label>
       <label>Hasta<input type="date" value={to} onChange={e => setTo(e.target.value)} /></label>
-      {(kind === 'sales' || kind === 'waste') && <label>Producto<select value={productId} onChange={e => setProductId(e.target.value)}><option value="">Todos</option>{products.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
-      {(kind === 'sales' || kind === 'loyalty') && <label>Cliente<select value={customerId} onChange={e => setCustomerId(e.target.value)}><option value="">Todos</option>{customers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
-      {kind === 'purchases' && <label>Proveedor<select value={supplierId} onChange={e => setSupplierId(e.target.value)}><option value="">Todos</option>{suppliers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
+      {(kind === 'sales' || kind === 'waste') && <label>Producto<select value={productId} onChange={e => selectFilter('productId', e.target.value)}><option value="">Todos</option>{products.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
+      {(kind === 'sales' || kind === 'loyalty') && <label>Cliente<select value={customerId} onChange={e => selectFilter('customerId', e.target.value)}><option value="">Todos</option>{customers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
+      {kind === 'purchases' && <label>Proveedor<select value={supplierId} onChange={e => selectFilter('supplierId', e.target.value)}><option value="">Todos</option>{suppliers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
       {(kind === 'sales' || kind === 'purchases') && <label>Medio<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option value="">Todos</option>{methods.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
       <div className="row-actions"><button className="secondary" disabled={loading} onClick={() => void load()}>Aplicar filtros</button><button className="primary" onClick={() => void exportXlsx()}>Exportar Excel</button></div>
     </div></section>

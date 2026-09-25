@@ -19,3 +19,5 @@ Estado: completado en el alcance del incremento 2. Evidencia: ../../docs/evidenc
 | TASK-INC6-INV-03 | API autorizada, idempotente y auditada | AC-003-09/10/11 | 02 | Pruebas de permisos/reintento | Verificado — permisos, reintentos y auditoría para AC-003-09/10/11 y consumo interno |
 | TASK-INC6-INV-04 | Formularios de compras, traslados y conteos | REQ-003-02 | 03 | E2E, móvil, temas y teclado | Verificado — compra, traslado/despacho/recepción parcial, conteo y consumo interno E2E |
 | TASK-INC6-INV-05 | Costeo promedio y valoración de salidas | REQ-003-05; AC-003-04 | DEC-005 | Decisión y pruebas de historia | Bloqueado |
+
+- [x] TASK-UAT-INV-01 — Corregir NAT-UAT-02 y verificar compra, traslado completo, conteo y consumo de terminados (AC-003-09/10/11). Integración y navegador aprobados; [evidencia](../../docs/evidence/correccion-flujos-2026-09-25.md).

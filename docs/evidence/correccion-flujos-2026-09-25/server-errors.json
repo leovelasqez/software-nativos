@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/api/local-transition",
+    "status": 404,
+    "code": "not_found",
+    "message": "Ruta no disponible."
+  },
+  {
+    "path": "/api/transfers/8a20b1ba-7099-42bf-b321-f448b8c1429f/receive",
+    "status": 400,
+    "code": "catalog_invalid",
+    "message": "La recepción excede lo despachado."
+  }
+]

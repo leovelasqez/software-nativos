@@ -6,9 +6,10 @@ import type { Item, Product, Recipe, RecipeLine, RecipeOption } from '../src/cat
 import { Dialog, Heading, Notice, Reason, SaveForm } from './components.tsx';
 
 type Page<T> = { items: T[]; nextCursor: string | null };
-export async function allPages<T>(url: string): Promise<T[]> {
+export async function allPages<T>(url: string, pageSize: number | null = 100): Promise<T[]> {
+  // Some cursor endpoints (customers) use a fixed page size and reject `limit`.
   const items: T[] = []; let after: string | null = null;
-  do { const r: Page<T> = await api(url + '&limit=100' + (after ? '&after=' + encodeURIComponent(after) : '')); items.push(...r.items); after = r.nextCursor; } while (after);
+  do { const r: Page<T> = await api(url + (pageSize === null ? '' : '&limit=' + pageSize) + (after ? '&after=' + encodeURIComponent(after) : '')); items.push(...r.items); after = r.nextCursor; } while (after);
   return items;
 }
 function useOperation(branchId: string) {

@@ -1,0 +1,133 @@
+{
+  "runId": "2026-09-25T15-04-50-429Z",
+  "origin": "http://127.0.0.1:53181",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "B02",
+      "name": "Terminado, cambio, consulta de copia y consumo único",
+      "state": "PASS",
+      "detail": "T 10→8; efectivo neto 10000; cambio 10000; una venta después de copia/sincronización.",
+      "seconds": 1.237
+    },
+    {
+      "id": "B03",
+      "name": "Comanda, sustitución y adicional con consumo exacto",
+      "state": "PASS",
+      "detail": "Comanda sin consumo. Cobro13000: P900 L2000 L2 800 V9 A180.",
+      "seconds": 2.216
+    },
+    {
+      "id": "B06",
+      "name": "Cliente, domicilio, descuento, propina y canje: total 21800",
+      "state": "PASS",
+      "detail": "Pedido preservado al crear cliente. Total21800, propina1800, envío3000, 17 puntos; saldo417.",
+      "seconds": 4.532
+    },
+    {
+      "id": "B08",
+      "name": "Cancelar tres preparados: dos desperdiciados y uno sin consumo",
+      "state": "PASS",
+      "detail": "Consumo por desperdicio200g, sin venta; reintento de sync no duplica.",
+      "seconds": 1.29
+    },
+    {
+      "id": "B17",
+      "name": "Archivar/restaurar conserva ventas y existencias",
+      "state": "PASS",
+      "detail": "Archivo y restauración por UI; saldo e historia de ventas idénticos.",
+      "seconds": 0.755
+    },
+    {
+      "id": "B20",
+      "name": "Conciliación de costo desconocido con historia conservada",
+      "state": "PASS",
+      "detail": "Costo actual2; sin cambio de existencias ni ventas previas.",
+      "seconds": 1.237
+    },
+    {
+      "id": "B15-T",
+      "name": "Conteo físico y consumo interno de producto terminado",
+      "state": "PASS",
+      "detail": "Conteo terminado8→7; consumo interno1→saldo6, sin venta.",
+      "seconds": 0.948
+    },
+    {
+      "id": "B14-T",
+      "name": "Traslado de producto terminado",
+      "state": "PASS",
+      "detail": "Terminado despachado2; origen -2, destino +1 y +1; conciliación por sede.",
+      "seconds": 1.426
+    },
+    {
+      "id": "B19",
+      "name": "Excel descarga todas las filas, además de las veinte visibles",
+      "state": "PASS",
+      "detail": "Pantalla20 filas; Excel121 filas completas en Contexto/Datos/Totales. Fixture volumétrica preparada, descarga por UI.",
+      "seconds": 2.112
+    },
+    {
+      "id": "BX01",
+      "name": "Importación Excel: vista previa, alta y referencia duplicada",
+      "state": "PASS",
+      "detail": "Vista previa sin altas; confirmación2 productos/1receta/2insumos; duplicado rechazado sin nuevas altas.",
+      "seconds": 2.099
+    },
+    {
+      "id": "B21",
+      "name": "Cajero y encargado: restricciones visibles y compras de su sede",
+      "state": "PASS",
+      "detail": "Roles limitados a Centro sin costos/ajustes de puntos. Encargado compra1000g en unidad base; cajero sin acción de compra.",
+      "seconds": 5.517
+    },
+    {
+      "id": "B13-T",
+      "name": "Compra de producto terminado",
+      "state": "PASS",
+      "detail": "Compra de3 terminados por6000; entrada exacta3 unidades.",
+      "seconds": 1.305
+    },
+    {
+      "id": "B14-R",
+      "name": "Insumo: despacho, dos recepciones y rechazo del exceso",
+      "state": "PASS",
+      "detail": "Salida10; entrada6+4; intento excedente5 cuando faltaban4 rechazado, sin movimiento.",
+      "seconds": 1.524
+    },
+    {
+      "id": "B15-R",
+      "name": "Insumo: conteo causal y consumo interno sin venta",
+      "state": "PASS",
+      "detail": "A 180→178 por conteo→176 por consumo interno; sin venta.",
+      "seconds": 0.76
+    },
+    {
+      "id": "B16",
+      "name": "Venta con existencia negativa y alerta",
+      "state": "PASS",
+      "detail": "P50g; venta consume100g; saldo-50g, alerta visible, sin doble consumo al sincronizar.",
+      "seconds": 2.215
+    },
+    {
+      "id": "B12",
+      "name": "Retiro, contrapartida y cierre offline con diferencia",
+      "state": "PASS",
+      "detail": "Base150000+cobros54800-retiro50000=154800; gasto1000 y contrapartida conservados; contado148800, diferencia-6000. Cierre offline sincronizado, movimientos offline bloqueados.",
+      "seconds": 16.83
+    },
+    {
+      "id": "B18",
+      "name": "Informes: catálogos completos, filtro y Excel fuera de la primera página",
+      "state": "PASS",
+      "detail": "254 productos,120 clientes,120 proveedores Centro; producto fuera de página100 filtra una venta y exporta una fila; Milán solo muestra su proveedor, sin filtro anterior.",
+      "seconds": 2.559
+    },
+    {
+      "id": "B24",
+      "name": "Crear, verificar y restaurar respaldo aislado desde navegador",
+      "state": "PASS",
+      "detail": "Respaldo y SHA-256 verificados; restauración aislada conciliada; ventas activas sin cambios. No acredita PITR Railway.",
+      "seconds": 5.551
+    }
+  ]
+}

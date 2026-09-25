@@ -1,0 +1,63 @@
+Ir al contenido
+nativos.
+VIDA Y BIENESTAR
+TU ESPACIO
+Resumen
+Caja y ventas
+Sucursales y bodegas
+Productos
+Recetas
+Inventario
+Compras y proveedores
+Traslados
+Conteos y ajustes
+Clientes
+Fidelización
+Informes
+Usuarios y roles
+Auditoría
+Notificaciones
+Respaldo y recuperación
+Módulos en preparación
+P
+PRUEBA UAT Dueño
+Dueño
+Traslados
+Sucursal
+Centro
+Milán
+Claro
+MOVIMIENTO ENTRE BODEGAS
+Traslados
+
+Despacha desde una bodega y recibe por partes en el destino.
+
++ Nuevo traslado
+
+No hay traslados registrados en esta sucursal.
+
+ADMINISTRACIÓN
+Nuevo traslado
+Origen
+Centro · Bodega de venta
+Destino
+Selecciona otra bodega
+Milán · Bodega de venta
+
+El origen corresponde a la sucursal actual; elige la bodega de destino, incluso si pertenece a otra sucursal autorizada.
+
+Artículo 1
+Selecciona
+PRUEBA L (ml)
+PRUEBA L2 (ml)
+PRUEBA P (g)
+PRUEBA V (unit)
+PRUEBA A (g)
+Cantidad
+Unidad
++ Agregar artículo
+Motivo del cambio
+Los cambios quedan registrados.
+Guardar borrador
+Nativos · Vida y bienestar
+Administración y Caja · Sitio web
