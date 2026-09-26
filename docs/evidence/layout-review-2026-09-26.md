@@ -8,7 +8,7 @@ Continuación de la corrección de Productos (`14a6c2a`), solicitada por el usua
 - Recetas, productos archivados, compras, traslados y conteos: nombres largos con espacio propio, importes y acciones independientes y formularios sin columnas de ancho intrínseco excesivo.
 - Clientes y Fidelización: acciones breves, manteniendo etiquetas accesibles específicas; botones debajo del contenido cuando el ancho no permite columnas.
 - Usuarios, Sucursales y Auditoría: columnas que admiten nombres largos, estado de usuario visible en móvil y recursos/fechas que pueden pasar a otra línea.
-- Resumen e Informes: indicadores con ancho mínimo útil; etiquetas y totales de Informes en líneas separadas. Columnas numéricas alineadas, sin partir importes en las tablas.
+- Resumen e Informes: indicadores con ancho mínimo útil; etiquetas y totales de Informes en líneas separadas. Columnas numéricas alineadas, sin partir importes en las tablas. El texto de las celdas respeta palabras completas: identificadores largos no reducen «Tipo», «Venta» o «Cliente» a fragmentos de letras.
 - Informes, Notificaciones y Respaldos: desplazamiento horizontal dentro de la tabla, con región accesible por teclado y foco visible.
 - Caja: precio y botón de agregar ocupan espacio real en la tarjeta; nombre e importe del pedido separados; total móvil sobre los botones; resumen de cobro adaptable. Las reglas nuevas de Caja se limitan a pantalla.
 
@@ -25,6 +25,7 @@ Inspección inicial de solo lectura en el servicio publicado: Inventario reprodu
 | Inventario a 686 px | `1.234.567,123456 g` cabe en una línea en la columna de cantidad. |
 | Informes a 320 px | Total `$ 1.253.067,89` completo en una línea de 30,8 px de alto; etiqueta arriba. Página de 320 px, tabla de 640 px dentro de región de 286 px. |
 | Teclado en Informes | Flecha derecha desplaza 40 px la región enfocada; foco visible y sin ensanchar la página. |
+| Texto de tablas a 611 px | «Tipo», «Venta» y «Cliente» ocupan una línea. Revalidado sin desbordamiento de página a 320 y 1440 px, incluido oscuro. |
 | Formulario de receta a 390 px, oscuro | Nombre largo legible, sin desbordamiento del diálogo, foco inicial, Tab y Escape operativos. |
 | Caja/cobro a 320/390 px y escritorio | Nombre largo, precio y botón separados; total y controles legibles en claro/oscuro. |
 
@@ -34,7 +35,7 @@ Se inspeccionaron capturas además de mediciones DOM. La vista local de Caja rep
 
 - `npm run check`: aprobado; contratos/tipos, 56 pruebas unitarias, 66 pruebas de integración y compilación.
 - La regresión detectó diferencias en los nombres accesibles de Gestionar traslado y las acciones de Fidelización; se conservaron los originales junto a los textos visibles concisos. También se corrigió una carrera previa del test al volver de Caja: ahora espera el selector de sucursal antes de consultar y abrir el menú móvil, sin eliminar ninguna comprobación.
-- `npm run test:e2e`: aprobado sobre la compilación final; 1 prueba compuesta, 3,5 minutos, con Administración, Caja, exportación, fidelización y recuperación/sincronización offline. Incluye comprobaciones de teclado, accesibilidad y capturas.
+- `npm run test:e2e`: aprobado sobre la compilación final, incluido el ajuste de palabras de las tablas; 1 prueba compuesta, 4 minutos, con Administración, Caja, exportación, fidelización y recuperación/sincronización offline. Incluye comprobaciones de teclado, accesibilidad y capturas.
 - `git diff --check`: aprobado. Publicación pendiente de confirmación del servicio y sus assets.
 
 ## Límites

@@ -21,6 +21,11 @@
   min-width: 640px;
 }
 
+.report-results th,
+.report-results td {
+  overflow-wrap: normal;
+}
+
 .report-results .numeric {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
