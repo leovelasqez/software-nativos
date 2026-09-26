@@ -20,3 +20,9 @@ Contrato: ../../contracts/dashboard-v1.md. API aditiva, sin migración ni cambio
 - Menú administrativo desplazable con marca/cuenta persistentes. Móvil: accesos rápidos Ventas e Inventario. Caja conserva las mecánicas de altura y desplazamiento de 016.
 
 Evidencia: [verificación 017](../../docs/evidence/visual-redesign.md). La revisión utiliza bases sintéticas aisladas, no movimientos comerciales.
+
+## Corrección de impresión — AC-017-06
+
+Identificar el diálogo del comprobante con `receipt-dialog`. En impresión, retirar del flujo los hermanos de ese diálogo mediante `display:none`, sustituir alturas y posicionamiento de pantalla por flujo normal y limitar el contenido a 72 mm imprimibles. Usar el tamaño de papel del controlador (`@page size:auto`); la declaración anterior `80mm auto` no es válida. Reemplazar el grid del recibo por bloques compactos y evitar cortes dentro de cada producto. Omitir renglones de opciones/notas vacíos conservando todos los importes.
+
+Comprobar paginación PDF de 72,1 × 210 mm con 300 productos de catálogo detrás del diálogo y comprobantes sintéticos cortos/largos. Extraer texto para comprobar que no se pierde el total ni el cambio. Sin cambios a API, contratos, IndexedDB o migraciones. Publicar desde un archivo Git del commit verificado, excluyendo archivos locales ajenos; comprobar `/health`, `/caja` y hashes de los assets publicados.

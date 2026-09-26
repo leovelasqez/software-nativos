@@ -58,19 +58,30 @@
 .thermal-receipt .notice{background:#fff;color:#000;border-color:#d7d7d7}
 .receipt-actions{display:flex;justify-content:flex-end}
 @media print{
-  @page{size:80mm auto;margin:0}
-  html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
-  body *{visibility:hidden!important}
-  .thermal-receipt,.thermal-receipt *{visibility:visible!important}
-  .thermal-receipt{position:absolute!important;left:0!important;top:0!important;width:80mm!important;box-sizing:border-box!important;padding:4mm!important;display:grid!important;gap:2.5mm!important;background:#fff!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important;font-size:10pt!important;line-height:1.28!important}
+  /* Use the printer's paper size; 80mm auto is not a valid CSS page size. */
+  @page{size:auto;margin:0}
+  /* Remove the POS from layout: visibility:hidden still paginates the catalog. */
+  body:has(.receipt-dialog[open])>:not(#root),
+  body:has(.receipt-dialog[open]) #root>:not(.pos-shell),
+  body:has(.receipt-dialog[open]) .pos-shell>:not(.receipt-dialog),
+  .receipt-dialog>.dialog-header{display:none!important}
+  html:has(.receipt-dialog[open]),body:has(.receipt-dialog[open]),
+  body:has(.receipt-dialog[open]) #root,body:has(.receipt-dialog[open]) .pos-shell,
+  .receipt-dialog[open]{display:block!important;position:static!important;inset:auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#000!important;color-scheme:light!important}
+  .receipt-dialog[open]{width:72mm!important;max-width:100%!important}
+  .receipt-dialog::backdrop{display:none!important}
+  .thermal-receipt{position:static!important;width:100%!important;box-sizing:border-box!important;padding:2mm!important;border:0!important;border-radius:0!important;display:block!important;background:#fff!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important;font-size:9pt!important;line-height:1.2!important;overflow-wrap:anywhere}
+  .thermal-receipt>*+*{margin-top:1.5mm!important}
   .thermal-receipt .brand{color:#000!important}
-  .thermal-receipt .brand small,.thermal-receipt small{color:#222!important}
-  .thermal-receipt .receipt-number{font-family:"Courier New",monospace!important;font-size:8pt!important;overflow-wrap:anywhere!important}
-  .thermal-receipt .receipt-line{gap:3mm!important;padding-bottom:2.5mm!important;border-color:#000!important;font-size:9pt!important}
+  .thermal-receipt .brand>span{font-size:25pt!important}
+  .thermal-receipt .brand small,.thermal-receipt small{color:#222!important;line-height:1.2!important;font-size:7.5pt!important}
+  .thermal-receipt .receipt-number{display:block;font-family:"Courier New",monospace!important;font-size:7pt!important;overflow-wrap:anywhere!important}
+  .thermal-receipt .receipt-line{display:flex!important;flex-wrap:nowrap!important;gap:2mm!important;padding-bottom:1.5mm!important;border-color:#000!important;font-size:9pt!important;break-inside:avoid}
+  .thermal-receipt .receipt-line>p{min-width:0}
   .thermal-receipt .receipt-line>span{font-weight:700!important}
-  .thermal-receipt p,.thermal-receipt h2{margin:0!important;color:#000!important}
-  .thermal-receipt h2{font-size:13pt!important}
-  .thermal-receipt .notice{padding:2.5mm!important;border:1px solid #000!important;background:#fff!important;color:#000!important;font-size:8.5pt!important}
+  .thermal-receipt p,.thermal-receipt h2{margin-bottom:0!important;color:#000!important;line-height:1.2!important}
+  .thermal-receipt h2{font-size:12pt!important;break-after:avoid}
+  .thermal-receipt .notice{padding:1.5mm!important;margin-bottom:0!important;border:1px solid #000!important;background:#fff!important;color:#000!important;font-size:8pt!important;break-inside:avoid}
   .receipt-actions,.receipt-screen-only{display:none!important}
 }
 

@@ -18,6 +18,11 @@ Estado: Implementado y verificado localmente el 19-09-2026. Autorización: «Apr
 - AC-017-03 → REQ-017-02/05: filtro actualiza todas las secciones; vacío/error/recarga; respuestas anteriores no sustituyen a la selección vigente; consulta móvil.
 - AC-017-04 → REQ-017-04/06: total/cobro visibles con listas largas; regresión de Caja, división, pagos, puntos y offline/recarga/sincronización con fuentes locales.
 - AC-017-05 → todos: typecheck, dominio, integración, build y E2E del proyecto; evidencia real y límites.
+- AC-017-06 → REQ-017-06: al imprimir un comprobante de 3 o 5 productos en papel de 72,1 × 210 mm, el catálogo y la navegación no generan páginas ni espacios adicionales. El comprobante conserva productos, impuestos, puntos cuando corresponda, total, pagos y cambio en una hoja. Un comprobante que excede físicamente el papel continúa en las páginas necesarias sin recortar información. Validar escritorio/móvil y claro/oscuro; distinguir PDF de impresión física.
+
+## Corrección de impresión — 26-09-2026
+
+El usuario reportó 31 hojas en la vista previa de una impresora POS de 80 mm y solicitó adaptar el comprobante a una hoja. Después de entregar la corrección local e indicar que faltaba publicarla, pidió «continua». Esta continuación autoriza publicar la corrección en el servicio existente `nativos-web` de Railway y verificar su entrega. No cambia cálculos, ventas guardadas ni permisos. [Evidencia de AC-017-06](../../docs/evidence/receipt-print-2026-09-26.md).
 
 ## Dependencias
 
