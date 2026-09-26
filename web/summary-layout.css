@@ -1,0 +1,76 @@
+/* Allow totals to keep their digits together instead of squeezing fixed thirds. */
+.dashboard-kpis,
+.report-results .summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.report-results .stat-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.report-results .stat-card > strong {
+  grid-column: 1;
+  grid-row: auto;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.report-results .table-wrap table {
+  min-width: 640px;
+}
+
+.report-results .numeric {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-results .table-wrap:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.report-filters .fields > label,
+.heading > div,
+.dialog-header > div {
+  min-width: 0;
+}
+
+.heading h1,
+.dialog-header h2,
+.stock-alert-copy small {
+  overflow-wrap: anywhere;
+}
+
+.dialog-header > .icon-button {
+  flex-shrink: 0;
+}
+
+dialog code {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) and (min-width: 601px) {
+  .report-filters .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-middle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard-kpi {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-kpi .metric-value {
+    grid-column: 1;
+    grid-row: 2;
+    max-width: none;
+    margin: 6px 0;
+    text-align: left;
+  }
+}

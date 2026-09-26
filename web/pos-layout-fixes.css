@@ -1,0 +1,72 @@
+/* Keep product names, amounts and actions in their own space at every width. */
+@media screen {
+  .pos-shell .pos-product { min-width: 0; }
+  .pos-shell .pos-product > * { min-width: 0; }
+  .pos-shell .pos-product-price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-self: end;
+    width: 100%;
+  }
+  .pos-shell .pos-product-price b {
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-shell .pos-product-price .product-add {
+    position: static;
+    margin: 0 0 0 auto;
+    flex-shrink: 0;
+  }
+  .pos-shell .pos-line-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .pos-shell .pos-line-main strong { min-width: 0; }
+  .pos-shell .pos-line-main b { text-align: right; }
+  .pos-shell .pos-total { flex-wrap: wrap; }
+  .pos-shell .pos-total strong { margin-left: auto; white-space: nowrap; }
+  .pos-shell .pos-secondary-actions { flex-wrap: wrap; }
+  .pos-shell .pos-line-controls .row-actions { min-width: 0; max-width: 100%; }
+  .pos-shell .pos-quantity-stepper { max-width: 100%; }
+  .pos-shell .pos-quantity-value { min-width: 0; overflow-wrap: anywhere; }
+  .checkout-dialog .checkout-summary > div { min-width: 0; }
+  .checkout-dialog .checkout-summary b,
+  .checkout-dialog .checkout-summary strong {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .checkout-dialog .checkout-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
+  .checkout-dialog .checkout-summary > div { display: grid; gap: 3px; }
+  .pos-shell .pos-sync { flex-wrap: wrap; }
+  .pos-shell .pos-status-details { min-width: 0; }
+}
+
+@media screen and (max-width: 480px) {
+  .pos-shell .pos-mobile-summary { grid-template-columns: minmax(0, 1fr) auto; }
+  .pos-shell .pos-mobile-summary > strong {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: 20px;
+    white-space: nowrap;
+  }
+  .pos-shell .pos-mobile-summary > .text-button { justify-self: start; }
+  .pos-shell .pos-mobile-summary > .primary { grid-column: 2; }
+}

@@ -24,6 +24,10 @@ Estado: Implementado y verificado localmente el 19-09-2026. Autorización: «Apr
 
 El usuario reportó 31 hojas en la vista previa de una impresora POS de 80 mm y solicitó adaptar el comprobante a una hoja. Después de entregar la corrección local e indicar que faltaba publicarla, pidió «continua». Esta continuación autoriza publicar la corrección en el servicio existente `nativos-web` de Railway y verificar su entrega. No cambia cálculos, ventas guardadas ni permisos. [Evidencia de AC-017-06](../../docs/evidence/receipt-print-2026-09-26.md).
 
+## Mantenimiento de distribución — 26-09-2026
+
+Tras corregir Productos, el usuario solicita revisar y corregir las demás pantallas. Aplicar REQ-017-03/04/05 y AC-017-01/04/05 a nombres largos, cantidades, importes, acciones, tablas y formularios de Administración/Caja. Sin cambios de reglas comerciales. [Evidencia de la revisión transversal](../../docs/evidence/layout-review-2026-09-26.md).
+
 ## Dependencias
 
 001/003/004/005/006/008/012/015/016. Contrato: ../../contracts/dashboard-v1.md. Sin migraciones ni cambios al protocolo. La pantalla de 14 pulgadas no fija resolución: las dimensiones comprobadas son referencias técnicas. No publicar ni modificar Alegra en este alcance.

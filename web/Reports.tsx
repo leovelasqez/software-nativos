@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Heading, Notice } from './components.tsx';
 import { api, date } from './api.ts';
 import { allPages } from './Catalog.tsx';
-import { reportColumns, reportLabel, reportValue } from './report-format.ts';
+import { isNumericReportColumn, reportColumns, reportLabel, reportValue } from './report-format.ts';
 
 const kinds = [{ id: 'sales', name: 'Ventas' }, { id: 'cash', name: 'Caja' }, { id: 'inventory', name: 'Inventario' }, { id: 'purchases', name: 'Compras' }, { id: 'waste', name: 'Desperdicio y consumo' }, { id: 'loyalty', name: 'Fidelización' }];
 type Report = { context: { lastSynchronizedAt: Record<string, string | null> }; items: Record<string, unknown>[]; totals: Record<string, string>; nextCursor: string | null };
@@ -56,7 +56,7 @@ export function Reports({ branchId }: { branchId: string }) {
     {error && <Notice error>{error}</Notice>}{loading && <p className="empty" role="status">Consultando informe…</p>}
     {report && <section className="panel report-results"><header className="section-heading"><div><h2>{kinds.find(k=>k.id===kind)?.name}</h2><p className="small">Última sincronización: {Object.values(report.context.lastSynchronizedAt).some(Boolean) ? Object.values(report.context.lastSynchronizedAt).filter((value):value is string=>Boolean(value)).map(date).join(' · ') : 'Sin confirmar'}</p></div><span className="badge">{report.items.length} registros</span></header>
       {Object.values(report.totals).some(value=>value!=='0') && <div className="summary-grid">{Object.entries(report.totals).filter(([,value])=>value!=='0').map(([label,value])=><section className="stat-card" key={label}><span className="eyebrow">{reportLabel(label)}</span><strong>{reportValue(label,value)}</strong></section>)}</div>}
-      {report.items.length ? <div className="table-wrap"><table><thead><tr>{columns.map(key=><th key={key}>{reportLabel(key)}</th>)}<th>Detalle</th></tr></thead><tbody>{report.items.map(item=><tr key={String(item.id)}>{columns.map(key=><td key={key}>{reportValue(key,item[key])}</td>)}<td><details className="report-record"><summary>Ver detalle</summary><RecordDetails value={item}/></details></td></tr>)}</tbody></table></div> : <p className="empty">No hay registros para estos filtros.</p>}
+      {report.items.length ? <div className="table-wrap" role="region" aria-label="Resultados del informe" tabIndex={0}><table><thead><tr>{columns.map(key=><th key={key} className={isNumericReportColumn(key) ? 'numeric' : undefined}>{reportLabel(key)}</th>)}<th>Detalle</th></tr></thead><tbody>{report.items.map(item=><tr key={String(item.id)}>{columns.map(key=><td key={key} className={isNumericReportColumn(key) ? 'numeric' : undefined}>{reportValue(key,item[key])}</td>)}<td><details className="report-record"><summary>Ver detalle</summary><RecordDetails value={item}/></details></td></tr>)}</tbody></table></div> : <p className="empty">No hay registros para estos filtros.</p>}
       {report.nextCursor && <Notice>La pantalla muestra una página; Excel incluye todas las filas autorizadas.</Notice>}
     </section>}</>;
 }

@@ -1,0 +1,146 @@
+/* Keep directory names readable without letting actions determine their width. */
+.catalog-row.customer-directory-row,
+.catalog-row.loyalty-member-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+.customer-directory-row > button,
+.loyalty-member-row > .row-actions {
+  justify-self: end;
+}
+.loyalty-member-row > .row-actions {
+  display: grid;
+  gap: 8px;
+}
+.customer-directory-row > button,
+.loyalty-member-row .row-actions > button {
+  width: auto;
+  white-space: nowrap;
+}
+.loyalty-member-row strong,
+.customer-history strong {
+  font-variant-numeric: tabular-nums;
+}
+.user-list .user-row {
+  grid-template-columns: 37px minmax(0, 1.2fr) minmax(0, 1fr) 70px auto;
+}
+.user-list .user-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.user-list .user-row > .status {
+  display: block;
+  white-space: nowrap;
+}
+.branch-hero > div:not(.branch-symbol) {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.branch-hero > .branch-symbol,
+.branch-hero > button,
+.branch-resources .resource-row > button {
+  flex-shrink: 0;
+}
+.branch-resources .resource-row > div {
+  min-width: 0;
+}
+.audit-list .audit-row {
+  grid-template-columns: 10px minmax(0, 1fr);
+}
+.audit-row > div,
+.audit-title > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.audit-row .small {
+  overflow-wrap: anywhere;
+}
+.audit-title > time {
+  flex-shrink: 0;
+}
+.admin-data-table {
+  min-width: 760px;
+}
+.admin-table-region:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.admin-data-table th,
+.admin-data-table td {
+  overflow-wrap: normal;
+}
+.admin-data-table td:first-child,
+.backup-table td:nth-child(3) {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.admin-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 175px;
+}
+.admin-table-actions > button {
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .user-list .user-row {
+    grid-template-columns: 37px minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    align-items: start;
+  }
+  .user-list .user-row > div:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .user-list .user-row > .status {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .user-list .user-row > button {
+    grid-column: 3;
+    grid-row: 1 / 4;
+  }
+  .audit-title {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 760px) {
+  .catalog-row.customer-directory-row,
+  .catalog-row.loyalty-member-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .customer-directory-row > button,
+  .loyalty-member-row > .row-actions {
+    justify-self: stretch;
+  }
+  .loyalty-member-row > .row-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .loyalty-member-row .row-actions > button {
+    white-space: normal;
+    min-width: 0;
+  }
+}
+@media (max-width: 400px) {
+  .user-list .user-row {
+    grid-template-columns: 37px minmax(0, 1fr);
+  }
+  .user-list .user-row > button {
+    grid-column: 2;
+    grid-row: 4;
+    justify-self: start;
+  }
+  .loyalty-member-row > .row-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .branch-resources .resource-row {
+    align-items: start;
+    flex-direction: column;
+  }
+}

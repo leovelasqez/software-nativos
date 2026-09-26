@@ -5,3 +5,7 @@
 @import url('./design.css');
 @import url('./pos-workspace.css');
 @import url('./catalog.css');
+@import url('./operations-layout.css');
+@import url('./summary-layout.css');
+@import url('./admin-layout.css');
+@import url('./pos-layout-fixes.css');

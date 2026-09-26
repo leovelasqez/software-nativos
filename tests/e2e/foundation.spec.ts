@@ -103,7 +103,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await exercisePurchases(page);
   await exerciseCajaAccess(page,password);
   await exercisePos(page, password);
-  await page.goto('http://127.0.0.1:4320/'); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
+  await page.goto('http://127.0.0.1:4320/'); await expect(page.getByRole('combobox', { name: 'Sucursal', exact: true })).toBeVisible(); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
   await exerciseLoyalty(page);
   await exerciseBrowser(password);
   expect(consoleErrors).toEqual([]);

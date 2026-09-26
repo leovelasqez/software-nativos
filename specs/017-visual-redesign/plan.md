@@ -1,5 +1,9 @@
 # Plan técnico de 017
 
+## Revisión responsiva transversal — 26-09-2026
+
+Continuación solicitada tras corregir Productos (14a6c2a): revisar el resto de las pantallas y corregir distribución de nombres, importes, cantidades y acciones (REQ-017-03/04/05; AC-017-01/04/05). Separar acciones de contenido en filas operativas, mantener etiquetas accesibles específicas y conservar cifras completas en columnas estables. Verificar componentes reales con datos sintéticos largos en 320/390/686/1440 px, temas claro/oscuro y formularios/teclado; consultar producción sin escribir datos comerciales. Sin cambios de contratos, cálculos, permisos, almacenamiento ni impresión. Publicar el cambio verificado en el servicio existente y documentar el alcance observado.
+
 Estado: Implementado y verificado localmente, diseño aprobado el 19-09-2026.
 
 1. Tokens y componentes compartidos, Inter e iconos React empaquetados. Rehacer layout administrativo y ajustar Caja sobre la distribución operativa de 016.

@@ -10,6 +10,7 @@ const labels: Record<string, string> = {
 };
 const moneyFields = new Set(['products','discounts','discount','redemption','redeemedAmount','tips','tip','shipping','refunds','cash','digital','total','subtotal','rounding','gross','amount','paidAmount','received','applied','cashApplied','cashDelta','change','tipPaid','shippingPaid','openingCash','expected','counted','difference']);
 const dateFields = new Set(['occurredAt','occurredAtMs','openedAt','closedAt','createdAt']);
+export const isNumericReportColumn = (key: string) => moneyFields.has(key) || ['quantity', 'minimum', 'earned', 'redeemed', 'earnedReversed', 'redeemedRestored'].includes(key);
 const values: Record<string,string> = { sale:'Venta', refund:'Devolución', shift:'Turno', movement:'Movimiento', waste:'Desperdicio', internal_consumption:'Consumo interno', income:'Ingreso', expense:'Egreso', cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',breb:'Bre-B',daviplata:'Daviplata',nequi:'Nequi',centro:'Centro',milan:'Milán' };
 export const reportLabel = (key: string) => labels[key] ?? key.replace(/([a-z])([A-Z])/g,'$1 $2').replaceAll('_',' ');
 export function reportValue(key: string, value: unknown): string {

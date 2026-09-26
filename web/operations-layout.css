@@ -1,0 +1,108 @@
+/* Keep operational names independent of values and action-label lengths. */
+.inventory-stock-row,
+.operation-value-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12rem;
+  align-items: start;
+  gap: 14px 24px;
+}
+
+.operation-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13rem;
+  align-items: start;
+}
+
+.operation-action-row > .secondary {
+  justify-self: end;
+  max-width: 100%;
+}
+
+.operation-value {
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.operation-value strong {
+  display: block;
+  line-height: 1.4;
+}
+
+.inventory-stock-row {
+  grid-template-columns: minmax(0, 1fr) 14rem;
+}
+
+.inventory-stock-row .operation-value strong {
+  font-size: 18px;
+}
+
+.inventory-stock-row p:last-child {
+  margin-bottom: 0;
+}
+
+.inventory-stock-actions {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.inventory-stock-actions .secondary {
+  width: auto;
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.operation-panel .panel-toolbar > label {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+}
+
+.operation-dialog .fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.operation-dialog .fields > *,
+.operation-dialog .dialog-header > div {
+  min-width: 0;
+}
+
+.operation-dialog :is(h2, p, label) {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .operation-action-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .operation-action-row > .secondary {
+    justify-self: start;
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .operation-value-row {
+    grid-template-columns: minmax(0, 1fr) 10rem;
+    gap: 12px;
+  }
+
+  .inventory-stock-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .operation-dialog .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .inventory-stock-row,
+  .operation-value-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
