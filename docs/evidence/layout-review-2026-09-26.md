@@ -36,7 +36,11 @@ Se inspeccionaron capturas además de mediciones DOM. La vista local de Caja rep
 - `npm run check`: aprobado; contratos/tipos, 56 pruebas unitarias, 66 pruebas de integración y compilación.
 - La regresión detectó diferencias en los nombres accesibles de Gestionar traslado y las acciones de Fidelización; se conservaron los originales junto a los textos visibles concisos. También se corrigió una carrera previa del test al volver de Caja: ahora espera el selector de sucursal antes de consultar y abrir el menú móvil, sin eliminar ninguna comprobación.
 - `npm run test:e2e`: aprobado sobre la compilación final, incluido el ajuste de palabras de las tablas; 1 prueba compuesta, 4 minutos, con Administración, Caja, exportación, fidelización y recuperación/sincronización offline. Incluye comprobaciones de teclado, accesibilidad y capturas.
-- `git diff --check`: aprobado. Publicación pendiente de confirmación del servicio y sus assets.
+- `git diff --check`: aprobado.
+
+Publicación confirmada en Railway, servicio `nativos-web`, entorno `production`: commit de interfaz `5fd967e` (incluye `a372ea3`), despliegue `95f1cd21-27ff-479a-a47a-3342d134dcab`, estado `SUCCESS`. `/health` responde 200 con `ok: true`; los archivos CSS/JavaScript referenciados por `/` y `/caja` coinciden por SHA-256 con la compilación local verificada. CSS final: `client-DTBbbH4S.css`.
+
+La pestaña original cargó ese CSS. Verificación de solo lectura: Informes conserva «Tipo», «Cliente» y «Venta» en una línea junto a importes alineados; Inventario muestra nombres, cantidades y acciones separados. Sin desbordamiento horizontal de página al ancho disponible del navegador (653 px). Se dejó Inventario abierto, se restauró el tamaño normal y se cerraron las vistas locales temporales.
 
 ## Límites
 
