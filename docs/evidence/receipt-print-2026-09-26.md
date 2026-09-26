@@ -25,4 +25,6 @@ Límites: no se imprimió físicamente ni se modificaron ventas para probar. Fir
 
 ## Publicación
 
-En curso. Se comprobarán el estado de Railway, la salud de la aplicación y la coincidencia de los assets publicados con la compilación local.
+Commit `7973c98`, enviado a `origin/main`. Publicado desde un archivo Git de ese commit en Railway, servicio `nativos-web`, entorno `production`. Despliegue `d2e6e4bf-fa97-420a-bdf2-9ba6a8273417`: `SUCCESS`.
+
+Verificación del 26-09-2026 a las 15:22:29 UTC: `/health` devuelve HTTP 200 y `{"ok":true}`; `/caja` devuelve HTTP 200 y la entrada `pos-C_p85j13.js`. Los seis assets publicados y `sw.js` coinciden por SHA-256 con la compilación probada. [Manifiesto de verificación](receipt-print-2026-09-26-deployment.json). Las consultas productivas fueron de solo lectura y no operaron turnos ni registraron ventas.

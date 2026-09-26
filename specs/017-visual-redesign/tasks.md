@@ -8,7 +8,7 @@
 | TASK-017-04 | Resumen real, consultas móviles y coherencia de módulos | REQ-017-02/03/05 / AC-017-01/03 | Verificado |
 | TASK-017-05 | Caja y diálogos conservando flujos y datos | REQ-017-04 / AC-017-04 | Verificado |
 | TASK-017-06 | Verificación funcional, visual, accesibilidad, offline y evidencia | Todos / AC-017-01 a 05 | Verificado localmente |
-| TASK-017-07 | Corregir aislamiento, ancho y paginación del comprobante térmico | REQ-017-06 / AC-017-06 | Verificado en PDF; publicación en curso |
+| TASK-017-07 | Corregir aislamiento, ancho y paginación del comprobante térmico | REQ-017-06 / AC-017-06 | Verificado en PDF y publicado; entrega de assets comprobada |
 
 Resultados y límites: [evidencia 017](../../docs/evidence/visual-redesign.md). No se publica ni modifica información comercial.
 

@@ -1,0 +1,54 @@
+{
+  "verifiedAt": "2026-09-26T15:22:29.597Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "commit": "7973c98",
+  "deploymentId": "d2e6e4bf-fa97-420a-bdf2-9ba6a8273417",
+  "healthStatus": 200,
+  "healthBody": "{\"ok\":true}",
+  "cajaStatus": 200,
+  "entry": "/assets/pos-C_p85j13.js",
+  "assets": [
+    {
+      "path": "sw.js",
+      "status": 200,
+      "sha256": "71b9894f1bcf3baf1cf136e166369293ccc2bcb1812b1b29d700903e19eacad5",
+      "matches": true
+    },
+    {
+      "path": "assets/admin-tAV2iUlV.js",
+      "status": 200,
+      "sha256": "e126c80c2e5587c192d7c26d96557083765787beab1e0ecb66b36821f862ccb8",
+      "matches": true
+    },
+    {
+      "path": "assets/client-DVsMkWoZ.css",
+      "status": 200,
+      "sha256": "d0c27044a3961ea9dea9c46d979ef79aee3d4457a2554f4fc58c48e2227f0ebf",
+      "matches": true
+    },
+    {
+      "path": "assets/client-MMYmh5HC.js",
+      "status": 200,
+      "sha256": "512d86fd90d27ecdf8df69aba5cdd521a01b23a5268b41c11c06ab4fce0665aa",
+      "matches": true
+    },
+    {
+      "path": "assets/engine-CyR9zoua.js",
+      "status": 200,
+      "sha256": "e2ac16806ba0f9e25e7d4d2059da636e35f4f096beef90f49a7a4a4676a875d5",
+      "matches": true
+    },
+    {
+      "path": "assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "status": 200,
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "matches": true
+    },
+    {
+      "path": "assets/pos-C_p85j13.js",
+      "status": 200,
+      "sha256": "4018499b3754107a4e13d71821ecff526c28e666ed47293416c4361baafb8bd3",
+      "matches": true
+    }
+  ]
+}
