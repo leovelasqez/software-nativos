@@ -32,7 +32,7 @@ Implementado y verificado localmente; publicado en `nativos-web` / `production` 
 
 ### Revisión del turno abierto — ampliación del 07-10-2026
 
-Implementada y verificada localmente. [Evidencia](../../docs/evidence/revision-turno-abierto-2026-10-07.md).
+Implementada, verificada localmente y publicada en el mismo servicio autorizado de Railway. [Evidencia de pruebas y publicación](../../docs/evidence/revision-turno-abierto-2026-10-07.md).
 
 Autorizada por la solicitud del usuario de comprobar los movimientos antes de cerrar. La imagen adjunta es una referencia del propósito de consulta; sus importes y clasificaciones no se usan como datos de Nativos.
 

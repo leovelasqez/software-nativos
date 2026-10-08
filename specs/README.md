@@ -1,8 +1,8 @@
 # Índice de especificaciones y trazabilidad
 
-## Revisión del turno abierto — verificada (07-10-2026)
+## Revisión del turno abierto — publicada (07-10-2026)
 
-REQ-006-06 y AC-006-10/11: consulta e impresión de movimientos antes del cierre, usando los mismos totales; conteo/diferencia pendientes, sin modificar el libro ni crear cierre, actualización compartida y funcionamiento offline. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/revision-turno-abierto-2026-10-07.md). Publicación en curso como continuación del comprobante autorizado en esta conversación.
+REQ-006-06 y AC-006-10/11: consulta e impresión de movimientos antes del cierre, usando los mismos totales; conteo/diferencia pendientes, sin modificar el libro ni crear cierre, actualización compartida y funcionamiento offline. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/revision-turno-abierto-2026-10-07.md). Publicada como continuación del comprobante autorizado; salud y archivos comprobados sin operar turnos comerciales.
 
 ## Comprobante de cierre — publicado (07-10-2026)
 

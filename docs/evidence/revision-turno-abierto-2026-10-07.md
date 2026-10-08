@@ -23,4 +23,8 @@ Capturas en [revision-turno-abierto-2026-10-07/](revision-turno-abierto-2026-10-
 
 ## Publicación y límites
 
-Ampliación verificada; publicación en el mismo servicio autorizada como continuación del comprobante en esta conversación. La verificación productiva será de disponibilidad y versión, sin operar turnos comerciales. Movimientos nunca enviados por otros equipos deben sincronizarse para aparecer. La impresión física conserva la verificación pendiente de los locales.
+Ampliación publicada como continuación del comprobante autorizado en esta conversación. Commit funcional `dbc2889c90785d192713adc5536709ca79151aa7`, enviado a `origin/main`; archivo Git de ese commit publicado en Railway, proyecto `nativos`, servicio `nativos-web`, entorno `production`. Despliegue `e44c9e65-c084-4c64-98a5-b994d4fb2656`: `SUCCESS`, con healthcheck aprobado.
+
+Verificación del 07-10-2026 a las 8:36 p. m. de Colombia (2026-10-08T01:36:46Z): `/health` devuelve HTTP 200 y `{"ok":true}`; `/` y `/caja` responden HTTP 200. Los doce archivos públicos comprobados corresponden a la compilación probada: HTML, todos los assets JS/CSS/fuente, service worker, manifiesto e icono; `theme.js` coincide con la fuente tras normalizar únicamente CRLF/LF. SHA-256 y resultados en [deployment.json](revision-turno-abierto-2026-10-07/deployment.json).
+
+La comprobación productiva fue exclusivamente de disponibilidad y versión, sin operar turnos comerciales. Movimientos nunca enviados por otros equipos deben sincronizarse para aparecer. La impresión física conserva la verificación pendiente de los locales.
