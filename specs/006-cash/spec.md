@@ -23,7 +23,7 @@ Turno y libro de movimientos, relación con cobro/devolución, cierre y su momen
 
 ### Comprobante de cierre — solicitud del 07-10-2026
 
-Implementado y verificado localmente. [Evidencia](../../docs/evidence/comprobante-cierre-2026-10-07.md). Sin publicación; la impresión física se verifica en los locales.
+Implementado y verificado localmente; publicado en `nativos-web` / `production` el 07-10-2026 con autorización posterior del usuario. [Evidencia de pruebas y publicación](../../docs/evidence/comprobante-cierre-2026-10-07.md). La impresión física se verifica en los locales.
 
 - AC-006-07 → REQ-006-02/03/05. Al confirmar el cierre se abre el comprobante con totales y detalle cronológico de todos los movimientos del turno, incluidos los cobros combinados y los seis medios de pago. El efectivo aplicado excluye cambio; propinas y domicilios se muestran separados sin sumarlos otra vez al cobro.
 - AC-006-08 → REQ-006-04/05. Un cierre offline y su comprobante se guardan juntos. Recargar, reintentar el comando, consultar o imprimir no crea operaciones nuevas. Los cierres anteriores del navegador siguen consultables al abrir otro turno.

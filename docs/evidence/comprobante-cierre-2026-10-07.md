@@ -1,6 +1,6 @@
 # Comprobante de cierre de caja — 07-10-2026
 
-Solicitud: el cierre no generaba un comprobante con ventas, ingresos, salidas y medios de pago. Corrección implementada y verificada localmente con datos sintéticos. No se publicó en Railway ni se operaron turnos comerciales.
+Solicitud: el cierre no generaba un comprobante con ventas, ingresos, salidas y medios de pago. Corrección implementada y verificada localmente con datos sintéticos. Publicación posterior autorizada por el usuario («ok, publicala en railway»), completada el 07-10-2026. No se operaron turnos comerciales.
 
 ## Comportamiento verificado
 
@@ -21,6 +21,12 @@ Solicitud: el cierre no generaba un comprobante con ventas, ingresos, salidas y 
 
 Capturas revisadas y conservadas en [comprobante-cierre-2026-10-07/](comprobante-cierre-2026-10-07/): `close-desktop-light.png`, `close-desktop-dark.png`, `close-mobile-light.png`, `close-mobile-dark.png` y `shared-close-receipt.png`. Muestran el comprobante dentro del diálogo con desplazamiento para el detalle completo.
 
+## Publicación autorizada y verificada
+
+Commit funcional `dbda1a5abb28f8d7da46b9119eef88431e0f3a02`, enviado a `origin/main`. Se publicó un archivo Git de ese commit, sin los Excel comerciales no versionados del workspace. Railway: proyecto `nativos`, servicio `nativos-web`, entorno `production`; despliegue `906b786b-f195-4378-9798-092260bfb339`, estado `SUCCESS`.
+
+Verificación del 07-10-2026 a las 8:16 p. m. de Colombia (2026-10-08T01:16:18Z): `/health` responde HTTP 200 y `{"ok":true}`; `/` y `/caja` responden HTTP 200. Los HTML, todos los archivos compilados JS/CSS, fuente, service worker, manifiesto e icono coinciden con la versión verificada. `theme.js` coincide con la fuente del archivo Git tras normalizar únicamente los finales CRLF/LF. Se comprobaron doce archivos mediante SHA-256; [manifiesto](comprobante-cierre-2026-10-07/deployment.json). Las solicitudes al sitio alojado fueron exclusivamente lecturas públicas de disponibilidad y versión.
+
 ## Límites
 
-Sin publicación en el servicio alojado. La impresión física en T80A/T82E y cajón USB requiere verificación en los locales; el ancho y la acción de imprimir se comprobaron en navegador. Los movimientos de otra instalación que nunca se sincronizaron permanecen en ese equipo y no se inventan en un cierre confirmado. Se conservan perfiles, outbox y fuentes de datos existentes.
+La impresión física en T80A/T82E y cajón USB requiere verificación en los locales; el ancho y la acción de imprimir se comprobaron en navegador. Los movimientos de otra instalación que nunca se sincronizaron permanecen en ese equipo y no se inventan en un cierre confirmado. Se conservan perfiles, outbox y fuentes de datos existentes. La comprobación funcional con ventas/cierres se hizo en bases sintéticas; no se cerró ningún turno comercial para comprobar la publicación.

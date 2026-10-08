@@ -1,0 +1,87 @@
+{
+  "verifiedAt": "2026-10-08T01:16:18.142Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "commit": "dbda1a5abb28f8d7da46b9119eef88431e0f3a02",
+  "deploymentId": "906b786b-f195-4378-9798-092260bfb339",
+  "deploymentStatus": "SUCCESS",
+  "healthStatus": 200,
+  "healthBody": {
+    "ok": true
+  },
+  "assets": [
+    {
+      "path": "/",
+      "status": 200,
+      "sha256": "0757eb17cbc5d981f4fcdbbff9cd0a29eb003943405548c1fa44f88abf281fe0",
+      "matches": true
+    },
+    {
+      "path": "/caja",
+      "status": 200,
+      "sha256": "ef01984cb4fc4ff89e8b03a57c47b6c4d54dd74b47c940b88c8568c61e4c522d",
+      "matches": true
+    },
+    {
+      "path": "/assets/admin-BPY5HBhh.js",
+      "status": 200,
+      "sha256": "1489ded9b792effae13182892cb931337c054393ee3a4dcd94012936b08e9be1",
+      "matches": true
+    },
+    {
+      "path": "/assets/client-BHgl0vRA.css",
+      "status": 200,
+      "sha256": "b94f21c6a23ba9f47af3f9d81f26baddcaaad106f8f62a1e3519fe3d1535a3e9",
+      "matches": true
+    },
+    {
+      "path": "/assets/client-DP9ERXjx.js",
+      "status": 200,
+      "sha256": "0c6fd3c327dc35cb85e0b58df22722d137319d6451cfe4fdfdb10750783db9e1",
+      "matches": true
+    },
+    {
+      "path": "/assets/engine-DG13d6D1.js",
+      "status": 200,
+      "sha256": "8927b39456cd38f78d6719af23f4117fa4ce763212912ca00ff64c1eecb0c8ec",
+      "matches": true
+    },
+    {
+      "path": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "status": 200,
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "matches": true
+    },
+    {
+      "path": "/assets/pos-Jbn8zmxD.js",
+      "status": 200,
+      "sha256": "ecee81bea7695974b1fd3fdaff526f96491dbb57a4ae56e6ef018dc0083a0559",
+      "matches": true
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "sha256": "3c88a08fabcfda4cdce66acd7405b2c0047272ef517b41c4bff4ad1806b7c1b0",
+      "matches": true
+    },
+    {
+      "path": "/theme.js",
+      "status": 200,
+      "sha256": "8fecccede7651d2f1a6ff168eecccbfc12345d59330e1ae939da5dc88e5f43fa",
+      "matches": true,
+      "lineEndingsOnly": true,
+      "comparison": "Git archive source and local build after CRLF/LF normalization"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "status": 200,
+      "sha256": "016998ef802c574520d71b7c07f2929a2e4245ed8fe622ffa0288f3b33592667",
+      "matches": true
+    },
+    {
+      "path": "/nativos-icon.svg",
+      "status": 200,
+      "sha256": "226ddcb1d62162c842f2fd99f329fde77ccac39c42af39538d4c98523a808da6",
+      "matches": true
+    }
+  ]
+}
