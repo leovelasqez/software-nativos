@@ -28,6 +28,8 @@ El 25-09-2026 el usuario autoriza expresamente hacer commit, push y desplegar en
 
 El 07-10-2026, después de verificar el comprobante de cierre de caja (AC-006-07/08/09), el usuario autoriza publicarlo en Railway: «ok, publicala en railway». Registrar el cambio y publicarlo en el servicio existente `nativos-web`, entorno `production`; verificar salud y entrega del artefacto. No operar turnos ni modificar datos comerciales para comprobar la publicación.
 
+En la continuación de ese mismo comprobante publicado, el usuario solicita consultarlo antes de cerrar para comprobar los movimientos (AC-006-10/11). La revisión conserva el turno abierto y no inventa conteo ni diferencia. La ampliación continúa la publicación del comprobante autorizada en esta conversación, en el mismo servicio y con pruebas sintéticas; la comprobación en producción sigue siendo de solo lectura.
+
 En la continuación de esa corrección del sistema publicado, el usuario reporta el bloqueo de caja en otro computador y elige la opción 1: continuar el mismo turno. Aplicar AC-018-05/06/07 conservando responsable, base, movimientos y pendientes. La corrección se verifica con datos sintéticos y se entrega en el mismo repositorio/servicio; no abrir, cerrar ni registrar movimientos en los turnos comerciales para probarla.
 
 ## Contexto del negocio

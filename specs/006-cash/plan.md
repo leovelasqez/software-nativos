@@ -2,6 +2,10 @@
 
 ## Mantenimiento: comprobante de cierre (07-10-2026)
 
+### Ampliación: revisión antes del cierre
+
+AC-006-10/11: extraer el cálculo existente a una función compartida; conservar `buildShiftReceipt` exclusivo de turnos cerrados y agregar `buildShiftPreview` para turnos abiertos, sin simular un cierre. `/v2/state.currentShiftPreview` es una proyección calculada, no se persiste en el agregado ni genera eventos. Reutilizar la reunión por ID de eventos locales y libro compartido. El diálogo reutiliza totales y formato térmico, con título/fecha/estado de revisión y conteo/diferencia pendientes. Abrir la revisión solo consulta el estado; el sincronizador existente continúa actualizando la vista. Comprobar con dominio la igualdad con el cierre, y con navegador offline/IndexedDB real la ausencia de cambios en turno, outbox, secuencia y cierres guardados; verificar medios, libro compartido, impresión, escritorio/móvil y temas. Continuar la publicación del comprobante ya autorizada en esta conversación después de verificar la ampliación.
+
 Autorizado por el reporte del usuario. AC-006-07/08/09: agregar cálculo puro `src/shift-receipt.ts` con dinero exacto, movimientos completos y totales por medio. Caja web reúne eventos del turno y libro compartido por ID, sin usar el límite de 50 ventas de la pantalla. Guarda una copia del comprobante en la misma transacción IndexedDB del cierre y su comando idempotente. Propiedad opcional aditiva, sin borrar perfiles ni cambiar versión de sincronización. Cierres anteriores se reconstruyen con los eventos conservados; el libro compartido confirmado actualiza el arqueo al sincronizar. Vista automática al cerrar, consulta desde Turno/Comprobantes y formato térmico existente con acción de impresión. Pruebas de dominio para pagos/cambio/correcciones y E2E de persistencia, reintento, turnos compartidos, temas, móvil e impresión CSS. La impresión física requiere el hardware de los locales.
 
 > Contexto histórico de incrementos 0–5. Para cambios nuevos prevalecen DEC-021 y specs/012-unified-web: un sitio único con Caja offline en navegador. Se conservan reglas y contratos comerciales.

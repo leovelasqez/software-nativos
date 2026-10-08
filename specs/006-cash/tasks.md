@@ -2,6 +2,12 @@
 
 ## Comprobante de cierre — 07-10-2026
 
+| ID | Entregable de revisión previa | Aceptación | Estado |
+| --- | --- | --- | --- |
+| TASK-006-PREVIEW-01 | Cálculo compartido y contrato de proyección de turno abierto | AC-006-10/11 | Verificado localmente |
+| TASK-006-PREVIEW-02 | Consulta e impresión desde Turno sin operación de cierre | AC-006-10 | Verificado localmente |
+| TASK-006-PREVIEW-03 | Dominio, integración del libro y E2E offline/compartido con evidencia | AC-006-10/11 | Verificado localmente |
+
 | ID | Entregable | Aceptación | Estado |
 | --- | --- | --- | --- |
 | TASK-006-RECEIPT-01 | Contrato y cálculo exacto por medio, detalle completo y contrapartidas | AC-006-07/09 | Verificado localmente |

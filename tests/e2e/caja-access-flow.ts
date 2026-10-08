@@ -99,6 +99,13 @@ export async function exerciseCajaAccess(parent:Page,password:string){
     await expect(a.locator('.pos-shift')).toContainText('Efectivo esperado: $ 32.150');
     await expect(a.locator('.pos-shift')).toContainText('Propina neta del turno: $ 2.000 · Domicilio neto: $ 4.000');
     await a.screenshot({path:'test-results/caja-access/open-centro.png',fullPage:true});
+    await a.getByRole('button',{name:'Revisar movimientos',exact:true}).click();
+    await expect(a.getByRole('heading',{name:'Comprobante del turno en curso',exact:true})).toBeVisible();
+    await expect(a.locator('.shift-receipt')).toContainText('Ventas (2): $ 32.000');
+    await expect(a.locator('.shift-receipt')).toContainText('Propina neta: $ 2.000');
+    await expect(a.locator('.shift-receipt')).toContainText('últimos movimientos sincronizados de otros equipos');
+    await a.screenshot({path:'test-results/caja-access/shared-open-review.png',fullPage:true});
+    await a.keyboard.press('Escape');
     await b.getByRole('navigation').getByRole('button',{name:'Comprobantes',exact:true}).click();
     await b.getByRole('button',{name:'Devolver',exact:true}).last().click();
     await b.getByLabel('Devolver · Batido de prueba').fill('1');
@@ -112,7 +119,15 @@ export async function exerciseCajaAccess(parent:Page,password:string){
     await a.getByRole('button',{name:'Corregir',exact:true}).click();await a.getByLabel('Motivo').fill('Contrapartida sintética desde primer equipo');
     await a.getByRole('button',{name:'Registrar contrapartida'}).click();await expect(a.getByRole('dialog')).not.toBeVisible();
     await expect(a.locator('.pos-shift')).toContainText('Efectivo esperado: $ 16.100');
-    await close(b,'16100');await a.getByRole('button',{name:'Sincronizar',exact:true}).click();
+    await a.getByRole('button',{name:'Revisar movimientos',exact:true}).click();
+    await expect(a.locator('.shift-receipt')).toContainText('Devoluciones (1): $ 16.000');
+    await expect(a.locator('.shift-receipt')).toContainText('Efectivo esperado: $ 16.100');
+    await close(b,'16100');
+    // AC-006-11: background sync remains active during review and replaces
+    // an open preview with the confirmed receipt if another member closes.
+    await expect(a.getByRole('heading',{name:'Comprobante de cierre',exact:true})).toBeVisible({timeout:25000});
+    await expect(a.locator('.shift-receipt')).toContainText('Cierre sincronizado.');
+    await a.keyboard.press('Escape');
     await expect(a.locator('.pos-shift')).toContainText('No hay un turno abierto');
     await expect(a.locator('.pos-shift')).toContainText('Diferencia: $ 0');
     await a.getByRole('button',{name:'Ver comprobante de cierre',exact:true}).click();

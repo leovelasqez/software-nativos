@@ -9,6 +9,7 @@ Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente seg
 - REQ-006-03: calcular efectivo esperado, contado y diferencia; presentar propinas y cobros de domicilio separados, sin duplicarlos.
 - REQ-006-04: persistir turnos offline y comunicar un cierre confirmado/sincronizado a informes y WhatsApp.
 - REQ-006-05: al cerrar, generar y mostrar un comprobante interno imprimible con identidad del turno, base, ventas, devoluciones, ingresos, gastos, retiros, correcciones, pagos por cada medio, propinas, domicilios y arqueo; conservarlo para consulta y reimpresión.
+- REQ-006-06: permitir revisar e imprimir el mismo detalle durante el turno abierto, antes de confirmar el cierre, con efectivo esperado actual y conteo/diferencia pendientes.
 
 ## Fronteras
 
@@ -28,6 +29,15 @@ Implementado y verificado localmente; publicado en `nativos-web` / `production` 
 - AC-006-07 → REQ-006-02/03/05. Al confirmar el cierre se abre el comprobante con totales y detalle cronológico de todos los movimientos del turno, incluidos los cobros combinados y los seis medios de pago. El efectivo aplicado excluye cambio; propinas y domicilios se muestran separados sin sumarlos otra vez al cobro.
 - AC-006-08 → REQ-006-04/05. Un cierre offline y su comprobante se guardan juntos. Recargar, reintentar el comando, consultar o imprimir no crea operaciones nuevas. Los cierres anteriores del navegador siguen consultables al abrir otro turno.
 - AC-006-09 → REQ-006-05; AC-018-06. Un cierre compartido incluye el libro central y los registros locales sin duplicarlos. Tras la sincronización usa el arqueo confirmado por el servidor. Los cierres existentes pueden reconstruirse del libro conservado sin modificar datos comerciales.
+
+### Revisión del turno abierto — ampliación del 07-10-2026
+
+Implementada y verificada localmente. [Evidencia](../../docs/evidence/revision-turno-abierto-2026-10-07.md).
+
+Autorizada por la solicitud del usuario de comprobar los movimientos antes de cerrar. La imagen adjunta es una referencia del propósito de consulta; sus importes y clasificaciones no se usan como datos de Nativos.
+
+- AC-006-10 → REQ-006-06. En un turno abierto, «Revisar movimientos» muestra los mismos totales/detalle que el comprobante de cierre y permite imprimir una vista identificada como revisión. No registra fecha de cierre, conteo ni diferencia, ni crea operaciones, notificaciones o copias definitivas. La consulta funciona offline y después de recargar.
+- AC-006-11 → REQ-006-02/03/06; AC-018-06/07. La vista se recalcula desde el libro del turno al consultar y al actualizar el estado. Integra movimientos locales y sincronizados de otros equipos sin duplicarlos; indica que los movimientos no enviados por otros equipos deben sincronizarse. Los totales revisados y los del cierre posterior concilian si no hubo movimientos adicionales.
 
 ## Dependencias y pendientes
 

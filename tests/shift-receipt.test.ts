@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildShiftReceipt } from '../src/shift-receipt.ts';
+import { buildShiftReceipt, buildShiftPreview } from '../src/shift-receipt.ts';
 import type { ReceiptSale, ReceiptRefund } from '../src/shift-receipt.ts';
 import type { CashMovement, PaymentMethod } from '../src/pos-domain.ts';
 import type { Shift } from '../src/pos/store.ts';
@@ -45,4 +45,27 @@ test('AC-006-08 — cierre vacío, saldo negativo y copia estable sin modificar 
   assert.equal(buildShiftReceipt(shift, 'centro', 'centro-caja', { sales: [], refunds: [], cashMovements: [] }).movements.length, 0);
   assert.throws(() => buildShiftReceipt({ ...shift, closedAtMs: null }, 'centro', 'centro-caja', input), /cerrado/);
   assert.throws(() => buildShiftReceipt(shift, 'centro', 'centro-caja', { ...input, cashMovements: [manual('correccion', 'correction', 'nequi', '10', '0', 'ausente')] }), /original/);
+});
+
+test('AC-006-10/11 — revisar el turno abierto conserva el libro y coincide con el cierre posterior', () => {
+  const open: Shift = { ...shift, closedAtMs: null, counted: null, difference: null };
+  const input = { sales: [sale, sale], refunds: [refund], cashMovements: [manual('ingreso', 'income', 'cash', '5000', '5000'), manual('gasto', 'expense', 'cash', '3000', '-3000')] };
+  const before = structuredClone({ open, input });
+  const preview = buildShiftPreview(open, 'centro', 'centro-caja', input, 500);
+  const receipt = buildShiftReceipt(shift, 'centro', 'centro-caja', input);
+  assert.deepEqual(preview.totals, receipt.totals); assert.deepEqual(preview.payments, receipt.payments); assert.deepEqual(preview.movements, receipt.movements);
+  assert.deepEqual(preview.shift, open); assert.notEqual(preview.shift, open); assert.equal(preview.viewedAtMs, 500);
+  assert.equal(preview.shift.closedAtMs, null); assert.equal(preview.shift.counted, null); assert.equal(preview.shift.difference, null);
+  assert.deepEqual({ open, input }, before); assert.equal(preview.totals.saleCount, 1);
+  const later = buildShiftPreview(open, 'centro', 'centro-caja', { ...input, sales: [...input.sales, { ...sale, id: 'venta-2' }] }, 600);
+  assert.equal(later.totals.saleCount, 2); assert.equal(later.totals.sales, '40000'); assert.equal(preview.totals.sales, '20000');
+  assert.throws(() => buildShiftPreview(shift, 'centro', 'centro-caja', input, 500), /abierto/);
+  assert.throws(() => buildShiftPreview({ ...open, counted: '0' }, 'centro', 'centro-caja', input, 500), /sin conteo/);
+});
+
+test('AC-006-10 — turno abierto vacío se revisa sin inventar conteo o fecha de cierre', () => {
+  const open: Shift = { ...shift, openingCash: '0', expected: '0', closedAtMs: null, counted: null, difference: null };
+  const preview = buildShiftPreview(open, 'centro', 'centro-caja', { sales: [], refunds: [], cashMovements: [] }, 50);
+  assert.equal(preview.totals.net, '0'); assert.equal(preview.movements.length, 0); assert.equal(preview.payments.length, 6);
+  assert.equal(preview.shift.expected, '0'); assert.equal(preview.shift.counted, null);
 });

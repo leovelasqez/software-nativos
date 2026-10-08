@@ -1,8 +1,19 @@
 import { exerciseCajaUi } from './caja-ui-flow.ts';
 import { expect } from '@playwright/test';
+import type { BrowserData } from '../../web/offline/engine.ts';
 import type { Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { AxeBuilder } from '@axe-core/playwright';
+// Inspect only commercial state from the real encrypted IndexedDB aggregate.
+async function commercialState(page:Page){return page.evaluate(async()=>{
+ const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('nativos-caja',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+ try{
+  const read=(name:string)=>new Promise<any>((resolve,reject)=>{const r=db.transaction('state','readonly').objectStore('state').get(name);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  const [key,record]=await Promise.all([read('key'),read('root')]);
+  const data=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(record.iv)},key,record.cipher))) as BrowserData;
+  return {sequence:data.sequence,shifts:data.shifts,outbox:data.outbox.map(o=>({id:o.operation.operationId,state:o.state})),events:data.events.length,commands:Object.keys(data.commands).sort(),receiptIds:Object.keys(data.shiftReceipts??{}).sort(),hasStoredPreview:'currentShiftPreview' in data};
+ }finally{db.close();}
+});}
 export async function exercisePos(page: Page, password: string) {
   const nav = async (name:string) => { if(!await page.getByRole('navigation').isVisible()) await page.getByRole('button',{name:'Menú de Caja',exact:true}).click(); await page.getByRole('navigation').getByRole('button',{name,exact:true}).click(); };
   const root = 'test-results/unified-web/regression'; await mkdir(root, { recursive: true });
@@ -35,8 +46,39 @@ export async function exercisePos(page: Page, password: string) {
   await nav('Comprobantes'); await expect(page.getByRole('button', { name: 'Ver copia' })).toHaveCount(1); await page.getByRole('button', { name: 'Ver copia' }).click(); await expect(dialog).toContainText('28.000'); await page.keyboard.press('Escape');
   // AC-006-08: close offline, keep the persisted receipt and reprint after reload.
   await page.evaluate(()=>navigator.serviceWorker.ready.then(()=>true));await page.context().setOffline(true);
-  await nav('Turno'); await expect(page.locator('.pos-shift')).toContainText('77.000'); await page.getByRole('button', { name: 'Cerrar turno' }).click(); await dialog.getByLabel('Efectivo contado (COP)').fill('77500'); await dialog.getByRole('button', { name: 'Confirmar cierre' }).click(); await expect(page.getByRole('heading', { name: 'Comprobante de cierre', exact:true })).toBeVisible();
+  await nav('Turno'); await expect(page.locator('.pos-shift')).toContainText('77.000');
+  // AC-006-10/11: live review and printing must leave the financial aggregate intact.
+  const beforeReview=await commercialState(page);
+  await page.getByRole('button',{name:'Revisar movimientos',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Comprobante del turno en curso',exact:true})).toBeVisible();
+  await expect(page.locator('.shift-receipt')).toContainText('Vista previa · El turno sigue abierto.');
+  await expect(page.locator('.shift-receipt')).toContainText('Efectivo contado: Pendiente de conteo');
+  await expect(page.locator('.shift-receipt')).toContainText('Diferencia: Pendiente de cierre');
+  await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');
+  await expect(page.locator('.shift-receipt section').nth(2).locator('.receipt-line')).toHaveCount(6);
+  const reviewedSummary=await page.locator('.shift-receipt section').nth(1).textContent();
+  for(const viewport of [{width:1440,height:1000,name:'desktop'},{width:390,height:844,name:'mobile'}]){
+    await page.setViewportSize(viewport);
+    for(const dark of [false,true]){
+      await page.evaluate(value=>document.documentElement.dataset.theme=value,dark?'dark':'light');
+      expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(v=>v.id)).toEqual([]);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+      await page.screenshot({path:root+'/review-'+viewport.name+'-'+(dark?'dark':'light')+'.png',fullPage:true});
+    }
+  }
+  await page.evaluate(()=>{window.print=()=>{document.documentElement.dataset.reviewPrintCalls='1';};});
+  await page.getByRole('button',{name:'Imprimir revisión',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-review-print-calls','1');
+  await page.emulateMedia({media:'print'});await expect(page.locator('.shift-receipt')).toContainText('Vista previa · El turno sigue abierto.');
+  expect(await page.locator('.thermal-receipt').evaluate(e=>parseFloat(getComputedStyle(e).width))).toBeCloseTo(72/25.4*96,0);
+  await expect(page.getByRole('button',{name:'Imprimir revisión',exact:true})).not.toBeVisible();await page.emulateMedia({media:'screen'});
+  expect(await commercialState(page)).toEqual(beforeReview);await page.keyboard.press('Escape');
+  await page.reload();await nav('Turno');await expect(page.getByRole('button',{name:'Cerrar turno',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Revisar movimientos',exact:true}).click();
+  await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');expect(await commercialState(page)).toEqual(beforeReview);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Cerrar turno' }).click(); await dialog.getByLabel('Efectivo contado (COP)').fill('77500'); await dialog.getByRole('button', { name: 'Confirmar cierre' }).click(); await expect(page.getByRole('heading', { name: 'Comprobante de cierre', exact:true })).toBeVisible();
   await expect(page.locator('.shift-receipt')).toContainText('Pendiente de sincronización');
+  await expect(page.locator('.shift-receipt section').nth(1)).toHaveText(reviewedSummary!);
   await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');
   await expect(page.locator('.shift-receipt')).toContainText('Cambio entregado: $ 2.000');
   const receiptId=await page.locator('.shift-receipt>.receipt-number').textContent();

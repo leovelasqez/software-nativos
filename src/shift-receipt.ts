@@ -16,13 +16,29 @@ export interface ShiftReceipt {
   payments: (Amounts & { method: PaymentMethod })[];
   movements: { id: string; kind: 'sale' | 'refund' | CashMovement['class']; reference: string; occurredAtMs: number; actorName: string; reason: string; amount: string; cashDelta: string; payments: { method: PaymentMethod; amount: string }[] }[];
 }
+export interface ShiftPreview extends Omit<ShiftReceipt, 'shift'> {
+  shift: Shift & { closedAtMs: null; counted: null; difference: null };
+  viewedAtMs: number;
+}
+export type ShiftReport = ShiftReceipt | ShiftPreview;
 export type ReceiptSale = Pick<SaleV2, 'id' | 'receiptNumber' | 'occurredAtMs' | 'actorName' | 'total' | 'tipPaid' | 'shippingPaid' | 'change' | 'cashApplied' | 'payments'>;
 export type ReceiptRefund = Pick<RefundV2, 'id' | 'saleId' | 'occurredAtMs' | 'actorName' | 'reason' | 'total' | 'tip' | 'shipping' | 'cashApplied' | 'payments'>;
+type ShiftLedger = { sales: ReceiptSale[]; refunds: ReceiptRefund[]; cashMovements: CashMovement[] };
 const unique = <T extends { id: string }>(rows: T[]) => [...new Map(rows.map(row => [row.id, row])).values()];
 
-// AC-006-07/09: applied payments and causal corrections, with exact money.
-export function buildShiftReceipt(shift: Shift, branchId: string, deviceId: string, input: { sales: ReceiptSale[]; refunds: ReceiptRefund[]; cashMovements: CashMovement[] }): ShiftReceipt {
+export function buildShiftReceipt(shift: Shift, branchId: string, deviceId: string, input: ShiftLedger): ShiftReceipt {
   if (shift.closedAtMs === null || shift.counted === null || shift.difference === null) throw new Error('El turno debe estar cerrado para emitir su comprobante.');
+  return { ...buildShiftDetails(shift, branchId, deviceId, input), shift: structuredClone(shift) as ShiftReceipt['shift'] };
+}
+
+// AC-006-10/11: review the same ledger without closing or inventing a count.
+export function buildShiftPreview(shift: Shift, branchId: string, deviceId: string, input: ShiftLedger, viewedAtMs: number): ShiftPreview {
+  if (shift.closedAtMs !== null || shift.counted !== null || shift.difference !== null) throw new Error('La revisión previa requiere un turno abierto sin conteo de cierre.');
+  return { ...buildShiftDetails(shift, branchId, deviceId, input), shift: structuredClone(shift) as ShiftPreview['shift'], viewedAtMs };
+}
+
+// AC-006-07/09/11: one calculation for both review and definitive receipt.
+function buildShiftDetails(shift: Shift, branchId: string, deviceId: string, input: ShiftLedger): Omit<ShiftReceipt, 'shift'> {
   const sales = unique(input.sales), refunds = unique(input.refunds), manual = unique(input.cashMovements);
   const rows = paymentMethods.map(method => ({ method, sales: 0n, refunds: 0n, income: 0n, expense: 0n, withdrawal: 0n, correction: 0n }));
   const rowFor = (method: PaymentMethod) => rows.find(row => row.method === method)!;
@@ -57,7 +73,7 @@ export function buildShiftReceipt(shift: Shift, branchId: string, deviceId: stri
   const amounts = (row: typeof rows[number]): Amounts => ({ sales: formatted(row.sales), refunds: formatted(row.refunds), income: formatted(row.income), expense: formatted(row.expense), withdrawal: formatted(row.withdrawal), correction: formatted(row.correction), net: formatted(row.sales - row.refunds + row.income - row.expense - row.withdrawal + row.correction) });
   const total = { method: 'cash' as const, sales: 0n, refunds: 0n, income: 0n, expense: 0n, withdrawal: 0n, correction: 0n };
   for (const row of rows) for (const key of ['sales', 'refunds', 'income', 'expense', 'withdrawal', 'correction'] as const) total[key] += row[key];
-  return { id: shift.id, shiftId: shift.id, branchId, deviceId, shift: structuredClone(shift) as ShiftReceipt['shift'],
+  return { id: shift.id, shiftId: shift.id, branchId, deviceId,
     totals: { ...amounts(total), saleCount: sales.length, refundCount: refunds.length, products: formatted(saleTotal - refundTotal - tip - shipping), tip: formatted(tip), shipping: formatted(shipping), change: formatted(change) },
     payments: rows.map(row => ({ method: row.method, ...amounts(row) })), movements: movements.sort((a, b) => a.occurredAtMs - b.occurredAtMs || a.id.localeCompare(b.id)) };
 }

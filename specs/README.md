@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Revisión del turno abierto — verificada (07-10-2026)
+
+REQ-006-06 y AC-006-10/11: consulta e impresión de movimientos antes del cierre, usando los mismos totales; conteo/diferencia pendientes, sin modificar el libro ni crear cierre, actualización compartida y funcionamiento offline. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/revision-turno-abierto-2026-10-07.md). Publicación en curso como continuación del comprobante autorizado en esta conversación.
+
 ## Comprobante de cierre — publicado (07-10-2026)
 
 REQ-006-05 y AC-006-07/08/09: comprobante automático al cerrar, movimientos completos y seis medios, arqueo, cierre offline persistente, consulta/reimpresión y libro compartido sin duplicados. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md), `src/shift-receipt.ts`, `web/offline/engine.ts`, `web/ShiftReceipt.tsx`, pruebas de dominio/integración/E2E y [evidencia](../docs/evidence/comprobante-cierre-2026-10-07.md). Publicado con autorización en Railway; salud y versión verificadas sin operar turnos comerciales. La impresión física queda pendiente de los equipos de los locales.
