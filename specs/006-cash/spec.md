@@ -39,6 +39,15 @@ Autorizada por la solicitud del usuario de comprobar los movimientos antes de ce
 - AC-006-10 → REQ-006-06. En un turno abierto, «Revisar movimientos» muestra los mismos totales/detalle que el comprobante de cierre y permite imprimir una vista identificada como revisión. No registra fecha de cierre, conteo ni diferencia, ni crea operaciones, notificaciones o copias definitivas. La consulta funciona offline y después de recargar.
 - AC-006-11 → REQ-006-02/03/06; AC-018-06/07. La vista se recalcula desde el libro del turno al consultar y al actualizar el estado. Integra movimientos locales y sincronizados de otros equipos sin duplicarlos; indica que los movimientos no enviados por otros equipos deben sincronizarse. Los totales revisados y los del cierre posterior concilian si no hubo movimientos adicionales.
 
+### Formato simplificado — referencia del 07-10-2026
+
+Implementado y verificado localmente. [Evidencia](../../docs/evidence/cierre-simplificado-2026-10-07.md).
+
+El usuario solicita simplificar el comprobante según la foto aportada. Sus cifras y número de cierre no se cargan como datos; se conserva el identificador real del turno. Esta solicitud sustituye la impresión del detalle cronológico completo de AC-006-07: el detalle sigue consultable en pantalla.
+
+- AC-006-12 → REQ-006-03/05/06. La vista de cierre/revisión y su impresión presentan fechas, total de ventas, base inicial, ventas por los seis medios registrados, devoluciones, retiros en efectivo, otros movimientos pertinentes, total de movimientos con base y efectivo de cierre. Mantienen contado/esperado/diferencia reales, con campos pendientes en el turno abierto. La impresión compacta excluye el detalle individual y los controles, y ofrece un espacio de observaciones en papel.
+- AC-006-13 → REQ-006-02/05/06. El detalle completo se consulta en un apartado desplegable de pantalla. Simplificar, desplegar o imprimir no recalcula el libro ni crea operaciones. Tarjeta permanece agrupada, sin atribuir a débito/crédito datos que no se registraron. Total de movimientos del resumen = base inicial + neto de movimientos de todos los medios; efectivo de cierre = contado en cierre / esperado en revisión.
+
 ## Dependencias y pendientes
 
 001/004/007/009. DEC-002/014 afectan redondeos, efectivo recibido/cambio y pagos fallidos. Datos de prueba sintéticos. Evidencia: pendiente.

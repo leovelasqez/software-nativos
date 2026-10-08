@@ -2,6 +2,12 @@
 
 ## Comprobante de cierre — 07-10-2026
 
+| ID | Formato simplificado | Aceptación | Estado |
+| --- | --- | --- | --- |
+| TASK-006-SIMPLE-01 | Resumen compacto de cierre y revisión, mismo libro | AC-006-12/13 | Verificado localmente |
+| TASK-006-SIMPLE-02 | Detalle desplegable en pantalla y exclusión del papel | AC-006-12/13 | Verificado localmente |
+| TASK-006-SIMPLE-03 | Verificar totales, impresión, temas y tamaños en E2E | AC-006-12/13 | Verificado localmente |
+
 | ID | Entregable de revisión previa | Aceptación | Estado |
 | --- | --- | --- | --- |
 | TASK-006-PREVIEW-01 | Cálculo compartido y contrato de proyección de turno abierto | AC-006-10/11 | Verificado localmente |

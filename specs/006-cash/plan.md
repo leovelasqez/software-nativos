@@ -2,6 +2,10 @@
 
 ## Mantenimiento: comprobante de cierre (07-10-2026)
 
+### Presentación simplificada
+
+AC-006-12/13: reutilizar `ShiftReport` y los cálculos publicados. Presentar un resumen `dl` en dos columnas con separadores punteados, fecha de apertura/cierre o consulta, ventas totales, base, una fila por medio, devoluciones, retiros cash y movimientos adicionales si existen. Sumar base + neto con decimales exactos solo para el total de presentación solicitado; mantener los importes guardados. Conservar el identificador íntegro del turno y el arqueo; no inventar numeración correlativa, débito/crédito ni observaciones persistidas. Agregar espacio de observaciones para completar en papel. Mover las secciones detalladas a `details` de pantalla, excluido por CSS de impresión. Verificar en el E2E existente resumen/arithmetic, despliegue de detalle, papel 72 mm, altura compacta, ausencia de detalle en impresión, ambos temas y tamaños. Continuar la publicación del mismo comprobante autorizada en esta conversación, después de comprobar la presentación.
+
 ### Ampliación: revisión antes del cierre
 
 AC-006-10/11: extraer el cálculo existente a una función compartida; conservar `buildShiftReceipt` exclusivo de turnos cerrados y agregar `buildShiftPreview` para turnos abiertos, sin simular un cierre. `/v2/state.currentShiftPreview` es una proyección calculada, no se persiste en el agregado ni genera eventos. Reutilizar la reunión por ID de eventos locales y libro compartido. El diálogo reutiliza totales y formato térmico, con título/fecha/estado de revisión y conteo/diferencia pendientes. Abrir la revisión solo consulta el estado; el sincronizador existente continúa actualizando la vista. Comprobar con dominio la igualdad con el cierre, y con navegador offline/IndexedDB real la ausencia de cambios en turno, outbox, secuencia y cierres guardados; verificar medios, libro compartido, impresión, escritorio/móvil y temas. Continuar la publicación del comprobante ya autorizada en esta conversación después de verificar la ampliación.

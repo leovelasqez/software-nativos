@@ -57,6 +57,13 @@ export async function exercisePos(page: Page, password: string) {
   await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');
   await expect(page.locator('.shift-receipt section').nth(2).locator('.receipt-line')).toHaveCount(6);
   const reviewedSummary=await page.locator('.shift-receipt section').nth(1).textContent();
+  await expect(page.locator('.shift-compact-summary>div').filter({hasText:'Total de ventas'}).locator('dd')).toHaveText('$ 28.000');
+  await expect(page.locator('.shift-compact-summary>div').filter({hasText:'Total de movimientos'}).locator('dd')).toHaveText('$ 77.000');
+  await expect(page.locator('.shift-cash-summary')).toContainText('Dinero en efectivo esperado');
+  await expect(page.getByText('Observaciones:',{exact:true})).toBeVisible();
+  await expect(page.locator('.shift-full-detail')).not.toHaveAttribute('open','');
+  await page.getByText('Ver detalle completo',{exact:true}).click();await expect(page.getByRole('heading',{name:'Detalle de movimientos',exact:true})).toBeVisible();
+  await page.getByText('Ver detalle completo',{exact:true}).click();
   for(const viewport of [{width:1440,height:1000,name:'desktop'},{width:390,height:844,name:'mobile'}]){
     await page.setViewportSize(viewport);
     for(const dark of [false,true]){
@@ -68,9 +75,14 @@ export async function exercisePos(page: Page, password: string) {
   }
   await page.evaluate(()=>{window.print=()=>{document.documentElement.dataset.reviewPrintCalls='1';};});
   await page.getByRole('button',{name:'Imprimir revisión',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-review-print-calls','1');
+  await page.getByText('Ver detalle completo',{exact:true}).click();
   await page.emulateMedia({media:'print'});await expect(page.locator('.shift-receipt')).toContainText('Vista previa · El turno sigue abierto.');
   expect(await page.locator('.thermal-receipt').evaluate(e=>parseFloat(getComputedStyle(e).width))).toBeCloseTo(72/25.4*96,0);
-  await expect(page.getByRole('button',{name:'Imprimir revisión',exact:true})).not.toBeVisible();await page.emulateMedia({media:'screen'});
+  await expect(page.getByRole('button',{name:'Imprimir revisión',exact:true})).not.toBeVisible();
+  await expect(page.locator('.shift-full-detail')).not.toBeVisible();
+  expect(await page.locator('.thermal-receipt').evaluate(e=>e.scrollHeight)).toBeLessThan(900);
+  await page.screenshot({path:root+'/simple-review-print.png',fullPage:true});
+  await page.emulateMedia({media:'screen'});await page.getByText('Ver detalle completo',{exact:true}).click();
   expect(await commercialState(page)).toEqual(beforeReview);await page.keyboard.press('Escape');
   await page.reload();await nav('Turno');await expect(page.getByRole('button',{name:'Cerrar turno',exact:true})).toBeEnabled();
   await page.getByRole('button',{name:'Revisar movimientos',exact:true}).click();
@@ -81,6 +93,8 @@ export async function exercisePos(page: Page, password: string) {
   await expect(page.locator('.shift-receipt section').nth(1)).toHaveText(reviewedSummary!);
   await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');
   await expect(page.locator('.shift-receipt')).toContainText('Cambio entregado: $ 2.000');
+  await expect(page.locator('.shift-compact-summary>div').filter({hasText:'Total de movimientos'}).locator('dd')).toHaveText('$ 77.000');
+  await expect(page.locator('.shift-cash-summary>div').filter({hasText:'Dinero en efectivo del cierre'}).locator('dd')).toHaveText('$ 77.500');
   const receiptId=await page.locator('.shift-receipt>.receipt-number').textContent();
   const pendingBefore=(await page.locator('.pos-sync').innerText()).match(/\d+ pendientes?/)![0];
   for(const viewport of [{width:1440,height:1000,name:'desktop'},{width:390,height:844,name:'mobile'}]){
@@ -95,9 +109,14 @@ export async function exercisePos(page: Page, password: string) {
   await page.evaluate(()=>{window.print=()=>{document.documentElement.dataset.printCalls=String(Number(document.documentElement.dataset.printCalls??'0')+1);};});
   await page.getByRole('button',{name:'Imprimir cierre',exact:true}).click();
   await expect(page.locator('html')).toHaveAttribute('data-print-calls','1');
+  await page.getByText('Ver detalle completo',{exact:true}).click();
   await page.emulateMedia({media:'print'});
   expect(await page.locator('.thermal-receipt').evaluate(e=>parseFloat(getComputedStyle(e).width))).toBeCloseTo(72/25.4*96,0);
   await expect(page.getByRole('button',{name:'Imprimir cierre',exact:true})).not.toBeVisible();
+  await expect(page.locator('.shift-full-detail')).not.toBeVisible();
+  await expect(page.getByRole('heading',{name:'Detalle de movimientos',exact:true})).not.toBeVisible();
+  expect(await page.locator('.thermal-receipt').evaluate(e=>e.scrollHeight)).toBeLessThan(900);
+  await page.screenshot({path:root+'/simple-close-print.png',fullPage:true});
   await page.emulateMedia({media:'screen'});
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible(); await expect(page.locator('.pos-shift')).toContainText('No hay un turno abierto');
   await page.reload();await nav('Turno');await page.getByRole('button',{name:'Ver comprobante de cierre',exact:true}).click();

@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Formato simplificado de cierre — verificado (07-10-2026)
+
+AC-006-12/13: resumen de dos columnas siguiendo la foto del usuario, efectivo/arqueo reales, detalle consultable mediante desplegable y excluido de la impresión compacta. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/cierre-simplificado-2026-10-07.md). Sin cambio de libro, permisos o persistencia; continuación de la publicación del comprobante autorizada en esta conversación.
+
 ## Revisión del turno abierto — publicada (07-10-2026)
 
 REQ-006-06 y AC-006-10/11: consulta e impresión de movimientos antes del cierre, usando los mismos totales; conteo/diferencia pendientes, sin modificar el libro ni crear cierre, actualización compartida y funcionamiento offline. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/revision-turno-abierto-2026-10-07.md). Publicada como continuación del comprobante autorizado; salud y archivos comprobados sin operar turnos comerciales.
