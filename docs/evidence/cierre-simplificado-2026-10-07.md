@@ -22,4 +22,8 @@ Capturas revisadas en [cierre-simplificado-2026-10-07/](cierre-simplificado-2026
 
 ## Publicación y límites
 
-La publicación continúa la autorización del mismo comprobante en Railway, servicio `nativos-web`, entorno `production`, con comprobación pública de salud y versión. Las pruebas funcionales usan datos sintéticos; no se operan turnos comerciales. La impresión física debe comprobarse con las impresoras de los locales. Observaciones es un espacio en papel, no un nuevo campo persistido.
+Publicado como continuación del mismo comprobante autorizado en Railway, servicio `nativos-web`, entorno `production`. Commit funcional `b35e65a7dac520c732013cb7a8d14b6676ac2375`, enviado a `origin/main`; se publicó un archivo Git de ese commit, excluyendo los archivos comerciales no versionados. Despliegue `6a4ec6d4-e943-4e9e-be5e-18dc23fff123`: `SUCCESS`, con healthcheck aprobado.
+
+Verificación del 07-10-2026 a las 8:58 p. m. de Colombia (2026-10-08T01:58:01Z): `/health` responde HTTP 200 y `{"ok":true}`; `/` y `/caja` responden HTTP 200. Los doce archivos públicos comprobados corresponden a la compilación validada: HTML, todos los assets JS/CSS/fuente, service worker, manifiesto e icono. `theme.js` coincide tras normalizar únicamente CRLF/LF. Hashes y resultados en [deployment.json](cierre-simplificado-2026-10-07/deployment.json).
+
+Las pruebas funcionales usan datos sintéticos; la comprobación productiva solo consulta salud y archivos públicos, sin operar turnos comerciales. La impresión física debe comprobarse con las impresoras de los locales. Observaciones es un espacio en papel, no un nuevo campo persistido.

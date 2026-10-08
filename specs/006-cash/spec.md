@@ -41,7 +41,7 @@ Autorizada por la solicitud del usuario de comprobar los movimientos antes de ce
 
 ### Formato simplificado — referencia del 07-10-2026
 
-Implementado y verificado localmente. [Evidencia](../../docs/evidence/cierre-simplificado-2026-10-07.md).
+Implementado, verificado y publicado en el mismo servicio autorizado de Railway. [Evidencia de pruebas y publicación](../../docs/evidence/cierre-simplificado-2026-10-07.md).
 
 El usuario solicita simplificar el comprobante según la foto aportada. Sus cifras y número de cierre no se cargan como datos; se conserva el identificador real del turno. Esta solicitud sustituye la impresión del detalle cronológico completo de AC-006-07: el detalle sigue consultable en pantalla.
 

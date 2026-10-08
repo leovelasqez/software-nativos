@@ -1,8 +1,8 @@
 # Índice de especificaciones y trazabilidad
 
-## Formato simplificado de cierre — verificado (07-10-2026)
+## Formato simplificado de cierre — publicado (07-10-2026)
 
-AC-006-12/13: resumen de dos columnas siguiendo la foto del usuario, efectivo/arqueo reales, detalle consultable mediante desplegable y excluido de la impresión compacta. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/cierre-simplificado-2026-10-07.md). Sin cambio de libro, permisos o persistencia; continuación de la publicación del comprobante autorizada en esta conversación.
+AC-006-12/13: resumen de dos columnas siguiendo la foto del usuario, efectivo/arqueo reales, detalle consultable mediante desplegable y excluido de la impresión compacta. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/cierre-simplificado-2026-10-07.md). Sin cambio de libro, permisos o persistencia; publicado como continuación del comprobante autorizado, con salud y archivos verificados.
 
 ## Revisión del turno abierto — publicada (07-10-2026)
 
