@@ -1,5 +1,9 @@
 # Plan técnico — Incremento 3: primera venta completa
 
+## Mantenimiento: comprobante de cierre (07-10-2026)
+
+Autorizado por el reporte del usuario. AC-006-07/08/09: agregar cálculo puro `src/shift-receipt.ts` con dinero exacto, movimientos completos y totales por medio. Caja web reúne eventos del turno y libro compartido por ID, sin usar el límite de 50 ventas de la pantalla. Guarda una copia del comprobante en la misma transacción IndexedDB del cierre y su comando idempotente. Propiedad opcional aditiva, sin borrar perfiles ni cambiar versión de sincronización. Cierres anteriores se reconstruyen con los eventos conservados; el libro compartido confirmado actualiza el arqueo al sincronizar. Vista automática al cerrar, consulta desde Turno/Comprobantes y formato térmico existente con acción de impresión. Pruebas de dominio para pagos/cambio/correcciones y E2E de persistencia, reintento, turnos compartidos, temas, móvil e impresión CSS. La impresión física requiere el hardware de los locales.
+
 > Contexto histórico de incrementos 0–5. Para cambios nuevos prevalecen DEC-021 y specs/012-unified-web: un sitio único con Caja offline en navegador. Se conservan reglas y contratos comerciales.
 Estado: implementado y verificado localmente en el alcance del incremento 3. Autorización: «Continua con el incremento 3», 14-09-2026. Plan funcional y hoja de ruta vigentes; 001/002/003 fundamentos ya verificados.
 

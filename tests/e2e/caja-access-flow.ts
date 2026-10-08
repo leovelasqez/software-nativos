@@ -20,7 +20,15 @@ export async function exerciseCajaAccess(parent:Page,password:string){
   async function close(page:Page,amount:string){
     await page.getByRole('navigation').getByRole('button',{name:'Turno',exact:true}).click();
     await page.getByRole('button',{name:'Cerrar turno',exact:true}).click();await page.getByLabel('Efectivo contado (COP)').fill(amount);
-    await page.getByRole('button',{name:'Confirmar cierre'}).click();await expect(page.getByRole('dialog')).not.toBeVisible();
+    await page.getByRole('button',{name:'Confirmar cierre'}).click();await expect(page.getByRole('heading',{name:'Comprobante de cierre',exact:true})).toBeVisible();
+    if(amount==='16100'){
+      const receipt=page.locator('.shift-receipt');
+      await expect(receipt).toContainText('Ventas (2): $ 32.000');await expect(receipt).toContainText('Devoluciones (1): $ 16.000');
+      await expect(receipt).toContainText('Propina neta: $ 1.000');await expect(receipt).toContainText('Domicilio neto: $ 2.000');
+      await expect(receipt.locator('section').last().locator('.receipt-line')).toHaveCount(5);
+      await page.screenshot({path:'test-results/caja-access/shared-close-receipt.png',fullPage:true});
+    }
+    await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).not.toBeVisible();
     await page.getByRole('button',{name:'Sincronizar',exact:true}).click();await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
   }
   async function switchTo(page:Page,id:string){
@@ -107,6 +115,10 @@ export async function exerciseCajaAccess(parent:Page,password:string){
     await close(b,'16100');await a.getByRole('button',{name:'Sincronizar',exact:true}).click();
     await expect(a.locator('.pos-shift')).toContainText('No hay un turno abierto');
     await expect(a.locator('.pos-shift')).toContainText('Diferencia: $ 0');
+    await a.getByRole('button',{name:'Ver comprobante de cierre',exact:true}).click();
+    await expect(a.locator('.shift-receipt')).toContainText('Cierre sincronizado.');
+    await expect(a.locator('.shift-receipt')).toContainText('Ventas (2): $ 32.000');
+    await a.keyboard.press('Escape');
     await a.getByRole('navigation').getByRole('button',{name:'Comprobantes',exact:true}).click();await expect(a.getByRole('button',{name:'Ver copia',exact:true})).toHaveCount(2);
     await switchTo(a,'milan-caja');await close(a,'200');
   }finally{await first.close();await second.close();}

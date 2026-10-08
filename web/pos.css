@@ -86,3 +86,6 @@
 }
 
 @media(max-width:380px){.pos-mobile-summary>strong{min-width:0;font-size:17px;overflow-wrap:anywhere}.checkout-summary>div{display:grid;gap:2px}.checkout-summary strong{font-size:19px}}
+
+.shift-payment-line{display:block}
+.shift-receipt section{display:grid;gap:10px}

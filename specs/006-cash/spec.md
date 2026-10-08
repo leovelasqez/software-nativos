@@ -8,6 +8,7 @@ Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente seg
 - REQ-006-02: registrar entradas, gastos, retiros, ventas y devoluciones, diferenciando efectivo de medios digitales.
 - REQ-006-03: calcular efectivo esperado, contado y diferencia; presentar propinas y cobros de domicilio separados, sin duplicarlos.
 - REQ-006-04: persistir turnos offline y comunicar un cierre confirmado/sincronizado a informes y WhatsApp.
+- REQ-006-05: al cerrar, generar y mostrar un comprobante interno imprimible con identidad del turno, base, ventas, devoluciones, ingresos, gastos, retiros, correcciones, pagos por cada medio, propinas, domicilios y arqueo; conservarlo para consulta y reimpresión.
 
 ## Fronteras
 
@@ -19,6 +20,14 @@ Turno y libro de movimientos, relación con cobro/devolución, cierre y su momen
 - AC-006-02 → REQ-006-02/03. Dada base de $150.000, entradas de ventas en efectivo de $386.000 y salida en efectivo de $50.000, sin otros movimientos, cuando se consulta el cierre, entonces se esperan $486.000. Ventas digitales no aumentan ese efectivo.
 - AC-006-03 → REQ-006-03. Dado un efectivo esperado de $486.000 y contado de $480.000, cuando se confirma, entonces se registra diferencia de −$6.000 y responsable.
 - AC-006-04 → REQ-006-04. Dado un cierre realizado offline, cuando reinicia Windows y luego sincroniza, entonces conserva el cierre y origina una sola solicitud comercial de notificación.
+
+### Comprobante de cierre — solicitud del 07-10-2026
+
+Implementado y verificado localmente. [Evidencia](../../docs/evidence/comprobante-cierre-2026-10-07.md). Sin publicación; la impresión física se verifica en los locales.
+
+- AC-006-07 → REQ-006-02/03/05. Al confirmar el cierre se abre el comprobante con totales y detalle cronológico de todos los movimientos del turno, incluidos los cobros combinados y los seis medios de pago. El efectivo aplicado excluye cambio; propinas y domicilios se muestran separados sin sumarlos otra vez al cobro.
+- AC-006-08 → REQ-006-04/05. Un cierre offline y su comprobante se guardan juntos. Recargar, reintentar el comando, consultar o imprimir no crea operaciones nuevas. Los cierres anteriores del navegador siguen consultables al abrir otro turno.
+- AC-006-09 → REQ-006-05; AC-018-06. Un cierre compartido incluye el libro central y los registros locales sin duplicarlos. Tras la sincronización usa el arqueo confirmado por el servidor. Los cierres existentes pueden reconstruirse del libro conservado sin modificar datos comerciales.
 
 ## Dependencias y pendientes
 

@@ -8,6 +8,7 @@ import { createApp } from '../../src/server/app.ts';
 import { payloadHash, verifyAuthorization } from '../../src/pos-crypto.ts';
 import type { Authorization, PosEvent, Signed } from '../../src/pos-domain.ts';
 import { isDailyLowStockWindow, runDailyLowStock } from '../../src/server/notifications-api.ts';
+import { buildShiftReceipt } from '../../src/shift-receipt.ts';
 
 test('Incremento 6 — movimientos manuales de caja conservan libro, corrección y cierre', { timeout: 120_000 }, async () => {
   const directory = resolve('.local/cash-test-' + randomUUID()); const password = randomBytes(24).toString('base64url');
@@ -47,6 +48,19 @@ test('Incremento 6 — movimientos manuales de caja conservan libro, corrección
     const closed = await sync({ kind: 'shift.close', shiftId, counted: '536000', occurredAtMs: openedAtMs + 5 }); assert.equal(closed.statusCode, 200, closed.body);
     const shift = (await db.pool.query('SELECT expected::text,difference::text FROM pos_shifts WHERE id=$1', [shiftId])).rows[0];
     assert.deepEqual(shift, { expected: '536000.000000', difference: '0.000000' });
+    // AC-006-09: closed historical shifts include their complete ledger even
+    // without continuation, and access remains bound to actor/installation.
+    const history = await inject('/api/pos/authorize', { deviceId, previous: null }, { cookie, 'x-pos-token': token });
+    assert.equal(history.statusCode, 200, history.body);
+    const ledger = history.json().sharedShifts.find((s: { shift: { id: string } }) => s.shift.id === shiftId);
+    assert.ok(ledger); assert.equal(ledger.cashMovements.length, 4);
+    const receipt = buildShiftReceipt(ledger.shift, 'centro', deviceId, ledger);
+    assert.equal(receipt.shift.expected, '536000'); assert.equal(receipt.shift.difference, '0');
+    assert.equal(receipt.payments.find(p => p.method === 'nequi')!.income, '99999');
+    assert.equal(receipt.movements.length, 4);
+    const independent = await inject('/api/pos/enroll', { deviceId, installationId: randomUUID() }, { cookie });
+    const isolatedHistory = await inject('/api/pos/authorize', { deviceId, previous: null }, { cookie, 'x-pos-token': independent.json().token });
+    assert.deepEqual(isolatedHistory.json().sharedShifts, []);
     const closeIntents = await db.pool.query("SELECT recipient_role,type,state,data FROM notification_intents WHERE causal_id=$1 ORDER BY recipient_role", [shiftId]);
     assert.equal(closeIntents.rowCount, 2); assert.deepEqual(closeIntents.rows.map(row => ({ recipientRole: row.recipient_role, type: row.type, state: row.state, shiftId: row.data.id, salesTotal: row.data.salesTotal, salesByMethod: row.data.salesByMethod })), [{ recipientRole: 'branch_manager', type: 'shift_closed', state: 'pending', shiftId, salesTotal: '0', salesByMethod: {} }, { recipientRole: 'owner', type: 'shift_closed', state: 'pending', shiftId, salesTotal: '0', salesByMethod: {} }]);
     await db.pool.query("INSERT INTO inventory_items(id,name,reference,kind,base_unit) VALUES('notification-item','Artículo aviso','notification-item','raw','unit')");

@@ -33,7 +33,36 @@ export async function exercisePos(page: Page, password: string) {
   await page.screenshot({ path: `${root}/mobile-receipt.png`, fullPage: true }); await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Sincronizar', exact: true }).click(); await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
   await nav('Comprobantes'); await expect(page.getByRole('button', { name: 'Ver copia' })).toHaveCount(1); await page.getByRole('button', { name: 'Ver copia' }).click(); await expect(dialog).toContainText('28.000'); await page.keyboard.press('Escape');
-  await nav('Turno'); await expect(page.locator('.pos-shift')).toContainText('77.000'); await page.getByRole('button', { name: 'Cerrar turno' }).click(); await dialog.getByLabel('Efectivo contado (COP)').fill('77500'); await dialog.getByRole('button', { name: 'Confirmar cierre' }).click(); await expect(dialog).not.toBeVisible(); await expect(page.locator('.pos-shift')).toContainText('No hay un turno abierto');
+  // AC-006-08: close offline, keep the persisted receipt and reprint after reload.
+  await page.evaluate(()=>navigator.serviceWorker.ready.then(()=>true));await page.context().setOffline(true);
+  await nav('Turno'); await expect(page.locator('.pos-shift')).toContainText('77.000'); await page.getByRole('button', { name: 'Cerrar turno' }).click(); await dialog.getByLabel('Efectivo contado (COP)').fill('77500'); await dialog.getByRole('button', { name: 'Confirmar cierre' }).click(); await expect(page.getByRole('heading', { name: 'Comprobante de cierre', exact:true })).toBeVisible();
+  await expect(page.locator('.shift-receipt')).toContainText('Pendiente de sincronización');
+  await expect(page.locator('.shift-receipt')).toContainText('Ventas (1): $ 28.000');
+  await expect(page.locator('.shift-receipt')).toContainText('Cambio entregado: $ 2.000');
+  const receiptId=await page.locator('.shift-receipt>.receipt-number').textContent();
+  const pendingBefore=(await page.locator('.pos-sync').innerText()).match(/\d+ pendientes?/)![0];
+  for(const viewport of [{width:1440,height:1000,name:'desktop'},{width:390,height:844,name:'mobile'}]){
+    await page.setViewportSize(viewport);
+    for(const dark of [false,true]){
+      await page.evaluate(value=>document.documentElement.dataset.theme=value,dark?'dark':'light');
+      const report=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(report.violations.map(v=>v.id)).toEqual([]);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+      await page.screenshot({path:root+'/close-'+viewport.name+'-'+(dark?'dark':'light')+'.png',fullPage:true});
+    }
+  }
+  await page.evaluate(()=>{window.print=()=>{document.documentElement.dataset.printCalls=String(Number(document.documentElement.dataset.printCalls??'0')+1);};});
+  await page.getByRole('button',{name:'Imprimir cierre',exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-print-calls','1');
+  await page.emulateMedia({media:'print'});
+  expect(await page.locator('.thermal-receipt').evaluate(e=>parseFloat(getComputedStyle(e).width))).toBeCloseTo(72/25.4*96,0);
+  await expect(page.getByRole('button',{name:'Imprimir cierre',exact:true})).not.toBeVisible();
+  await page.emulateMedia({media:'screen'});
+  await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible(); await expect(page.locator('.pos-shift')).toContainText('No hay un turno abierto');
+  await page.reload();await nav('Turno');await page.getByRole('button',{name:'Ver comprobante de cierre',exact:true}).click();
+  await expect(page.locator('.shift-receipt>.receipt-number')).toHaveText(receiptId!);
+  await expect(page.locator('.shift-receipt')).toContainText('Diferencia: $ 500');
+  await expect(page.locator('.pos-sync')).toContainText(pendingBefore);
+  await page.keyboard.press('Escape');await page.context().setOffline(false);
   await page.getByRole('button', { name: 'Sincronizar', exact: true }).click(); await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
   const other=await page.context().newPage();await other.goto('http://127.0.0.1:4320/caja');await expect(other.getByRole('heading',{name:'Nueva venta'})).toBeVisible();await other.getByRole('navigation').getByRole('button',{name:'Comprobantes',exact:true}).click();await expect(other.getByRole('button',{name:'Ver copia'})).toHaveCount(1);await other.close();
 

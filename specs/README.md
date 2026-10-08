@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Comprobante de cierre — verificado localmente (07-10-2026)
+
+REQ-006-05 y AC-006-07/08/09: comprobante automático al cerrar, movimientos completos y seis medios, arqueo, cierre offline persistente, consulta/reimpresión y libro compartido sin duplicados. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md), `src/shift-receipt.ts`, `web/offline/engine.ts`, `web/ShiftReceipt.tsx`, pruebas de dominio/integración/E2E y [evidencia](../docs/evidence/comprobante-cierre-2026-10-07.md). Sin publicación ni prueba física de impresoras.
+
 ## Rediseño 017 — implementado y verificado localmente
 
 Propuesta visual aprobada el 19-09-2026 para todo el sitio, con Resumen operativo por sucursal. [Spec](017-visual-redesign/spec.md), [plan](017-visual-redesign/plan.md), [tareas](017-visual-redesign/tasks.md), [contrato](../contracts/dashboard-v1.md) y [evidencia](../docs/evidence/visual-redesign.md). Sitio real verificado con datos sintéticos, 45 pruebas unitarias, 58 de integración, regresión E2E y revisión visual de los 15 módulos. Sin publicación.

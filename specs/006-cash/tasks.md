@@ -1,5 +1,14 @@
 # Tareas — Incremento 3
 
+## Comprobante de cierre — 07-10-2026
+
+| ID | Entregable | Aceptación | Estado |
+| --- | --- | --- | --- |
+| TASK-006-RECEIPT-01 | Contrato y cálculo exacto por medio, detalle completo y contrapartidas | AC-006-07/09 | Verificado localmente |
+| TASK-006-RECEIPT-02 | Persistencia atómica, reconstrucción de cierres y reintento idempotente | AC-006-08/09 | Verificado localmente |
+| TASK-006-RECEIPT-03 | Vista automática, consulta y formato imprimible | AC-006-07/08 | Verificado localmente |
+| TASK-006-RECEIPT-04 | Pruebas de dominio, E2E y evidencia visual | AC-006-07/08/09 | Verificado localmente |
+
 | ID | Entregable | Requisitos / aceptación | Estado |
 | --- | --- | --- | --- |
 | TASK-INC3-01 | Contratos de cobro/turno/grant/sync y DEC-018 | AC-004-11/12, AC-006-05, AC-007-07 | Verificado |
