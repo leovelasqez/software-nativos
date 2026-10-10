@@ -1,8 +1,8 @@
 # Índice de especificaciones y trazabilidad
 
-## Revisión integral — verificada localmente (09-10-2026)
+## Revisión integral — publicada (10-10-2026)
 
-[Spec 019](019-code-audit/spec.md), [plan](019-code-audit/plan.md) y [tareas](019-code-audit/tasks.md): revisión de seguridad, dependencias y mantenimiento autorizada por el usuario. Bootstrap alojado protegido, identidad offline vinculada a la contraseña, contrapartida única, reloj/continuación de turnos coherentes, auditoría de agentes, informes/cursores/Excel corregidos y código sin uso retirado. La evidencia se registra en [la revisión](../docs/evidence/code-audit-2026-10-09.md). No se acredita publicación de estos cambios.
+[Spec 019](019-code-audit/spec.md), [plan](019-code-audit/plan.md) y [tareas](019-code-audit/tasks.md): revisión de seguridad, dependencias y mantenimiento autorizada por el usuario. Bootstrap alojado protegido, identidad offline vinculada a la contraseña, contrapartida única, reloj/continuación de turnos coherentes, auditoría de agentes, informes/cursores/Excel corregidos y código sin uso retirado. La evidencia se registra en [la revisión](../docs/evidence/code-audit-2026-10-09.md) y [la publicación en Railway](../docs/evidence/code-audit-publication-2026-10-10.md).
 
 ## Formato simplificado de cierre — publicado (07-10-2026)
 

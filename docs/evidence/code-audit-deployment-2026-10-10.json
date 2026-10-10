@@ -1,0 +1,99 @@
+{
+  "verifiedAt": "2026-10-10T13:30:54.493Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "commit": "3d90b4e4d986c2a45538ec8c1812d64b00af4c2a",
+  "deploymentId": "b285958c-5127-43aa-93f0-f47d53e1d307",
+  "healthStatus": 200,
+  "healthBody": {
+    "ok": true
+  },
+  "statusBody": {
+    "setupRequired": false
+  },
+  "assets": [
+    {
+      "path": "/index.html",
+      "status": 200,
+      "sha256": "ba0e30471326463afb63a3aa222f9c88221356cbcf7e6f49bd0a9d80ed2943e1",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/pos.html",
+      "status": 200,
+      "sha256": "a7153e10432428c58f3b8f6c5e7cfa06001f181317a17c9818ff234d247b598e",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "sha256": "d027c21846a3c2194876caa83b42980667519974c641a797dfea0d34c8653dd5",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/theme.js",
+      "status": 200,
+      "sha256": "8fecccede7651d2f1a6ff168eecccbfc12345d59330e1ae939da5dc88e5f43fa",
+      "matches": true,
+      "normalizedLineEndings": true
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "status": 200,
+      "sha256": "016998ef802c574520d71b7c07f2929a2e4245ed8fe622ffa0288f3b33592667",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/nativos-icon.svg",
+      "status": 200,
+      "sha256": "226ddcb1d62162c842f2fd99f329fde77ccac39c42af39538d4c98523a808da6",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/admin-BJI3z3BL.js",
+      "status": 200,
+      "sha256": "d1e83e7d70da8f99ad3323d0e37e29b312b58586a4d8ce4b2118b103f61806b0",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/client-BPvuU9Bc.js",
+      "status": 200,
+      "sha256": "bc055ec496727b163e0433e58bda00cdb6b00ef6d1ac37c50ee4811cbaaa82c8",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/client-LBPYtAEs.css",
+      "status": 200,
+      "sha256": "36b5ee32b0771e380f4dd5603f8dd6d27a4128b36d2b095851ce8e5593ebf498",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/engine-CrEj69BR.js",
+      "status": 200,
+      "sha256": "8ffdee64e9be3d090e18b836db76b667a98b3a19117c237efabaf54979774acb",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/pos-7WBGV4Dl.js",
+      "status": 200,
+      "sha256": "2faf7030290cafe14291339306f13008e2501ab0875e3ec5432ca95eebb067f7",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "status": 200,
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "matches": true,
+      "normalizedLineEndings": false
+    }
+  ]
+}

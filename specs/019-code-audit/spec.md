@@ -38,4 +38,4 @@ AC-019-05 incluye además exclusión de productos/recetas/insumos archivados en 
 
 La evidencia automática utiliza PostgreSQL, SQLite y perfiles de navegador sintéticos aislados. Una revisión de código no acredita hardware, recuperación ante pérdida física, envíos de WhatsApp ni carga comercial real. El informe separará errores corregidos, mejoras heurísticas y pendientes operativos documentados.
 
-Evidencia final: [revisión del 09-10-2026](../../docs/evidence/code-audit-2026-10-09.md). AC-019-01 a 09 verificados con datos sintéticos; entrega local, sin publicación nueva.
+Evidencia final: [revisión del 09-10-2026](../../docs/evidence/code-audit-2026-10-09.md). AC-019-01 a 09 verificados con datos sintéticos. Publicación posterior autorizada el 10-10-2026: [evidencia de Railway](../../docs/evidence/code-audit-publication-2026-10-10.md).

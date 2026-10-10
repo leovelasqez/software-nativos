@@ -99,6 +99,6 @@ El escaneo del árbol usó `gitleaks dir <copia-de-textos-versionados-y-nuevos> 
 
 ## Entrega y límites
 
-Cambios locales revisables, sin commit/push/despliegue nuevo por esta revisión. Sitios ya configurados conservan su acceso; una base alojada nueva necesita una clave de instalación externa. Para publicar, seguir el procedimiento existente y no incluir secretos en comandos/logs/documentos.
+Al cierre de la revisión del 09-10, los cambios eran locales. El usuario autorizó su publicación el 10-10 y se desplegaron en Railway; constancia y verificación pública en [la evidencia de publicación](code-audit-publication-2026-10-10.md). Sitios ya configurados conservan su acceso; una base alojada nueva necesita una clave de instalación externa.
 
 Esta revisión no ensaya impresoras/cajones, pérdida física del perfil, restauración externa de Railway, WhatsApp ni migración histórica de Alegra. Sus pendientes documentados no se reclasifican como errores nuevos de esta auditoría. Las pruebas sintéticas no se presentan como operación comercial ni como prueba de la configuración/perímetro del servidor publicado.
