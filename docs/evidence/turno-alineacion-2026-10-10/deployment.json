@@ -1,0 +1,127 @@
+{
+  "verifiedAt": "2026-10-10T13:53:48.451Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "deploymentId": "48ea442c-a1ad-46b1-9c93-8ab7774655a8",
+  "commit": "f4b17789175967a04833b177b06d146d852f5532",
+  "healthStatus": 200,
+  "healthBody": {
+    "ok": true
+  },
+  "statusBody": {
+    "setupRequired": false
+  },
+  "assets": [
+    {
+      "path": "/assets/admin-Cf5B7kH1.js",
+      "status": 200,
+      "sha256": "bd5acc2073705080558d53c312cc90b0d175a1db81b787562152a529a5624390",
+      "localSha256": "bd5acc2073705080558d53c312cc90b0d175a1db81b787562152a529a5624390",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/client-BsB1FueJ.js",
+      "status": 200,
+      "sha256": "0eda84a30fb9e11d055f50c8ee78c112b649cb333dc7d4cda7bf1fc326bc0022",
+      "localSha256": "0eda84a30fb9e11d055f50c8ee78c112b649cb333dc7d4cda7bf1fc326bc0022",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/client-DeqgMCF4.css",
+      "status": 200,
+      "sha256": "2da185decb0dcdd900ef28b1f2bde91c2438ddd649deca8c7ea301af9eb31c6c",
+      "localSha256": "2da185decb0dcdd900ef28b1f2bde91c2438ddd649deca8c7ea301af9eb31c6c",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/engine-D1QHCNl0.js",
+      "status": 200,
+      "sha256": "b8e957674008cb39d78c74106b0dcbf89e31c9c9c402fda2be7d4be0480a6431",
+      "localSha256": "b8e957674008cb39d78c74106b0dcbf89e31c9c9c402fda2be7d4be0480a6431",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+      "status": 200,
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "localSha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/assets/pos-HEBFQ-pN.js",
+      "status": 200,
+      "sha256": "774c4ec1d16702c9f2b0a938f13645466d3d245af30989dce54f2a43da347004",
+      "localSha256": "774c4ec1d16702c9f2b0a938f13645466d3d245af30989dce54f2a43da347004",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/index.html",
+      "status": 200,
+      "sha256": "b0f3e5fa0ad5b9831e5cfef5f54614416ff095f2d978a4006b6eb16167759fa6",
+      "localSha256": "b0f3e5fa0ad5b9831e5cfef5f54614416ff095f2d978a4006b6eb16167759fa6",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "status": 200,
+      "sha256": "016998ef802c574520d71b7c07f2929a2e4245ed8fe622ffa0288f3b33592667",
+      "localSha256": "016998ef802c574520d71b7c07f2929a2e4245ed8fe622ffa0288f3b33592667",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/nativos-icon.svg",
+      "status": 200,
+      "sha256": "226ddcb1d62162c842f2fd99f329fde77ccac39c42af39538d4c98523a808da6",
+      "localSha256": "226ddcb1d62162c842f2fd99f329fde77ccac39c42af39538d4c98523a808da6",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/pos.html",
+      "status": 200,
+      "sha256": "f9dd1e1462bedefe0e83d4525bbda9de5a7459f8a821ea7f32bfab94dd98596e",
+      "localSha256": "f9dd1e1462bedefe0e83d4525bbda9de5a7459f8a821ea7f32bfab94dd98596e",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "sha256": "f082683a551f824939c61e70ee13252b202c2673e17a86fc46d3e3e90329fbff",
+      "localSha256": "f082683a551f824939c61e70ee13252b202c2673e17a86fc46d3e3e90329fbff",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/theme.js",
+      "status": 200,
+      "sha256": "8fecccede7651d2f1a6ff168eecccbfc12345d59330e1ae939da5dc88e5f43fa",
+      "localSha256": "dbe9c28e77e157071a47ecd1eacbcc8a51071aca94b7fc131af8dac9b77faef0",
+      "matches": true,
+      "normalizedLineEndings": true
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "sha256": "b0f3e5fa0ad5b9831e5cfef5f54614416ff095f2d978a4006b6eb16167759fa6",
+      "localSha256": "b0f3e5fa0ad5b9831e5cfef5f54614416ff095f2d978a4006b6eb16167759fa6",
+      "matches": true,
+      "normalizedLineEndings": false
+    },
+    {
+      "path": "/caja",
+      "status": 200,
+      "sha256": "f9dd1e1462bedefe0e83d4525bbda9de5a7459f8a821ea7f32bfab94dd98596e",
+      "localSha256": "f9dd1e1462bedefe0e83d4525bbda9de5a7459f8a821ea7f32bfab94dd98596e",
+      "matches": true,
+      "normalizedLineEndings": false
+    }
+  ]
+}

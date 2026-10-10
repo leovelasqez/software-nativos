@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | TASK-006-ALIGN-01 | Eliminar la doble sangría y separar identidad/salida lateral | AC-006-14 | Verificado localmente |
 | TASK-006-ALIGN-02 | Verificar tamaños, temas, teclado y formularios con datos sintéticos | AC-006-14 | Verificado localmente |
-| TASK-006-ALIGN-03 | Commit, publicación Railway y evidencia de salud/artefactos | AC-006-14 | Pendiente |
+| TASK-006-ALIGN-03 | Commit, publicación Railway y evidencia de salud/artefactos | AC-006-14 | Publicado y verificado — [evidencia](../../docs/evidence/turno-alineacion-2026-10-10.md) |
 
 ## Comprobante de cierre — 07-10-2026
 

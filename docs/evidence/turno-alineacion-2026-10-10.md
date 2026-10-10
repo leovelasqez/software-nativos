@@ -12,4 +12,12 @@ Verificación de la aplicación real con PostgreSQL e IndexedDB sintéticos aisl
 - Tab entre acciones con foco visible; formularios de movimientos y cierre se abren y se cierran con Escape. Apertura y cierre de prueba con base/conteo sintéticos de $500.000.
 - Capturas revisadas: [escritorio](turno-alineacion-2026-10-10/escritorio-claro.png), [móvil oscuro](turno-alineacion-2026-10-10/movil-oscuro.png). [Mediciones del navegador](turno-alineacion-2026-10-10/verification.json).
 
-El cambio es exclusivamente de estilos de pantalla. La evidencia de publicación se añadirá después del despliegue autorizado. La verificación pública será de solo lectura.
+El cambio es exclusivamente de estilos de pantalla.
+
+## Publicación verificada
+
+Commit funcional `f4b1778` enviado a `origin/main`. Publicado en Railway, proyecto `nativos`, servicio `nativos-web`, entorno `production`, despliegue `48ea442c-a1ad-46b1-9c93-8ab7774655a8`, estado `SUCCESS`.
+
+<https://nativos-web-production.up.railway.app/caja>. `/health`: HTTP 200, `{"ok":true}`; `/api/status`: instalación configurada. Las doce rutas del build y las entradas `/` y `/caja` responden HTTP 200 y coinciden con la compilación verificada. `/theme.js` se compara normalizando CRLF/LF; el resto coincide byte a byte. [Resultados y hashes](turno-alineacion-2026-10-10/deployment.json).
+
+Paquete de 163 archivos preparado con `git archive` desde el commit, exclusivamente fuentes y configuración necesarias para la aplicación. La verificación de producción fue de solo lectura, sin operar turnos comerciales. Navegador y base sintética de comprobación detenidos al finalizar.

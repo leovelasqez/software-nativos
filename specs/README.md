@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Alineación de Turno — publicada (10-10-2026)
+
+REQ-006-07 / AC-006-14: títulos, datos y acciones comparten el borde interior de la tarjeta; identidad y salida lateral en filas propias. Verificación en escritorio/móvil, temas, teclado y formularios con datos sintéticos; publicación Railway con salud y artefactos comprobados. [Spec 006](006-cash/spec.md) y [evidencia](../docs/evidence/turno-alineacion-2026-10-10.md).
+
 ## Revisión integral — publicada (10-10-2026)
 
 [Spec 019](019-code-audit/spec.md), [plan](019-code-audit/plan.md) y [tareas](019-code-audit/tasks.md): revisión de seguridad, dependencias y mantenimiento autorizada por el usuario. Bootstrap alojado protegido, identidad offline vinculada a la contraseña, contrapartida única, reloj/continuación de turnos coherentes, auditoría de agentes, informes/cursores/Excel corregidos y código sin uso retirado. La evidencia se registra en [la revisión](../docs/evidence/code-audit-2026-10-09.md) y [la publicación en Railway](../docs/evidence/code-audit-publication-2026-10-10.md).
