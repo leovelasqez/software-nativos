@@ -17,7 +17,7 @@ import { handleOrdersSync } from './orders-sync.ts';
 import { CatalogError, decimal, formatted } from '../catalog.ts';
 import { queueShiftClosed } from './notifications-api.ts';
 import { isWithinGrantClock } from '../authorization.ts';
-import { sharedShifts } from './shift-continuation.ts';
+import { sharedShifts, closedShiftIds } from './shift-continuation.ts';
 
 async function key(c: PoolClient) {
   let row = (await c.query('SELECT * FROM pos_signing_key')).rows[0] as { public_key: string; private_key: string } | undefined;
@@ -77,7 +77,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const authorization: Authorization = { principal: principal(actor.user), actorName: actor.user.name,
       grant: { version: 1, grantId: randomUUID(), actorId: actor.user.id, branchId: device.branch_id, deviceId: device.device_id, validatedAtMs: now, expiresAtMs: now + WEEK_MS, actions: actor.user.actions.filter(a => ['data.read','order.write','sale.charge','shift.open','shift.close','sale.discount','sale.cancel','sale.refund','cash.movement'].includes(a)) } };
     const openShift = (await c.query('SELECT s.id,s.actor_id AS "actorId",u.name AS "actorName" FROM pos_shifts s JOIN app_users u ON u.id=s.actor_id WHERE s.device_id=$1 AND s.closed_at IS NULL', [device.device_id])).rows[0] ?? null;
-    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift, sharedShifts:await sharedShifts(c,device.device_id,device.installation_id,actor.user.id) };
+    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift, sharedShifts:await sharedShifts(c,device.device_id,device.installation_id,actor.user.id), closedShiftIds:await closedShiftIds(c,device.device_id,device.installation_id) };
   }));
   app.post('/api/pos/shift/resume', {schema:routeSchema('/api/pos/shift/resume','post')}, req=>tx(async c=>{
     const actor=await authenticate(c,req),b=req.body as {deviceId:string;shiftId:string};
@@ -130,12 +130,12 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     } else {
       const shift = (await c.query('SELECT * FROM pos_shifts WHERE id=$1 AND device_id=$2 AND actor_id=$3 AND (installation_id=$4 OR $4=ANY(resumed_installations)) AND closed_at IS NULL', [payload.shiftId, o.deviceId, o.actorId,device.installation_id])).rows[0];
       if (!shift) throw new ApiError(409, 'shift_conflict', 'El turno no pertenece al usuario o ya está cerrado.');
-      if (occurred.getTime() < shift.opened_at.getTime()) throw new ApiError(422, 'invalid_time', 'La operación precede a la apertura.');
+      if (!isWithinGrantClock(occurred.getTime(), shift.opened_at.getTime())) throw new ApiError(422, 'invalid_time', 'La operación precede a la apertura.');
       if (payload.kind === 'sale.charge') {
         const snap = (await c.query('SELECT data FROM pos_snapshots WHERE id=$1 AND device_id=$2', [payload.snapshotId, o.deviceId])).rows[0]?.data as Snapshot | undefined;
-        if (!snap || snap.branchId !== o.branchId || snap.createdAtMs > payload.occurredAtMs) throw new ApiError(422, 'snapshot_missing', 'Versión de catálogo desconocida.');
+        if (!snap || snap.branchId !== o.branchId || !isWithinGrantClock(payload.occurredAtMs, snap.createdAtMs)) throw new ApiError(422, 'snapshot_missing', 'Versión de catálogo desconocida.');
         const history = (await c.query('SELECT data FROM pos_snapshots WHERE id=ANY($1::text[]) AND device_id=$2', [[...new Set(payload.lines.map(l => l.snapshotId))], o.deviceId])).rows.map(r => r.data as Snapshot);
-        if (history.some(s => s.branchId !== o.branchId || s.createdAtMs > payload.occurredAtMs)) throw new ApiError(422, 'snapshot_invalid', 'Versión de línea inválida.');
+        if (history.some(s => s.branchId !== o.branchId || !isWithinGrantClock(payload.occurredAtMs, s.createdAtMs))) throw new ApiError(422, 'snapshot_invalid', 'Versión de línea inválida.');
         if ((await c.query('SELECT 1 FROM pos_sales WHERE order_id=$1', [payload.orderId])).rowCount) throw new ApiError(409, 'order_already_charged', 'Este pedido ya tiene un cobro confirmado.');
         const sale = calculateSale(snap, payload.lines, payload.payment, history);
         const receiptNumber = `${o.branchId}-${o.deviceId}-${device.installation_id}-${o.sequence}`;

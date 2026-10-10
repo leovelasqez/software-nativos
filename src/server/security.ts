@@ -12,6 +12,10 @@ export class ApiError extends Error {
 }
 export const SESSION_MS = 12 * 60 * 60 * 1000;
 export const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
+export function matchesSetupToken(configured: string | undefined, provided: string | undefined) {
+  return configured !== undefined && provided !== undefined
+    && timingSafeEqual(createHash('sha256').update(configured).digest(), createHash('sha256').update(provided).digest());
+}
 function derive(password: string, salt: string) {
   return new Promise<Buffer>((resolve, reject) => scrypt(password, salt, 64,
     { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 }, (err, value) => err ? reject(err) : resolve(value)));
@@ -30,7 +34,7 @@ export async function newSession(c: PoolClient, userId: string) {
   await c.query('DELETE FROM sessions WHERE expires_at <= now()');
   await c.query('INSERT INTO sessions(token_hash,user_id,device_id,expires_at) VALUES($1,$2,$3,$4)',
     [tokenHash(token), userId, deviceId, new Date(Date.now() + SESSION_MS)]);
-  return { token, deviceId, tokenHash: tokenHash(token) };
+  return { token, deviceId, tokenHash: tokenHash(token), actorId: userId };
 }
 export async function authenticate(db: Pool | PoolClient, request: FastifyRequest): Promise<Actor> {
   const token = request.cookies.nativos_session;

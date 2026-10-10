@@ -10,6 +10,22 @@ export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'breb' | 'daviplata' 
 export interface Payment { method: PaymentMethod; received: string }
 export type CashMovementClass = 'income' | 'expense' | 'withdrawal' | 'correction';
 export interface CashMovement { id: string; shiftId: string; class: CashMovementClass; method: PaymentMethod; amount: string; cashDelta: string; reason: string; reversesMovementId: string | null; occurredAtMs: number; actorName: string }
+export function canCorrectCashMovement(movement: CashMovement, history: CashMovement[]) {
+  return movement.reversesMovementId === null && !history.some(entry => entry.reversesMovementId === movement.id);
+}
+export function cashMovementDelta(shiftId: string, history: CashMovement[], input: Pick<CashMovement, 'class' | 'method' | 'amount' | 'reason' | 'reversesMovementId'>) {
+  const amount = decimal(input.amount);
+  if (amount <= 0n || input.reason.trim().length < 3 || input.reason.length > 500) throw new CatalogError('Revisa el importe y el motivo.');
+  if (input.class === 'correction') {
+    const original = history.find(entry => entry.id === input.reversesMovementId);
+    if (!original || original.shiftId !== shiftId || original.reversesMovementId !== null || original.method !== input.method || original.amount !== formatted(amount))
+      throw new CatalogError('La corrección debe referenciar exactamente un movimiento vigente del turno.');
+    if (!canCorrectCashMovement(original, history)) throw new CatalogError('El movimiento ya tiene una corrección registrada.');
+    return -signedDecimal(original.cashDelta);
+  }
+  if (input.reversesMovementId !== null) throw new CatalogError('Solo una corrección puede referenciar otro movimiento.');
+  return input.method === 'cash' ? (input.class === 'income' ? amount : -amount) : 0n;
+}
 interface EventBase { occurredAtMs: number; shiftId: string }
 export type PosEvent = EventBase & ({ kind: 'shift.open'; openingCash: string } | { kind: 'sale.charge'; orderId: string; snapshotId: string; lines: OrderLine[]; payment: Payment } | { kind: 'shift.close'; counted: string } | { kind: 'cash.movement'; movementId: string; class: CashMovementClass; method: PaymentMethod; amount: string; reason: string; reversesMovementId: string | null });
 export function signedDecimal(n: string) { return n.startsWith('-') ? -decimal(n.slice(1)) : decimal(n); }

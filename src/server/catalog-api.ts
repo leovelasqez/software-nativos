@@ -180,7 +180,7 @@ export function registerCatalog(app: FastifyInstance, pool: Pool) {
   }));
   app.post('/api/warehouses/:id/reversals', { schema: routeSchema('/api/warehouses/{id}/reversals', 'post') }, req => mutate(req, 'inventory.manage', async c => {
     const b = req.body as Common & { movementId: string }; const warehouseId = (req.params as Params).id; await warehouse(c, warehouseId, b.branchId);
-    const old = (await c.query("SELECT * FROM inventory_movements WHERE id=$1 AND warehouse_id=$2 AND kind='initial'", [b.movementId, warehouseId])).rows[0]; if (!old) throw notFound();
+    const old = (await c.query("SELECT * FROM inventory_movements WHERE id=$1 AND warehouse_id=$2 AND kind IN ('initial','import_initial')", [b.movementId, warehouseId])).rows[0]; if (!old) throw notFound();
     if ((await c.query('SELECT 1 FROM inventory_movements WHERE reverses_id=$1', [old.id])).rowCount) throw new ApiError(409, 'already_reversed', 'El movimiento ya fue revertido.');
     const id = randomUUID();
     await c.query(`INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reverses_id,reason) VALUES($1,$2,$3,'reversal',-$4::numeric,$5,$6)`, [id, old.item_id, warehouseId, old.quantity, old.id, b.reason]);

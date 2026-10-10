@@ -6,7 +6,7 @@ import {hash,passwordHash,verifyPassword,verify} from './crypto.ts';
 import {authorize} from '../../src/authorization.ts';
 import {isRetryableClockAuthorizationRejection,isRetryableInventoryRejection,rebaseOperations,transition} from '../../src/sync.ts';
 import {decimal,formatted} from '../../src/catalog.ts';
-import {signedDecimal} from '../../src/pos-domain.ts';
+import {signedDecimal,cashMovementDelta} from '../../src/pos-domain.ts';
 import {applyOrderEvent,eventAction,upgradeOrder,describeLine} from '../../src/orders-domain.ts';
 import type {OrderV2,OrderEvent,CommandEvent,Customer,SaleV2,RefundV2} from '../../src/orders-domain.ts';
 import type {Authorization,Signed,Snapshot,PosEvent,CashMovement,CashMovementClass,PaymentMethod} from '../../src/pos-domain.ts';
@@ -21,7 +21,7 @@ type Staged={entry:Entry;result:Result;fingerprint:string;actorId:string};
 export interface BrowserData{
  version:1;installationId:string;sequence:number;previous:string|null;lastSyncAtMs:number|null;high:number;
  terminal?:{deviceId:string;branchId:string;installationId:string;token:string;publicKey:string};
- users:Record<string,{signed:Signed;passwordHash:string;revoked:boolean}>;grants:Record<string,Signed>;
+ users:Record<string,{signed:Signed;passwordHash:string;revoked:boolean;actorId?:string}>;grants:Record<string,Signed>;
  session:{login:string;expires:number}|null;snapshots:Snapshot[];snapshotId:string|null;customers:Customer[];loyalty:LoyaltyCache|null;
  orders:Record<string,{actorId:string;order:OrderV2}>;selected:Record<string,string>;shifts:Shift[];sales:SaleV2[];refunds:RefundV2[];
  events:{id:string;actorId:string;event:OrderEvent|PosEvent;result:Result}[];stock:{sequence:number;itemId:string;quantity:string}[];
@@ -32,6 +32,8 @@ export interface BrowserData{
  centralOpenShift?:{id:string;actorId:string;actorName:string}|null;
  sharedShifts?:Record<string,SharedShift>;
  shiftReceipts?:Record<string,ShiftReceipt>;
+ /** Cierres centrales conocidos cuyo detalle conserva el responsable original. */
+ closedShiftIds?:string[];
 }
 export const blankData=():BrowserData=>({version:1,installationId:crypto.randomUUID(),sequence:0,previous:null,lastSyncAtMs:null,high:0,users:{},grants:{},session:null,snapshots:[],snapshotId:null,customers:[],loyalty:null,orders:{},selected:{},shifts:[],sales:[],refunds:[],events:[],stock:[],outbox:[],commands:{},staged:null,failures:{}});
 const legacySequenceConflict='La secuencia ya fue utilizada por otra operación.';
@@ -50,14 +52,23 @@ export class BrowserEngine{
   if(!decision.allowed)throw new Error(decision.reason==='offline_expired'?'Han pasado siete días. Inicia sesión online para volver a cobrar.':decision.reason==='clock_untrusted'?'El reloj retrocedió. Revalida tu acceso online.':'No tienes permiso para esta operación.');
   if(['sale.charge','sale.refund','shift.open'].includes(action)&&Date.now()+1000<startWall+performance.now()-startMono)throw new Error('El reloj retrocedió. Revalida tu acceso online.');return a;
  }
- async accept(login:string,verifier:string,result:{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache;openShift?:{id:string;actorId:string;actorName:string}|null;sharedShifts?:SharedShift[]}){
+ async cachedActorId(login:string){
+  const user=this.data.users[login];
+  if(user?.signed.document&&this.data.terminal)return (await verify(user.signed,this.data.terminal.publicKey)).grant.actorId;
+  return user?.actorId;
+ }
+ async accept(login:string,verifier:string,result:{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache;openShift?:{id:string;actorId:string;actorName:string}|null;sharedShifts?:SharedShift[];closedShiftIds?:string[]},expectedActorId?:string){
   const a=await verify(result.signed,this.data.terminal!.publicKey);if(!shape.snapshot(result.snapshot)||result.snapshot.deviceId!==a.grant.deviceId||result.snapshot.branchId!==a.grant.branchId||a.grant.deviceId!==this.data.terminal!.deviceId||a.grant.branchId!==this.data.terminal!.branchId||a.grant.actorId!==a.principal.actorId)throw new Error('Catálogo incompleto. Conserva la descarga anterior.');
-  this.data.users[login]={signed:result.signed,passwordHash:verifier,revoked:false};this.data.high=a.grant.validatedAtMs;this.data.customers=result.customers;this.data.loyalty=result.loyalty;this.data.centralOpenShift=result.openShift??null;
+  const cached=this.data.users[login],boundActorId=cached?.passwordHash===verifier?await this.cachedActorId(login):undefined;
+  if((cached?.passwordHash===verifier&&Boolean(verifier)&&boundActorId===undefined)||(expectedActorId!==undefined&&a.grant.actorId!==expectedActorId)||(boundActorId!==undefined&&a.grant.actorId!==boundActorId))
+   throw new Error('La sesión online corresponde a otro usuario. Inicia sesión con tu cuenta para revalidar Caja.');
+  this.data.users[login]={signed:result.signed,passwordHash:verifier,revoked:false,actorId:a.grant.actorId};this.data.high=a.grant.validatedAtMs;this.data.customers=result.customers;this.data.loyalty=result.loyalty;this.data.centralOpenShift=result.openShift??null;
   if(!this.data.outbox.length){
    if(!this.data.staged&&result.snapshot.serverSequence>this.data.sequence){const previous=result.snapshot.serverOperationId;if((result.snapshot.serverSequence===0&&previous!==null)||(result.snapshot.serverSequence>0&&typeof previous!=='string'))throw new Error('El servidor no entregó un cursor de Caja completo.');this.data.sequence=result.snapshot.serverSequence;this.data.previous=previous??null;}
    if(!this.data.snapshots.some(s=>s.id===result.snapshot.id))this.data.snapshots.push(result.snapshot);this.data.snapshotId=result.snapshot.id;this.data.lastSyncAtMs=Date.now();
   }
   if(!this.data.outbox.length&&!this.data.staged){
+   this.data.closedShiftIds=[...new Set([...(this.data.closedShiftIds??[]),...(result.closedShiftIds??[])])].filter(id=>this.data.shifts.some(s=>s.id===id&&s.closedAtMs===null));
    for(const shared of result.sharedShifts??[]){
     this.data.sharedShifts??={};this.data.sharedShifts[shared.shift.id]=shared;
     const old=this.data.shifts.findIndex(s=>s.id===shared.shift.id);
@@ -72,16 +83,63 @@ export class BrowserEngine{
   }
   await this.save();
  }
- async login(login:string,password:string,sessionExists=false){login=login.toLowerCase();
-  try{if(!sessionExists)await this.remote('/login',{login,password});const verifier=password?await passwordHash(password):this.data.users[login]?.passwordHash??'';
-   this.data.session={login,expires:Date.now()+12*3600_000};await this.save();
-   if(!this.data.terminal){const me=await this.remote<{user:{role:string};branches:{id:string;name:string}[]}>('/me');if(me.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');const devices=[];for(const b of me.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+b.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({...d,branchName:b.name})));}this.data.users[login]={signed:{document:'',signature:''},passwordHash:verifier,revoked:false};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier};}
-   await this.sync(false);await this.accept(login,verifier,await this.remote('/pos/authorize',{deviceId:this.data.terminal.deviceId,previous:null}));message='';return {needsEnrollment:false};
+ async login(login:string,password:string,sessionExists=false,expectedActorId?:string){
+  login=login.toLowerCase();
+  try{
+   if(!sessionExists){const session=await this.remote<{actorId:string}>('/login',{login,password});expectedActorId=session.actorId;}
+   let me:{user:{id:string;login:string;role:string};branches:{id:string;name:string}[]}|undefined;
+   if(!expectedActorId||!this.data.terminal){
+    me=await this.remote('/me');
+    if(me!.user.login!==login||(expectedActorId!==undefined&&me!.user.id!==expectedActorId))throw new Error('La sesión online corresponde a otro usuario. Inicia sesión con tu cuenta para revalidar Caja.');
+    expectedActorId=me!.user.id;
+   }
+   const verifier=password?await passwordHash(password):this.data.users[login]?.passwordHash??'';
+   if(!password&&this.data.users[login]){
+    const boundActorId=await this.cachedActorId(login);
+    if((boundActorId!==undefined&&boundActorId!==expectedActorId)||(boundActorId===undefined&&Boolean(verifier)))throw new Error('La cuenta cambió. Ingresa tu contraseña para habilitar Caja de nuevo.');
+   }
+   if(!this.data.terminal){
+    if(me!.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');
+    const devices=[];
+    for(const b of me!.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+b.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({...d,branchName:b.name})));}
+    this.data.users[login]={signed:{document:'',signature:''},passwordHash:verifier,revoked:false,actorId:expectedActorId};
+    this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier};
+   }
+   await this.sync(false);
+   await this.accept(login,verifier,await this.remote('/pos/authorize',{deviceId:this.data.terminal.deviceId,previous:null}),expectedActorId);
+   this.data.session={login,expires:Date.now()+12*3600_000};await this.save();message='';return {needsEnrollment:false};
   }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;const fail=this.data.failures[login];if(fail&&fail.until>Date.now())throw new Error('Espera antes de volver a intentar el acceso offline.');const u=this.data.users[login];if(!u||!u.passwordHash||!await verifyPassword(password,u.passwordHash)){const count=(fail?.count??0)+1;this.data.failures[login]={count,until:count>=5?Date.now()+300000:0};await this.save();throw new Error('Credenciales offline incorrectas.');}await this.auth('data.read',login);this.data.session={login,expires:Date.now()+12*3600_000};delete this.data.failures[login];await this.save();return {needsEnrollment:false};}
  }
- async session(){const me=await this.remote<{user:{login:string}}>('/me');return this.login(me.user.login,'',true);}
- async preparePassword(password:string){const login=this.loginName();if(this.data.users[login]?.passwordHash)return;if(!password)throw new Error('Ingresa tu contraseña para habilitar el acceso sin conexión.');await this.remote('/login',{login,password});this.data.users[login]!.passwordHash=await passwordHash(password);await this.save();}
- async enroll(deviceId:string){const login=this.loginName();this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});await this.save();await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{deviceId,previous:null}));await navigator.storage?.persist?.();return {ok:true};}
+ async session(){const me=await this.remote<{user:{id:string;login:string}}>('/me');return this.login(me.user.login,'',true,me.user.id);}
+ async preparePassword(password:string){
+  const login=this.loginName(),user=this.data.users[login]!;if(user.passwordHash&&await this.cachedActorId(login)!==undefined)return;
+  if(!password)throw new Error('Ingresa tu contraseña para habilitar el acceso sin conexión.');
+  const session=await this.remote<{actorId:string}>('/login',{login,password});
+  const boundActorId=await this.cachedActorId(login);
+  if(boundActorId!==undefined&&boundActorId!==session.actorId)throw new Error('La cuenta cambió. Inicia sesión de nuevo para activar Caja.');
+  user.passwordHash=await passwordHash(password);user.actorId=session.actorId;await this.save();
+ }
+ async enroll(deviceId:string){
+  const login=this.loginName(),previous=structuredClone(this.data);
+  try{
+   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
+   await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{deviceId,previous:null}));
+   await navigator.storage?.persist?.();return {ok:true};
+  }catch(error){this.data=previous;await this.save();throw error;}
+ }
+ async importLegacy(password:string){
+  await this.preparePassword(password);
+  const login=this.loginName(),verifier=this.data.users[login]!.passwordHash,actorId=await this.cachedActorId(login);
+  if(this.data.terminal||this.data.outbox.length||this.data.sequence)throw new Error('Este navegador ya tiene una caja.');
+  await this.save();
+  const imported=await this.remote<BrowserData>('/local-transition',{targetId:this.data.installationId});
+  if(imported.version!==1||!imported.terminal||imported.terminal.installationId!==imported.installationId)throw new Error('Traslado incompatible.');
+  this.data=imported;
+  const importedActorId=await this.cachedActorId(login),boundActorId=importedActorId??actorId;
+  this.data.users[login]={...(this.data.users[login]??{signed:{document:'',signature:''},revoked:false}),passwordHash:importedActorId===undefined||importedActorId===actorId?verifier:''};
+  if(boundActorId!==undefined)this.data.users[login]!.actorId=boundActorId;
+  await this.save();await navigator.storage?.persist?.();return this.session();
+ }
  async terminals(){const me=await this.remote<{branches:{id:string;name:string}[]}>('/me');const devices:{id:string;name:string;branchName:string}[]=[];for(const branch of me.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+branch.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({id:d.id,name:d.name,branchName:branch.name})));}return devices;}
  async switchTerminal(deviceId:string){
   const current=this.data.terminal;if(!current||current.deviceId===deviceId)return this.state();
@@ -118,7 +176,7 @@ export class BrowserEngine{
   const terminal=this.data.terminal!;
   return buildShiftReceipt(shift,terminal.branchId,terminal.deviceId,this.ledgerFor(shift));
  }
- shift(){return this.data.shifts.find(s=>s.closedAtMs===null)??null;}
+ shift(){return this.data.shifts.find(s=>s.closedAtMs===null&&!this.data.closedShiftIds?.includes(s.id))??null;}
  async checkShiftOpening(){
   try{await this.refresh();}catch(error){if(!(error instanceof RemoteError)||error.status!==0)throw error;}
   if(this.shift())throw new Error('Esta caja ya tiene un turno abierto. Continúalo desde Turno.');
@@ -161,7 +219,29 @@ export class BrowserEngine{
   await this.archive(a);const staged={entry,result,fingerprint:replay.fingerprint,actorId:a.grant.actorId};if(redeem){this.data.staged=staged;await this.save();return this.recover();}this.apply(staged);await this.save();return result;
  }
  async shiftCommand(id:string,kind:'shift.open'|'shift.close',value:string){let a=await this.auth();const intent={kind,value};const replay=await this.replay(id,intent,a.grant.actorId);if(replay.response)return replay.response;this.ensureWritable();await this.auth(kind);decimal(value);if(this.data.staged)throw new Error('Resuelve el canje pendiente.');if(kind==='shift.close'&&this.data.sharedShifts?.[this.shift()?.id??'']){await this.sync(false);if(this.data.outbox.length)throw new Error('Sincroniza los pendientes antes de cerrar el turno compartido.');await this.refresh();a=await this.auth(kind);}const existing=this.shift();if(kind==='shift.open'?existing!==null:!existing||existing.actorId!==a.grant.actorId)throw new Error('La caja tiene otro turno o no te pertenece.');if(kind==='shift.open'){await this.checkShiftOpening();a=await this.auth(kind);}const now=Date.now();const event:PosEvent=kind==='shift.open'?{kind,shiftId:crypto.randomUUID(),openingCash:value,occurredAtMs:now}:{kind,shiftId:existing!.id,counted:value,occurredAtMs:now};const entry=await this.entry(id,event,a,1);let shift:Shift;if(kind==='shift.open'){shift={id:event.shiftId,actorId:a.grant.actorId,actorName:a.actorName,openingCash:value,expected:value,openedAtMs:now,closedAtMs:null,counted:null,difference:null};this.data.shifts.push(shift);}else{shift=existing!;shift.closedAtMs=now;shift.counted=value;shift.difference=formatted(decimal(value)-signedDecimal(shift.expected));}const shiftReceipt=kind==='shift.close'?this.receiptFor(shift):undefined;if(shiftReceipt){this.data.shiftReceipts??={};this.data.shiftReceipts[shift.id]=shiftReceipt;}const response={shift:structuredClone(shift),...(shiftReceipt?{shiftReceipt}:{})};await this.archive(a);this.record(entry,replay.fingerprint,response);await this.save();return response;}
- async cashMovementCommand(id:string,input:{class:CashMovementClass;method:PaymentMethod;amount:string;reason:string;reversesMovementId:string|null}){let a=await this.auth();const intent={kind:'cash.movement',...input};const replay=await this.replay(id,intent,a.grant.actorId);if(replay.response)return replay.response;this.ensureWritable();if(this.data.staged)throw new Error('Resuelve el canje pendiente.');if(!a.principal.actions.includes('cash.movement'))throw new Error('No tienes permiso para registrar movimientos de caja.');await this.remote('/me');await this.refresh();a=await this.auth();if(decimal(input.amount)<=0n||input.reason.trim().length<3||input.reason.length>500)throw new Error('Revisa el importe y el motivo.');const shift=this.shift();if(!shift||shift.actorId!==a.grant.actorId)throw new Error('Abre un turno propio antes de registrar el movimiento.');const original=input.reversesMovementId?(this.data.events.find(e=>e.result.cashMovement?.id===input.reversesMovementId)?.result.cashMovement??this.data.sharedShifts?.[shift.id]?.cashMovements.find(m=>m.id===input.reversesMovementId)):null;if(input.class==='correction'?!original||original.shiftId!==shift.id||original.reversesMovementId!==null||original.method!==input.method||original.amount!==formatted(decimal(input.amount)):input.reversesMovementId!==null)throw new Error('La corrección debe referenciar exactamente un movimiento vigente del turno.');const delta=input.class==='correction'?-signedDecimal(original!.cashDelta):input.method==='cash'?(input.class==='income'?decimal(input.amount):-decimal(input.amount)):0n;const event:PosEvent={kind:'cash.movement',shiftId:shift.id,movementId:crypto.randomUUID(),class:input.class,method:input.method,amount:input.amount,reason:input.reason.trim(),reversesMovementId:input.reversesMovementId,occurredAtMs:Date.now()};const entry=await this.entry(id,event,a,1);const movement:CashMovement={id:event.movementId,shiftId:shift.id,class:event.class,method:event.method,amount:formatted(decimal(event.amount)),cashDelta:formatted(delta),reason:event.reason,reversesMovementId:event.reversesMovementId,occurredAtMs:event.occurredAtMs,actorName:a.actorName};const result:Result={order:null,sale:null,refund:null,comanda:null,movements:[],warehouseId:'',cashDelta:movement.cashDelta,cashMovement:movement};await this.archive(a);this.apply({entry,result,fingerprint:replay.fingerprint,actorId:a.grant.actorId});await this.save();return {cashMovement:movement};}
+ async cashMovementCommand(id:string,input:{class:CashMovementClass;method:PaymentMethod;amount:string;reason:string;reversesMovementId:string|null}){
+  let a=await this.auth();
+  const intent={kind:'cash.movement',...input};
+  const replay=await this.replay(id,intent,a.grant.actorId);
+  if(replay.response)return {cashMovement:replay.response.cashMovement};
+  this.ensureWritable();
+  if(this.data.staged)throw new Error('Resuelve el canje pendiente.');
+  if(!a.principal.actions.includes('cash.movement'))throw new Error('No tienes permiso para registrar movimientos de caja.');
+  await this.remote('/me');
+  await this.refresh();
+  a=await this.auth();
+  const shift=this.shift();
+  if(!shift||shift.actorId!==a.grant.actorId)throw new Error('Abre un turno propio antes de registrar el movimiento.');
+  const delta=cashMovementDelta(shift.id,this.ledgerFor(shift).cashMovements,input);
+  const event:PosEvent={kind:'cash.movement',shiftId:shift.id,movementId:crypto.randomUUID(),class:input.class,method:input.method,amount:input.amount,reason:input.reason.trim(),reversesMovementId:input.reversesMovementId,occurredAtMs:Date.now()};
+  const entry=await this.entry(id,event,a,1);
+  const movement:CashMovement={id:event.movementId,shiftId:shift.id,class:event.class,method:event.method,amount:formatted(decimal(event.amount)),cashDelta:formatted(delta),reason:event.reason,reversesMovementId:event.reversesMovementId,occurredAtMs:event.occurredAtMs,actorName:a.actorName};
+  const result:Result={order:null,sale:null,refund:null,comanda:null,movements:[],warehouseId:'',cashDelta:movement.cashDelta,cashMovement:movement};
+  await this.archive(a);
+  this.apply({entry,result,fingerprint:replay.fingerprint,actorId:a.grant.actorId});
+  await this.save();
+  return {cashMovement:movement};
+ }
  async recover(cancel=false){const s=this.data.staged;if(!s)return null;const signed=this.data.grants[s.entry.signedId];if(!signed)throw new Error('Falta autorización histórica.');if(cancel){const result=await this.remote<{committed:boolean}>('/pos/redemption/cancel',{operationId:s.entry.operation.operationId,deviceId:s.entry.operation.deviceId,signed},true);if(!result.committed){this.data.staged=null;await this.save();return null;}}
   const result=await this.remote<{kind:'accepted';receipt:Operation}>('/pos/sync',{operation:s.entry.operation,payload:s.entry.payload,signed},true);if(result.kind!=='accepted'||transition('pending',s.entry.operation,result)!=='acknowledged')throw new Error('Acuse incorrecto. Conserva el intento.');this.apply(s);this.data.outbox=this.data.outbox.filter(o=>o.operation.operationId!==s.entry.operation.operationId);this.data.staged=null;await this.save();return s.result;
  }
@@ -179,7 +259,7 @@ export async function browserCall<T>(path:string,body:Record<string,unknown>={})
  let result:unknown;
  if(path==='/login')result=await e.login(String(body.login),String(body.password));
  else if(path==='/session')result=await e.session();
- else if(path==='/import-legacy'){await e.preparePassword(String(body.password??''));const login=e.loginName(),verifier=e.data.users[login]!.passwordHash;if(e.data.terminal||e.data.outbox.length||e.data.sequence)throw new Error('Este navegador ya tiene una caja.');await e.save();const target=e.data.installationId;const imported=await e.remote<BrowserData>('/local-transition',{targetId:target});if(imported.version!==1||!imported.terminal||imported.terminal.installationId!==imported.installationId)throw new Error('Traslado incompatible.');e.data=imported;e.data.users[login]={...(e.data.users[login]??{signed:{document:'',signature:''},revoked:false}),passwordHash:verifier};await e.save();await navigator.storage?.persist?.();result=await e.session();}
+ else if(path==='/import-legacy')result=await e.importLegacy(String(body.password??''));
  else if(path==='/enroll'){await e.preparePassword(String(body.password??''));result=await e.enroll(String(body.deviceId));}
  else if(path==='/terminals')result=await e.terminals();
  else if(path==='/terminal/switch')result=await e.switchTerminal(String(body.deviceId));

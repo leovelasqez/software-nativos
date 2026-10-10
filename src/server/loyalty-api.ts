@@ -1,3 +1,4 @@
+import { isWithinGrantClock } from '../authorization.ts';
 import { CatalogError } from '../catalog.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
@@ -20,7 +21,7 @@ export async function loyaltyEntry(c:PoolClient,id:string,customerId:string,delt
 }
 export async function settleLoyalty(c:PoolClient,id:string,sale:SaleV2|null,refund:RefundV2|null,actor:Actor,branchId:string,occurredAtMs:number){
  if(sale?.loyalty){const l=sale.loyalty;const member=(await c.query('SELECT * FROM loyalty_members WHERE customer_id=$1',[sale.customer?.id])).rows[0];const rule=(await c.query('SELECT data FROM loyalty_rules WHERE id=$1',[l.rule.id])).rows[0]?.data as LoyaltyRule|undefined;
-  if(!member||!rule||Number(member.enrolled_at_ms)!==l.memberSince||l.memberSince>occurredAtMs||rule.createdAtMs>occurredAtMs||Object.keys(rule).some(k=>rule[k as keyof LoyaltyRule]!==l.rule[k as keyof LoyaltyRule]))throw new ApiError(422,'loyalty_version','La inscripción o regla no corresponde al cobro.');
+  if(!member||!rule||Number(member.enrolled_at_ms)!==l.memberSince||!isWithinGrantClock(occurredAtMs,l.memberSince)||!isWithinGrantClock(occurredAtMs,rule.createdAtMs)||Object.keys(rule).some(k=>rule[k as keyof LoyaltyRule]!==l.rule[k as keyof LoyaltyRule]))throw new ApiError(422,'loyalty_version','La inscripción o regla no corresponde al cobro.');
   if(points(l.redeemedPoints)>0n){if((await loyaltyCache(c)).rule.id!==rule.id)throw new ApiError(409,'rule_changed','Las reglas cambiaron. Revisa el cobro.');requireAccess(actor,branchId,'loyalty.redeem');if(BigInt(member.balance)<points(l.redeemedPoints))throw new ApiError(409,'insufficient_points','Saldo central insuficiente para este canje.');}
   await loyaltyEntry(c,id,member.customer_id,points(l.earnedPoints)-points(l.redeemedPoints),{kind:'sale',branchId,actorName:actor.user.name,earned:l.earnedPoints,redeemed:l.redeemedPoints,ruleId:rule.id,reason:'Puntos del cobro'},sale.id);
  }

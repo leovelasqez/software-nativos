@@ -855,6 +855,14 @@
                         "type": "object",
                         "additionalProperties": true
                       }
+                    },
+                    "closedShiftIds": {
+                      "type": "array",
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                      }
                     }
                   },
                   "required": [

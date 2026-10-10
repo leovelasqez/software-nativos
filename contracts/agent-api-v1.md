@@ -10,6 +10,8 @@ Un dueño crea (`POST /api/agents`), rota (`POST /api/agents/{id}/rotate`) o rev
 
 `GET /api/agent/v1/products`, `/recipes`, `/inventory`, `/movements` y `/reports/{kind}` requieren `branchId`, aplican cursor/`limit` y retornan solo proyecciones permitidas. Informes devuelven el mismo contexto `lastSynchronizedAt` por sucursal que la API web. Inventario y movimientos excluyen entrada de costo y costo unitario. No incluyen credenciales, hashes, claves POS, costos ni márgenes para una identidad sin permiso.
 
+Revisión 09-10-2026: el cursor de inventario es `warehouseId:itemId` y se valida como dos identificadores, exclusivamente en esa ruta. Se ordena y compara por ese mismo valor compuesto. Productos, recetas e inventario operativos excluyen registros archivados. Los eventos de importación usan `actor_kind=agent`; no se reescribe auditoría histórica. Un saldo inicial `import_initial` se puede revertir mediante la misma ruta autorizada y causal que un `initial`, permitiendo corregirlo sin eliminar el documento de importación.
+
 ## Importaciones
 
 `POST /api/agent/v1/imports/preview` acepta `contracts/agent-import-v1.schema.json` y devuelve cada error como `{row,field,code,message}` junto al `previewFingerprint`. No persiste hechos comerciales. `POST /api/agent/v1/imports/confirm` requiere el mismo cuerpo y fingerprint; aplica el lote completo o nada. Repetir el mismo `operationId`, actor y contenido devuelve el resultado original; cambiar el contenido devuelve `409 operation_conflict`.

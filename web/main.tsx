@@ -34,6 +34,7 @@ const pending = ['WhatsApp', 'Agentes de IA'];
 const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup' };
 function App() {
   const [me, setMe] = useState<Me | null>(null); const [setup, setSetup] = useState(false);
+  const [setupTokenRequired, setSetupTokenRequired] = useState(false);
   const [ready, setReady] = useState(false); const [error, setError] = useState('');
   const [page, setPage] = useState<Page>('summary'); const [branchId, setBranchId] = useState(''); const [menuOpen, setMenuOpen] = useState(false);
   const [overviewBranch, setOverviewBranch] = useState('all'); const [inventoryWarehouse, setInventoryWarehouse] = useState('');
@@ -44,7 +45,7 @@ function App() {
   async function init() {
     setError('');
     try {
-      const status = await api<{ setupRequired: boolean }>('/status'); setSetup(status.setupRequired);
+      const status = await api<{ setupRequired: boolean; setupTokenRequired?: boolean }>('/status'); setSetup(status.setupRequired); setSetupTokenRequired(status.setupTokenRequired === true);
       if (!status.setupRequired) {
         const response = await fetch('/api/me', { cache: 'no-store' });
         if (response.ok) { const value: Me = await response.json(); setMe(value); setBranchId(value.branches[0]?.id ?? ''); }
@@ -59,9 +60,10 @@ function App() {
   if (!me) return <div className="auth-shell"><div className="auth-story"><Logo /><div className="story-copy"><span className="eyebrow">NATIVOS · VIDA Y BIENESTAR</span><h1>Todo tu negocio.<br /><span>Un mismo lugar.</span></h1><p>Una vista clara de tus ventas, tu inventario y cada uno de tus locales.</p><div className="story-locations"><span>Milán</span><span>Centro</span></div></div><span className="story-footer">Nativos · Vida y bienestar</span></div>
     <main className="auth-main"><div className="auth-theme"><ThemeToggle /></div><div className="auth-card"><span className="eyebrow">{setup ? 'PRIMER ACCESO' : 'BIENVENIDO DE NUEVO'}</span><h2>{setup ? 'Configura tu acceso' : 'Inicia sesión'}</h2><p>{setup ? 'Crea el usuario del dueño para comenzar a administrar Nativos.' : 'Ingresa con el usuario asignado a tu equipo.'}</p>
       {error ? <><Notice error>{error}</Notice><button className="secondary" onClick={() => void init()}>Volver a conectar</button></> : <SaveForm label={setup ? 'Crear mi acceso' : 'Entrar a Nativos'} onSave={async data => {
-        await api(setup ? '/setup' : '/login', 'POST', { ...(setup ? { name: String(data.get('name')) } : {}), login: String(data.get('login')), password: String(data.get('password')) });
+        await api(setup ? '/setup' : '/login', 'POST', { ...(setup ? { name: String(data.get('name')), ...(setupTokenRequired ? { setupToken: String(data.get('setupToken')) } : {}) } : {}), login: String(data.get('login')), password: String(data.get('password')) });
         setSetup(false); await refresh(); setPage('summary');
       }}>{setup && <label>Nombre completo<input name="name" minLength={2} maxLength={100} required autoComplete="name" /></label>}
+        {setup && setupTokenRequired && <label>Clave de instalación<input name="setupToken" aria-label="Clave de instalación" type="password" minLength={43} maxLength={128} required autoComplete="off" spellCheck={false} /><small>Usa la clave privada suministrada para esta instalación.</small></label>}
         <label>Usuario<input name="login" minLength={3} maxLength={64} required pattern="[a-zA-Z0-9_.\-]+" autoComplete="username" autoCapitalize="none" spellCheck={false} /></label>
         <label>Contraseña<input name="password" type="password" aria-label="Contraseña" aria-describedby={setup ? 'password-help' : undefined} minLength={setup ? 12 : 1} maxLength={128} required autoComplete={setup ? 'new-password' : 'current-password'} />{setup && <small id="password-help">Usa al menos 12 caracteres. Tú eliges tus credenciales.</small>}</label>
       </SaveForm>}<p className="auth-footnote"><a href="/caja">Abrir Caja, incluso sin conexión</a></p></div></main></div>;

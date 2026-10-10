@@ -1,6 +1,6 @@
 import { loyaltyCalculation, proportional, apportion } from './loyalty.ts';
-import type { LoyaltyMeta, LoyaltyResult } from './loyalty.ts';
-import { decimal, formatted, multiply, CatalogError } from './catalog.ts';
+import type { LoyaltyMeta } from './loyalty.ts';
+import { decimal, formatted, CatalogError } from './catalog.ts';
 import { calculateSale, roundPeso } from './pos-domain.ts';
 import type { Order, OrderLine, Snapshot, Payment } from './pos-domain.ts';
 import type { Action } from './contracts.ts';

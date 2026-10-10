@@ -6,6 +6,11 @@ import { legacySale } from '../orders-domain.ts';
 import { formatted } from '../catalog.ts';
 import { signedDecimal } from '../pos-domain.ts';
 
+export async function closedShiftIds(c: PoolClient, deviceId: string, installationId: string) {
+  return (await c.query<{ id: string }>(`SELECT id FROM pos_shifts WHERE device_id=$1 AND closed_at IS NOT NULL
+    AND (installation_id=$2 OR $2=ANY(resumed_installations)) ORDER BY id`, [deviceId, installationId])).rows.map(row => row.id);
+}
+
 export async function sharedShifts(c: PoolClient, deviceId: string, installationId: string, actorId: string): Promise<SharedShift[]> {
   const shifts = (await c.query(`SELECT s.*,u.name AS actor_name,
     (s.opening_cash+(SELECT coalesce(sum(cash_applied),0) FROM pos_sales WHERE shift_id=s.id)

@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
 import type { Action } from '../contracts.ts';
 import importSchema from '../../contracts/agent-import-v1.schema.json' with { type: 'json' };
-import { CatalogError, decimal, formatted, freezeRecipe, toBase } from '../catalog.ts';
+import { decimal, formatted, freezeRecipe, toBase } from '../catalog.ts';
 import type { Item, Product, Recipe, RecipeLine, RecipeOption } from '../catalog.ts';
 import { audit, publicUser, transaction } from './db.ts';
 import type { Actor } from './db.ts';
@@ -25,10 +25,12 @@ const importValidator = new Ajv2020({ strict: true, allErrors: true }).compile(i
 function queryLimit(value: string | undefined) { const limit = Number(value ?? '50'); return Number.isInteger(limit) && limit >= 1 && limit <= 100 ? limit : null; }
 function canonical(value: unknown): string { if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']'; if (value && typeof value === 'object') return '{' + Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, child]) => JSON.stringify(key) + ':' + canonical(child)).join(',') + '}'; return JSON.stringify(value); }
 function importFingerprint(value: { previewFingerprint?: string }) { const { previewFingerprint: _previewFingerprint, ...body } = value; return createHash('sha256').update(canonical(body)).digest('hex'); }
-async function agentRead(pool: Pool, request: Parameters<typeof authenticateAgent>[1], action: Action = 'data.read') {
+async function agentRead(pool: Pool, request: Parameters<typeof authenticateAgent>[1], compositeCursor = false) {
   const query = request.query as Query; const limit = queryLimit(query.limit);
-  if (!limit || !query.branchId || !idPattern.test(query.branchId) || (query.after !== undefined && !idPattern.test(query.after)) || (query.q !== undefined && query.q.length > 100)) throw new ApiError(400, 'invalid_query', 'Revisa sucursal, cursor y límite.');
-  const actor = await authenticateAgent(pool, request); requireAccess(actor, query.branchId, action);
+  const cursorParts = typeof query.after === 'string' ? query.after.split(':') : [];
+  const validCursor = query.after === undefined || (cursorParts.length === (compositeCursor ? 2 : 1) && cursorParts.every(part => idPattern.test(part)));
+  if (!limit || !query.branchId || !idPattern.test(query.branchId) || !validCursor || (query.q !== undefined && (typeof query.q !== 'string' || query.q.length > 100))) throw new ApiError(400, 'invalid_query', 'Revisa sucursal, cursor y límite.');
+  const actor = await authenticateAgent(pool, request); requireAccess(actor, query.branchId);
   return { actor, query, limit };
 }
 
@@ -160,22 +162,22 @@ export function registerAgents(app: FastifyInstance, pool: Pool) {
   app.get('/api/agent/v1/products', async req => {
     const { query, limit } = await agentRead(pool, req);
     const rows = (await pool.query(`SELECT p.id,v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version
-      WHERE p.id>$1 AND (v.data->>'name' ILIKE $2 OR p.reference ILIKE $2) ORDER BY p.id LIMIT $3`, [query.after ?? '', `%${query.q ?? ''}%`, limit + 1])).rows;
+      WHERE p.archived_at IS NULL AND p.id>$1 AND (v.data->>'name' ILIKE $2 OR p.reference ILIKE $2) ORDER BY p.id LIMIT $3`, [query.after ?? '', `%${query.q ?? ''}%`, limit + 1])).rows;
     const items = rows.slice(0, limit).map(row => ({ ...row.data, activeRecipeVersion: row.active_recipe_version, sellable: row.data.type === 'finished' || row.active_recipe_version !== null }));
     return { items, nextCursor: rows.length > limit ? items.at(-1)?.id ?? null : null };
   });
   app.get('/api/agent/v1/recipes', async req => {
     const { query, limit } = await agentRead(pool, req);
     const rows = (await pool.query(`SELECT r.id,r.data FROM recipe_versions r JOIN catalog_products p ON p.id=r.product_id AND p.active_recipe_version=r.version
-      WHERE r.id>$1 ORDER BY r.id LIMIT $2`, [query.after ?? '', limit + 1])).rows;
+      WHERE p.archived_at IS NULL AND r.id>$1 ORDER BY r.id LIMIT $2`, [query.after ?? '', limit + 1])).rows;
     const items = rows.slice(0, limit).map(row => ({ id: row.id, ...row.data }));
     return { items, nextCursor: rows.length > limit ? items.at(-1)?.id ?? null : null };
   });
   app.get('/api/agent/v1/inventory', async req => {
-    const { query, limit } = await agentRead(pool, req);
+    const { query, limit } = await agentRead(pool, req, true);
     const rows = (await pool.query(`SELECT w.id AS "warehouseId",w.name AS warehouse,i.id AS "itemId",i.name,i.reference,i.base_unit AS "baseUnit",coalesce(sum(m.quantity),0)::numeric(30,6)::text AS quantity,minimums.minimum::text AS minimum
       FROM inventory_items i CROSS JOIN (SELECT id,name FROM warehouses WHERE branch_id=$1) w LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=w.id LEFT JOIN inventory_minimums minimums ON minimums.warehouse_id=w.id AND minimums.item_id=i.id
-      WHERE (w.id || ':' || i.id)>$2 GROUP BY w.id,w.name,i.id,i.name,i.reference,i.base_unit,minimums.minimum ORDER BY w.id,i.id LIMIT $3`, [query.branchId, query.after ?? '', limit + 1])).rows;
+      WHERE i.archived_at IS NULL AND (w.id || ':' || i.id)>$2 GROUP BY w.id,w.name,i.id,i.name,i.reference,i.base_unit,minimums.minimum ORDER BY (w.id || ':' || i.id) LIMIT $3`, [query.branchId, query.after ?? '', limit + 1])).rows;
     const items = rows.slice(0, limit).map(row => ({ id: `${row.warehouseId}:${row.itemId}`, ...row }));
     return { items, nextCursor: rows.length > limit ? items.at(-1)?.id ?? null : null };
   });

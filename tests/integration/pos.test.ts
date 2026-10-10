@@ -16,7 +16,7 @@ test('Incremento 3 — PostgreSQL, SQLite y DPAPI reales; recuperación y sincro
   const directory = resolve('.local/pos-test-' + randomUUID()); const password = randomBytes(24).toString('base64url');
   const dbPassword = randomBytes(32).toString('hex'); let db = await startLocalPostgres(directory, { password: dbPassword });
   let app = await createApp({ pool: db.pool, origin: 'http://127.0.0.1:4330' });
-  let cookie = ''; let offline = false; let loseReply = false; let offset = 0; let original: Snapshot; let productId = ''; let preparedId = ''; let rawId = ''; let warehouse = ''; let saleId = '';
+  let cookie = ''; let offline = false; let loseReply = false; let offset = 0; let original: Snapshot; let productId = ''; let preparedId = ''; let rawId = ''; let saleId = '';
   const req = async (method: 'GET' | 'POST' | 'PUT' | 'PATCH', url: string, payload?: object) => app.inject({ method, url, ...(payload ? { payload } : {}), headers: { host: '127.0.0.1:4330', cookie, 'x-nativos-request': '1' } });
   const request: Requester = async (url, init) => {
     if (offline) throw new Error('Simulated network outage');
@@ -32,7 +32,7 @@ test('Incremento 3 — PostgreSQL, SQLite y DPAPI reales; recuperación y sincro
   try {
     await migrate(db.pool); await migrate(db.pool);
     const setup = await req('POST', '/api/setup', { name: 'Dueño Sintético', login: 'owner-pos', password }); assert.equal(setup.statusCode, 201, setup.body); cookie = `nativos_session=${setup.cookies[0]!.value}`;
-    const detail = (await req('GET', '/api/branches/centro')).json(); warehouse = detail.warehouses.find((w: { isDefault: boolean }) => w.isDefault).id;
+    const detail = (await req('GET', '/api/branches/centro')).json();
     const p = await req('POST', '/api/products', draftProduct('FIN')); assert.equal(p.statusCode, 200, p.body); productId = p.json().id;
     rawId = (await req('POST', '/api/items', { ...common(), name: 'Insumo sintético', reference: 'RAW-POS', kind: 'raw', baseUnit: 'g' })).json().id;
     preparedId = (await req('POST', '/api/products', draftProduct('PREP', 'prepared'))).json().id;

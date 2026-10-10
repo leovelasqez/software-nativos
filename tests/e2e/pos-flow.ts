@@ -14,7 +14,7 @@ async function commercialState(page:Page){return page.evaluate(async()=>{
   return {sequence:data.sequence,shifts:data.shifts,outbox:data.outbox.map(o=>({id:o.operation.operationId,state:o.state})),events:data.events.length,commands:Object.keys(data.commands).sort(),receiptIds:Object.keys(data.shiftReceipts??{}).sort(),hasStoredPreview:'currentShiftPreview' in data};
  }finally{db.close();}
 });}
-export async function exercisePos(page: Page, password: string) {
+export async function exercisePos(page: Page) {
   const nav = async (name:string) => { if(!await page.getByRole('navigation').isVisible()) await page.getByRole('button',{name:'Menú de Caja',exact:true}).click(); await page.getByRole('navigation').getByRole('button',{name,exact:true}).click(); };
   const root = 'test-results/unified-web/regression'; await mkdir(root, { recursive: true });
   await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto('http://127.0.0.1:4320/caja');
@@ -44,6 +44,23 @@ export async function exercisePos(page: Page, password: string) {
   await page.screenshot({ path: `${root}/mobile-receipt.png`, fullPage: true }); await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Sincronizar', exact: true }).click(); await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
   await nav('Comprobantes'); await expect(page.getByRole('button', { name: 'Ver copia' })).toHaveCount(1); await page.getByRole('button', { name: 'Ver copia' }).click(); await expect(dialog).toContainText('28.000'); await page.keyboard.press('Escape');
+  // AC-019-03: a corrected movement no longer offers another correction.
+  // The withdrawal and its counterpart preserve the original expected cash.
+  await nav('Turno');
+  await page.getByRole('button', { name: 'Registrar ingreso o salida', exact: true }).click();
+  await dialog.getByRole('combobox', { name: 'Clase', exact: true }).selectOption('withdrawal');
+  await dialog.getByRole('combobox', { name: 'Medio', exact: true }).selectOption('cash');
+  await dialog.getByLabel('Importe (COP)', { exact: true }).fill('10');
+  await dialog.getByLabel('Motivo', { exact: true }).fill('Retiro de revisión de código');
+  await dialog.getByRole('button', { name: 'Registrar movimiento', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const correctedRow = page.locator('.movement-panel .catalog-row').filter({ hasText: 'Retiro de revisión de código' });
+  await correctedRow.getByRole('button', { name: 'Corregir', exact: true }).click();
+  await dialog.getByLabel('Motivo', { exact: true }).fill('Contrapartida de revisión de código');
+  await dialog.getByRole('button', { name: 'Registrar contrapartida', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(correctedRow.getByRole('button', { name: 'Corregir', exact: true })).toHaveCount(0);
+  await expect(page.locator('.pos-shift')).toContainText('77.000');
   // AC-006-08: close offline, keep the persisted receipt and reprint after reload.
   await page.evaluate(()=>navigator.serviceWorker.ready.then(()=>true));await page.context().setOffline(true);
   await nav('Turno'); await expect(page.locator('.pos-shift')).toContainText('77.000');

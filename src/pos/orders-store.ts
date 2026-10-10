@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS customers_cache(id TEXT PRIMARY KEY,data TEXT NOT NUL
   get(id:string):OrderV2|null{const r=this.base.db.prepare('SELECT data FROM orders_v2 WHERE id=?').get(id);return r?JSON.parse(String(r.data)):null;}
   owner(id:string){return this.base.db.prepare('SELECT actor_id FROM orders_v2 WHERE id=?').get(id)?.actor_id;}
   list(actorId:string):OrderV2[]{return this.base.db.prepare('SELECT data FROM orders_v2 WHERE actor_id=? ORDER BY rowid DESC').all(actorId).map(r=>JSON.parse(String(r.data)) as OrderV2).filter(o=>!o.closed);}
-  current(actorId:string){const selected=this.base.meta<string>('order-active-'+actorId);return this.list(actorId).find(o=>o.id===selected)??this.list(actorId)[0]??this.blank(actorId);}
+  current(actorId:string){const selected=this.base.meta<string>('order-active-'+actorId);return this.list(actorId).find(o=>o.id===selected)??this.list(actorId)[0]??this.blank();}
   select(actorId:string,id:string){if(this.owner(id)!==actorId)throw new Error('El pedido pertenece a otro usuario.');this.meta('order-active-'+actorId,id);}
   customers():Customer[]{return this.base.db.prepare('SELECT data FROM customers_cache ORDER BY id').all().map(r=>JSON.parse(String(r.data)));}
   cache(customers:Customer[]){this.tx(()=>{for(const customer of customers)this.base.db.prepare('INSERT INTO customers_cache VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data').run(customer.id,JSON.stringify(customer));});}
@@ -65,5 +65,5 @@ CREATE TABLE IF NOT EXISTS customers_cache(id TEXT PRIMARY KEY,data TEXT NOT NUL
       this.base.db.prepare('INSERT INTO commands VALUES(?,?,?)').run(id,payloadHash(JSON.stringify({actor:actorId,intent})),JSON.stringify(result));failure?.(result);return result;
     });
   }
-  blank(actorId:string){return upgradeOrder({id:randomUUID(),revision:0,snapshotId:this.base.snapshot()?.id??'',lines:[]});}
+  blank(){return upgradeOrder({id:randomUUID(),revision:0,snapshotId:this.base.snapshot()?.id??'',lines:[]});}
 }

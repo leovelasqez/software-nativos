@@ -15,7 +15,9 @@ Abre [Nativos](http://127.0.0.1:4310/) y entra con tu usuario. **Caja y ventas**
 
 No hay contraseña predeterminada. Si no existe configuración, el primer dueño elige sus credenciales. La base de desarrollo, usuarios y operaciones existentes se conservan en `.local/development`, fuera de Git. No borrar esa carpeta para corregir problemas.
 
-El despliegue técnico de Railway está disponible en [nativos-web-production.up.railway.app](https://nativos-web-production.up.railway.app). Su PostgreSQL inició limpio y no recibió datos locales; allí todavía se debe crear el primer dueño de producción desde el formulario privado. La URL no implica autorización de ventas reales: recuperación operativa, hardware y autorización final continúan como puertas separadas.
+El despliegue técnico de Railway está disponible en [nativos-web-production.up.railway.app](https://nativos-web-production.up.railway.app). Su PostgreSQL inició limpio y no recibió datos locales. En una instalación alojada nueva, el primer dueño se registra con una clave privada de instalación, además de sus credenciales personales. La URL no implica autorización de ventas reales: recuperación operativa, hardware y autorización final continúan como puertas separadas.
+
+Desde la revisión del 09-10-2026, la configuración inicial está cerrada por defecto fuera de desarrollo HTTP en loopback. Para una base alojada nueva, configurar `NATIVOS_SETUP_TOKEN` con una clave aleatoria de al menos 32 bytes codificada en base64url (43–128 caracteres) y entregarla por un canal privado al dueño, que la usa en **Clave de instalación**. Sin esa variable no se puede registrar el primer dueño. La clave no se devuelve ni se almacena en datos de Caja y puede retirarse del entorno después de configurar el usuario. Un sitio ya configurado conserva su login habitual. Nunca guardar una clave real en código, ejemplos, documentos o logs.
 
 ## Caja en el navegador
 

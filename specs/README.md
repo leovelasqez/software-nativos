@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Revisión integral — verificada localmente (09-10-2026)
+
+[Spec 019](019-code-audit/spec.md), [plan](019-code-audit/plan.md) y [tareas](019-code-audit/tasks.md): revisión de seguridad, dependencias y mantenimiento autorizada por el usuario. Bootstrap alojado protegido, identidad offline vinculada a la contraseña, contrapartida única, reloj/continuación de turnos coherentes, auditoría de agentes, informes/cursores/Excel corregidos y código sin uso retirado. La evidencia se registra en [la revisión](../docs/evidence/code-audit-2026-10-09.md). No se acredita publicación de estos cambios.
+
 ## Formato simplificado de cierre — publicado (07-10-2026)
 
 AC-006-12/13: resumen de dos columnas siguiendo la foto del usuario, efectivo/arqueo reales, detalle consultable mediante desplegable y excluido de la impresión compacta. [Spec 006](006-cash/spec.md), [contrato](../contracts/shift-receipt-v1.md) y [evidencia](../docs/evidence/cierre-simplificado-2026-10-07.md). Sin cambio de libro, permisos o persistencia; publicado como continuación del comprobante autorizado, con salud y archivos verificados.

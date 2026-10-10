@@ -24,7 +24,8 @@ async function shutdown() {
 
 try {
   await migrate(pool);
-  app = await createApp({ pool, origin: config.origin, staticRoot: resolve('dist') });
+  app = await createApp({ pool, origin: config.origin, staticRoot: resolve('dist'),
+    ...(config.setupToken ? { setupToken: config.setupToken } : {}) });
   await app.listen({ port: config.port, host: '0.0.0.0' });
   console.log(`Nativos disponible en ${config.origin}`);
   process.once('SIGINT', () => { void shutdown(); });

@@ -26,6 +26,9 @@
                   "properties": {
                     "setupRequired": {
                       "type": "boolean"
+                    },
+                    "setupTokenRequired": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -239,10 +242,15 @@
                   "properties": {
                     "ok": {
                       "const": true
+                    },
+                    "actorId": {
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
-                    "ok"
+                    "ok",
+                    "actorId"
                   ]
                 }
               }
@@ -457,6 +465,12 @@
                     "type": "string",
                     "minLength": 12,
                     "maxLength": 128
+                  },
+                  "setupToken": {
+                    "type": "string",
+                    "minLength": 43,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_-]+$"
                   }
                 },
                 "required": [
@@ -496,10 +510,15 @@
                   "properties": {
                     "ok": {
                       "const": true
+                    },
+                    "actorId": {
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
-                    "ok"
+                    "ok",
+                    "actorId"
                   ]
                 }
               }

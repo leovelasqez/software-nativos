@@ -14,7 +14,7 @@ Antes de implementar una capacidad, lee también [README.md](./README.md), [el p
 - Antes de cambios productivos, completar `plan.md` y `tasks.md` junto al `spec.md` de la capacidad, usando las plantillas de `specs/_templates/`. Crear contratos de datos/API/sincronización cuando existan interfaces afectadas.
 - Vincular tareas y pruebas con identificadores `REQ-NNN-NN` y `AC-NNN-NN`. Mantener especificación, contratos, implementación y evidencia alineados en el mismo cambio.
 - Probar reglas de negocio en su dominio, persistencia y permisos en integración y los flujos críticos de usuario de extremo a extremo. No reducir la validación a revisar pantallas.
-- Mantener el estado real de cada capacidad: consultar specs/README.md para el estado por alcance; no hay funcionalidad desplegada en producción.
+- Mantener el estado real de cada capacidad: consultar specs/README.md y sus evidencias para distinguir alcances locales, publicaciones verificadas y pendientes operativos. Las publicaciones concretas de Railway están registradas; no inferir autorización comercial de ellas.
 - No introducir microservicios, colas externas o herramientas de generación por etiqueta metodológica. Justificar cambios arquitectónicos con una decisión registrada y evidencia.
 - No es obligatorio instalar un framework SDD: el flujo inicial utiliza Markdown y, cuando se autorice implementar, contratos y pruebas versionados con el código.
 

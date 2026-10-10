@@ -44,13 +44,13 @@ export function Reports({ branchId }: { branchId: string }) {
   const columns=(reportColumns[kind]??[]).filter(key=>report?.items.some(item=>item[key]!==undefined));
   return <><Heading eyebrow="CONSULTA ONLINE" title="Informes">Consulta ventas, inventario y movimientos confirmados. Las operaciones offline aparecen después de sincronizarse.</Heading>
     <section className="panel report-filters"><div className="fields">
-      <label>Informe<select value={kind} onChange={e => setKind(e.target.value)}>{kinds.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+      <label>Informe<select value={kind} onChange={e => { setKind(e.target.value); setPaymentMethod(''); }}>{kinds.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
       <label>Desde<input type="date" value={from} onChange={e => setFrom(e.target.value)} /></label>
       <label>Hasta<input type="date" value={to} onChange={e => setTo(e.target.value)} /></label>
       {(kind === 'sales' || kind === 'waste') && <label>Producto<select value={productId} onChange={e => selectFilter('productId', e.target.value)}><option value="">Todos</option>{products.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
       {(kind === 'sales' || kind === 'loyalty') && <label>Cliente<select value={customerId} onChange={e => selectFilter('customerId', e.target.value)}><option value="">Todos</option>{customers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
       {kind === 'purchases' && <label>Proveedor<select value={supplierId} onChange={e => selectFilter('supplierId', e.target.value)}><option value="">Todos</option>{suppliers.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
-      {(kind === 'sales' || kind === 'purchases') && <label>Medio<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option value="">Todos</option>{methods.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
+      {(kind === 'sales' || kind === 'purchases') && <label>Medio<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option value="">Todos</option>{(kind === 'purchases' ? [...methods, { id: 'other', name: 'Otro' }] : methods).map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
       <div className="row-actions"><button className="secondary" disabled={loading} onClick={() => void load()}>Aplicar filtros</button><button className="primary" onClick={() => void exportXlsx()}>Exportar Excel</button></div>
     </div></section>
     {error && <Notice error>{error}</Notice>}{loading && <p className="empty" role="status">Consultando informe…</p>}

@@ -44,6 +44,6 @@ export async function migrate(pool: Pool) {
 export async function audit(c: PoolClient, actor: Actor, action: string, reason: string,
   changes: object, branchId: string | null = null, scope = actor.user.branch_ids) {
   await c.query(`INSERT INTO audit_events(actor_id,actor_kind,device_id,branch_id,scope_branch_ids,operation_id,action,reason,changes)
-    VALUES($1,'human',$2,$3,$4,$5,$6,$7,$8)`,
-  [actor.user.id, actor.deviceId, branchId, scope, randomUUID(), action, reason, JSON.stringify(changes)]);
+    VALUES($1,$9,$2,$3,$4,$5,$6,$7,$8)`,
+  [actor.user.id, actor.deviceId, branchId, scope, randomUUID(), action, reason, JSON.stringify(changes), actor.user.kind]);
 }

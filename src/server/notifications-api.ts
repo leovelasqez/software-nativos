@@ -8,7 +8,6 @@ import { decimal, formatted } from '../catalog.ts';
 const states = new Set(['pending','sending','delivered','failed_retryable','failed_terminal','uncertain']);
 const outcomes = new Set(['delivered','retryable','terminal','uncertain']);
 const id = (value: unknown) => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value);
-const page = (value: unknown) => typeof value === 'string' && /^\d+$/.test(value) ? value : '0';
 const roles = ['owner','branch_manager'] as const;
 async function add(c: PoolClient, type: 'low_stock_daily'|'shift_closed', branchId: string, causalId: string, data: object) {
   for (const recipientRole of roles) await c.query(`INSERT INTO notification_intents(id,dedupe_key,type,branch_id,causal_id,recipient_role,state,data) VALUES($1,$2,$3,$4,$5,$6,'pending',$7) ON CONFLICT(dedupe_key) DO NOTHING`, [randomUUID(), `${type}:${branchId}:${causalId}:${recipientRole}`, type, branchId, causalId, recipientRole, JSON.stringify(data)]);
@@ -35,9 +34,9 @@ export function registerNotifications(app: FastifyInstance, pool: Pool) {
   app.addHook('onClose', async () => clearInterval(scheduler));
   app.get('/api/notifications', async req => {
     const actor = await authenticate(pool, req); requireAdmin(actor); const q = req.query as { branchId?: string; state?: string; after?: string; limit?: string };
-    const limit = Number(q.limit ?? 50); if (!q.branchId || !id(q.branchId) || (q.state && !states.has(q.state)) || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new ApiError(400,'invalid_query','Revisa sucursal, estado y paginación.');
+    const limit = Number(q.limit ?? 50); if (!q.branchId || !id(q.branchId) || (q.state && !states.has(q.state)) || (q.after !== undefined && !id(q.after)) || (q.limit !== undefined && typeof q.limit !== 'string') || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new ApiError(400,'invalid_query','Revisa sucursal, estado y paginación.');
     if (!actor.user.branch_ids.includes(q.branchId)) throw new ApiError(403,'forbidden','No tienes permiso para esta sucursal.');
-    const rows = (await pool.query(`SELECT id,type,branch_id AS "branchId",causal_id AS "causalId",recipient_role AS "recipientRole",state,data,created_at AS "createdAt" FROM notification_intents WHERE branch_id=$1 AND ($2::text IS NULL OR state=$2) AND id>$3 ORDER BY id LIMIT $4`,[q.branchId,q.state??null,page(q.after),limit+1])).rows;
+    const rows = (await pool.query(`SELECT id,type,branch_id AS "branchId",causal_id AS "causalId",recipient_role AS "recipientRole",state,data,created_at AS "createdAt" FROM notification_intents WHERE branch_id=$1 AND ($2::text IS NULL OR state=$2) AND id>$3 ORDER BY id LIMIT $4`,[q.branchId,q.state??null,q.after??'',limit+1])).rows;
     const items=rows.slice(0,limit).map(row=>({...row,createdAt:row.createdAt.toISOString()})); return {items,nextCursor:rows.length>limit?items.at(-1)?.id??null:null};
   });
   app.post('/api/notifications/:id/simulate', async req => transaction(pool, async c => {

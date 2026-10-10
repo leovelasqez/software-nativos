@@ -3,6 +3,7 @@ export type ProductionConfig = {
   origin: string;
   port: number;
   poolMax: number;
+  setupToken?: string;
 };
 
 function integer(value: string | undefined, fallback: number, minimum: number, maximum: number, name: string) {
@@ -27,10 +28,14 @@ export function productionConfig(env: NodeJS.ProcessEnv = process.env): Producti
   if (publicUrl.protocol !== 'https:' || !publicUrl.hostname || publicUrl.username || publicUrl.password
     || publicUrl.pathname !== '/' || publicUrl.search || publicUrl.hash) throw new Error('invalid_public_origin');
 
+  const setupToken = env.NATIVOS_SETUP_TOKEN?.trim();
+  if (setupToken && !/^[A-Za-z0-9_-]{43,128}$/.test(setupToken)) throw new Error('invalid_setup_token');
+
   return {
     databaseUrl,
     origin: publicUrl.origin,
     port: integer(env.PORT, 3000, 1, 65535, 'port'),
     poolMax: integer(env.NATIVOS_DB_POOL_MAX, 8, 1, 20, 'pool_max'),
+    ...(setupToken ? { setupToken } : {}),
   };
 }

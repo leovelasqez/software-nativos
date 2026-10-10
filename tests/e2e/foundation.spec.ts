@@ -3,7 +3,7 @@ import {exerciseCajaAccess} from './caja-access-flow.ts';
 import { exerciseLoyalty } from './loyalty-flow.ts';
 import { test, expect } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { AxeBuilder } from '@axe-core/playwright';
 import { exercisePos } from './pos-flow.ts';
 import { exerciseCatalog } from './catalog-flow.ts';
@@ -17,6 +17,8 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   page.on('pageerror', e => consoleErrors.push(e.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Configura tu acceso' })).toBeVisible();
+  const runtime = JSON.parse(await readFile('.local/e2e-runtime.json', 'utf8')) as { setupToken: string };
+  await page.getByLabel('Clave de instalación', { exact: true }).fill(runtime.setupToken);
   await page.getByLabel('Nombre completo').fill('Equipo de prueba');
   await page.getByLabel('Usuario', { exact: true }).fill('e2e-owner');
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
@@ -102,7 +104,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await exerciseInventoryOperations(page);
   await exercisePurchases(page);
   await exerciseCajaAccess(page,password);
-  await exercisePos(page, password);
+  await exercisePos(page);
   await page.goto('http://127.0.0.1:4320/'); await expect(page.getByRole('combobox', { name: 'Sucursal', exact: true })).toBeVisible(); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
   await exerciseLoyalty(page);
   await exerciseBrowser(password);

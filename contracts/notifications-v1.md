@@ -18,4 +18,6 @@ Estados permitidos: `pending → sending → delivered`; `sending → failed_ret
 
 `GET /api/notifications?branchId=&state=&after=&limit=` devuelve una proyección paginada al dueño, con payload comercial y estado, sin datos de contacto. `POST /api/notifications/:id/simulate` sólo existe localmente y permite registrar un resultado sintético de prueba; requiere `settings.manage`, `operationId` y motivo. No hay endpoint de URL arbitraria, teléfono o proveedor.
 
+Revisión 09-10-2026: `after` conserva el identificador completo de `nextCursor`, incluidos UUID; no lo convierte a un número ni lo reinicia silenciosamente. Límites fuera de 1–100, valores no enteros y cursores inválidos devuelven 400. Todas las páginas siguen limitadas a la sucursal autorizada.
+
 Las mutaciones de inventario y cierre sólo llaman al creador de intención dentro de su propia transacción. Un fallo de persistencia revierte el hecho comercial. El adaptador externo futuro toma una intención ya confirmada; su fallo no revierte venta, saldo ni cierre.

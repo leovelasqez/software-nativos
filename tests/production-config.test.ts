@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { productionConfig } from '../src/server/production-config.ts';
+import { randomBytes } from 'node:crypto';
 
 const databaseUrl = 'postgresql://nativos:secret@postgres.railway.internal:5432/railway';
+
+test('AC-019-02: clave de instalación externa opcional y validada sin incluirla en errores', () => {
+  const setupToken = randomBytes(32).toString('base64url');
+  assert.equal(productionConfig({ DATABASE_URL: databaseUrl, NATIVOS_ORIGIN: 'https://app.nativos.example', NATIVOS_SETUP_TOKEN: setupToken }).setupToken, setupToken);
+  assert.throws(() => productionConfig({ DATABASE_URL: databaseUrl, NATIVOS_ORIGIN: 'https://app.nativos.example', NATIVOS_SETUP_TOKEN: 'weak' }), /^Error: invalid_setup_token$/);
+});
 
 test('configuración alojada deriva origen seguro de Railway', () => {
   assert.deepEqual(productionConfig({ DATABASE_URL: databaseUrl, RAILWAY_PUBLIC_DOMAIN: 'nativos.example.up.railway.app', PORT: '8080' }), {

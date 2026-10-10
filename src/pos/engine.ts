@@ -14,7 +14,7 @@ import type { Authorization, Order, Payment, PosEvent, Signed, Snapshot } from '
 import { verifyAuthorization } from '../pos-crypto.ts';
 import { hashPassword, verifyPassword } from '../server/security.ts';
 import { OrdersStore } from './orders-store.ts';
-import { eventAction, checkout, describeLine } from '../orders-domain.ts';
+import { eventAction, describeLine } from '../orders-domain.ts';
 import type { CommandEvent, OrderEvent, Customer } from '../orders-domain.ts';
 import { PosStore } from './store.ts';
 import { Vault } from './vault.ts';
@@ -96,6 +96,9 @@ export class PosEngine {
   private async accept(login: string, passwordHash: string, result: { signed: Signed; snapshot: Snapshot; customers?: Customer[]; loyalty?:LoyaltyCache }) {
     const a = verifyAuthorization(result.signed, this.vault.data.terminal!.publicKey);
     if (!isSnapshot(result.snapshot) || result.snapshot.branchId !== a.grant.branchId || result.snapshot.deviceId !== a.grant.deviceId) throw new Error('La descarga de catálogo no está completa. Se conserva la anterior.');
+    const cached = this.vault.data.users[login];
+    if (cached?.passwordHash === passwordHash && verifyAuthorization(cached.signed, this.vault.data.terminal!.publicKey).grant.actorId !== a.grant.actorId)
+      throw new Error('La autorización corresponde a otro usuario. Inicia sesión con tu cuenta.');
     this.vault.data.users[login] = { signed: result.signed, passwordHash, revoked: false };
     this.vault.data.lastObservedAtMs = a.grant.validatedAtMs; this.startWall = this.clock(); this.startMono = performance.now();
     await this.vault.save();

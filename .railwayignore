@@ -11,3 +11,12 @@ test-results/
 playwright-report/
 playwright.config.ts
 *.log
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.db
+*.db-*
+*.sqlite*
+*.pem
+*.key

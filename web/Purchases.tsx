@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { dashboardDates } from '../src/dashboard.ts';
 import { api, date } from './api.ts';
 import type { BranchDetail, Me, Warehouse } from './api.ts';
 import type { Item } from '../src/catalog.ts';
@@ -54,7 +55,7 @@ function PurchaseForm({ branchId, suppliers, items, warehouses, close, saved }: 
   return <Dialog className="operation-dialog" title="Registrar compra pagada" onClose={close}><SaveForm label="Registrar compra" onSave={async d => {
     await send('/purchases', { supplierId: text(d, 'supplierId'), warehouseId: text(d, 'warehouseId'), purchasedOn: text(d, 'purchasedOn'), paymentMethod: text(d, 'paymentMethod'), paidAmount: text(d, 'paidAmount'), reason: text(d, 'reason'), lines: lines.map(l => ({ itemId: l.itemId, quantity: l.quantity, unit: l.unit, conversion: null, unitPrice: l.unitPrice })) }); await saved();
   }}>
-    {!suppliers.length ? <Notice error>Crea un proveedor antes de registrar una compra.</Notice> : <div className="fields"><label>Proveedor<select name="supplierId" required><option value="">Selecciona un proveedor</option>{suppliers.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label><label>Bodega de entrada<select name="warehouseId" defaultValue={defaultWarehouse} required>{warehouses.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label><label>Fecha de compra<input name="purchasedOn" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></label><label>Medio registrado<select name="paymentMethod" defaultValue="efectivo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label></div>}
+    {!suppliers.length ? <Notice error>Crea un proveedor antes de registrar una compra.</Notice> : <div className="fields"><label>Proveedor<select name="supplierId" required><option value="">Selecciona un proveedor</option>{suppliers.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label><label>Bodega de entrada<select name="warehouseId" defaultValue={defaultWarehouse} required>{warehouses.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label><label>Fecha de compra<input name="purchasedOn" type="date" defaultValue={dashboardDates(new Date()).today} required /></label><label>Medio registrado<select name="paymentMethod" defaultValue="efectivo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label></div>}
     {lines.map((line, index) => {
       const item = items.find(i => i.id === line.itemId);
       const set = (next: Partial<Line>) => setLines(lines.map(l => l.id === line.id ? { ...l, ...next } : l));

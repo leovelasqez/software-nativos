@@ -9,3 +9,7 @@ La acción `cash.movement` es un permiso predeterminado de los roles humanos. La
 Una corrección declara además `reversesMovementId`. Debe referenciar un movimiento confirmado del mismo turno, con el mismo medio e importe, y genera únicamente su contrapartida. No se actualiza ni elimina el registro original. El servidor rechaza turnos cerrados, ajenos, de otra caja, eventos anteriores a la apertura y un segundo intento con la misma operación pero contenido distinto. La respuesta idempotente es el acuse original.
 
 El cierre calcula `opening_cash + ventas/refunds en efectivo + sum(cash_delta)` sobre el libro confirmado. De esta forma consulta, cierre e informes futuros parten de los mismos hechos. Propinas y domicilios no se convierten en movimientos manuales.
+
+## Revisión del 09-10-2026
+
+Cada movimiento admite una sola contrapartida, tanto en el motor del navegador como en el servidor. La comprobación local reúne movimientos propios y el libro central compartido antes de crear el evento: rechazar una segunda corrección conserva saldo, secuencia, comandos y outbox. El reintento exacto del mismo comando devuelve la misma respuesta. Un movimiento corregido y su contrapartida no ofrecen **Corregir** en la interfaz. `cashMovementDelta` y `canCorrectCashMovement` comparten estas reglas sin cambiar el registro original.

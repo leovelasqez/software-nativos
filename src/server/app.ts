@@ -20,16 +20,18 @@ import type { Action, Role } from '../contracts.ts';
 import { transaction, audit, publicUser } from './db.ts';
 import type { Actor, UserRow } from './db.ts';
 import { ApiError, authenticate, requireAccess, requireAdmin, notFound,
-  hashPassword, verifyPassword, newSession, SESSION_MS } from './security.ts';
+  hashPassword, verifyPassword, matchesSetupToken, newSession, SESSION_MS } from './security.ts';
 import { routeSchema } from './api-contract.ts';
 
 interface UserInput { name: string; login: string; password: string; role: Role; branchIds: string[]; actions?: Action[]; active?: boolean; reason: string }
 interface ResourceInput { name: string; reason: string; active: boolean; isDefault: boolean; printerModel: string | null }
 type Params = { id: string; resourceId: string };
-export interface AppOptions { pool: Pool; origin: string; staticRoot?: string; backupDirectory?: string; backupRestoreDatabase?: string; backupRestoreConnection?: PoolConfig }
+export interface AppOptions { pool: Pool; origin: string; setupToken?: string; staticRoot?: string; backupDirectory?: string; backupRestoreDatabase?: string; backupRestoreConnection?: PoolConfig }
 
-export async function createApp({ pool, origin, staticRoot, backupDirectory, backupRestoreDatabase, backupRestoreConnection }: AppOptions) {
+export async function createApp({ pool, origin, setupToken, staticRoot, backupDirectory, backupRestoreDatabase, backupRestoreConnection }: AppOptions) {
   const allowed = new URL(origin);
+  const localSetup = allowed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(allowed.hostname);
+  const setupTokenRequired = setupToken !== undefined || !localSetup;
   const app = Fastify({ logger: false, bodyLimit: 32 * 1024, ajv: { customOptions: { removeAdditional: false, coerceTypes: false } } });
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
@@ -87,10 +89,14 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
       throw new ApiError(400, 'exclusive_permission', 'Costos y ajustes de puntos son exclusivos del dueño.');
   }
   app.get('/api/status', { schema: routeSchema('/api/status', 'get') }, async () => {
-    const result = await pool.query('SELECT 1 FROM app_users LIMIT 1'); return { setupRequired: result.rowCount === 0 };
+    const result = await pool.query('SELECT 1 FROM app_users LIMIT 1');
+    const setupRequired = result.rowCount === 0;
+    return { setupRequired, ...(setupRequired && setupTokenRequired ? { setupTokenRequired: true } : {}) };
   });
   app.post('/api/setup', { schema: routeSchema('/api/setup', 'post'), config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
-    const body = req.body as Pick<UserInput, 'name' | 'login' | 'password'>;
+    const body = req.body as Pick<UserInput, 'name' | 'login' | 'password'> & { setupToken?: string };
+    if (setupTokenRequired && !matchesSetupToken(setupToken, body.setupToken))
+      throw new ApiError(403, 'setup_forbidden', 'La clave de instalación no es válida o la configuración inicial no está habilitada.');
     const session = await transaction(pool, async c => {
       await c.query('SELECT pg_advisory_xact_lock(7301)');
       if ((await c.query('SELECT 1 FROM app_users LIMIT 1')).rowCount) throw new ApiError(409, 'already_configured', 'El dueño inicial ya está configurado.');
@@ -102,7 +108,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
       await audit(c, { user, ...session }, 'setup.completed', 'Configuración inicial', { after: publicUser(user) });
       return session;
     });
-    sessionCookie(reply, session.token); return reply.code(201).send({ ok: true });
+    sessionCookie(reply, session.token); return reply.code(201).send({ ok: true, actorId: session.actorId });
   });
   app.post('/api/login', { schema: routeSchema('/api/login', 'post'), config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
     const body = req.body as { login: string; password: string }; const login = body.login.toLowerCase();
@@ -124,7 +130,7 @@ export async function createApp({ pool, origin, staticRoot, backupDirectory, bac
       return session;
     });
     if (!session) throw new ApiError(401, 'invalid_credentials', 'No fue posible iniciar sesión. Revisa tus credenciales o espera si hubo varios intentos.');
-    sessionCookie(reply, session.token); return { ok: true };
+    sessionCookie(reply, session.token); return { ok: true, actorId: session.actorId };
   });
   app.post('/api/logout', { schema: routeSchema('/api/logout', 'post') }, async (req, reply) => {
     await transaction(pool, async c => {

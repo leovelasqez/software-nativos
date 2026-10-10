@@ -7,7 +7,6 @@ import contract from '../../contracts/foundation-api-v1.json' with { type: 'json
 import { startLocalPostgres } from '../../scripts/local-postgres.ts';
 import { migrate } from '../../src/server/db.ts';
 import { createApp } from '../../src/server/app.ts';
-import { defaultActions } from '../../src/permissions.ts';
 import { tokenHash } from '../../src/server/security.ts';
 import type { UserRow } from '../../src/server/db.ts';
 
@@ -45,7 +44,9 @@ test('Incremento 1 — PostgreSQL real, API y persistencia', { timeout: 180_000 
   };
   const login = async (name: string) => {
     const r = await request('POST', '/api/login', { login: name, password }, '');
-    assert.equal(r.statusCode, 200, r.body); return r.cookies[0]!.name + '=' + r.cookies[0]!.value;
+    assert.equal(r.statusCode, 200, r.body);
+    assert.equal(r.json().actorId, (await db.pool.query('SELECT id FROM app_users WHERE login=$1', [name])).rows[0].id);
+    return r.cookies[0]!.name + '=' + r.cookies[0]!.value;
   };
   try {
     await t.test('AC-001-05/09: migración repetible y configuración inicial concurrente', async () => {
@@ -59,6 +60,7 @@ test('Incremento 1 — PostgreSQL real, API y persistencia', { timeout: 180_000 
       assert.ok(success.headers['set-cookie']?.toString().includes('HttpOnly'));
       assert.ok(success.headers['set-cookie']?.toString().includes('SameSite=Strict'));
       const me = (await request('GET', '/api/me')).json(); ownerId = me.user.id;
+      assert.equal(success.json().actorId, ownerId);
       assert.deepEqual(me.branches.map((b: { id: string }) => b.id).sort(), ['centro', 'milan']);
       assert.equal((await db.pool.query('SELECT count(*) FROM app_users')).rows[0].count, '1');
       const raw = (await db.pool.query<UserRow>('SELECT * FROM app_users')).rows[0]!;
