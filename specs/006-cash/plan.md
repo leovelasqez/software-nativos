@@ -1,5 +1,9 @@
 # Plan técnico — Incremento 3: primera venta completa
 
+## Mantenimiento: alineación de Turno (10-10-2026)
+
+REQ-006-07 / AC-006-14: ajustar exclusivamente CSS de Caja. La tarjeta ya tiene padding propio: quitar padding de sus títulos y márgenes adicionales de avisos/botones directos. Permitir ajuste de textos largos. El pie lateral coloca identidad y salida en filas independientes. Comprobar en navegador real con base sintética aislada, turno abierto/cerrado, escritorio/móvil, claro/oscuro, teclado y apertura de formularios; ejecutar tipos y build y publicar el commit en el servicio existente con salud y hashes verificados.
+
 ## Mantenimiento: comprobante de cierre (07-10-2026)
 
 ### Presentación simplificada

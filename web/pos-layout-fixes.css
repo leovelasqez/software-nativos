@@ -1,5 +1,12 @@
 /* Keep product names, amounts and actions in their own space at every width. */
 @media screen {
+  /* The shift card already owns its inset; generic panel rules must not add another. */
+  .pos-shell .pos-shift { min-width: 0; overflow-wrap: anywhere; }
+  .pos-shell .pos-shift > :is(h2, h3) { padding: 0; }
+  .pos-shell .pos-shift > .notice { margin: 0; }
+  .pos-shell .pos-shift > button { margin: 0; justify-self: start; }
+  .pos-shell .sidebar-account { flex-wrap: wrap; align-items: flex-start; }
+  .pos-shell .sidebar-account > div { flex-basis: 100%; }
   .pos-shell .pos-product { min-width: 0; }
   .pos-shell .pos-product > * { min-width: 0; }
   .pos-shell .pos-product-price {

@@ -67,6 +67,12 @@ Verificación del alcance de incremento 3: [evidencia](../../docs/evidence/incre
 
 Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.md), [tareas](tasks-increment-4.md) y [evidencia](../../docs/evidence/increment-4.md). No acredita puntos, ingresos/gastos/retiros manuales, mensajería, hardware ni la capacidad completa.
 
+## Alineación de Turno — 10-10-2026
+
+REQ-006-07: la tarjeta de Turno alinea responsable, fechas, importes y acciones sobre el mismo borde interior. El nombre de usuario del menú lateral dispone de todo el ancho y la acción de salir ocupa una fila propia cuando el menú está visible.
+
+AC-006-14: con turno abierto o cerrado, en escritorio y móvil y en ambos temas, los títulos de la tarjeta no reciben una segunda sangría ni los avisos/botones un segundo margen; el nombre lateral no se comprime por el botón de salida. La pantalla conserva sus textos, importes, acciones y foco visible sin desbordamiento horizontal. Autorizado por la captura del usuario y su solicitud de corrección, commit y publicación en Railway.
+
 ## Dirección vigente — sitio web único
 
 La revisión del 15-09-2026 conserva estas reglas y sustituye el cliente de escritorio por módulos del mismo sitio web. Aplicar DEC-021 y [012](../012-unified-web/spec.md). Pruebas históricas de Electron/SQLite no sustituyen aceptación en navegador. Impresión, cajón y recuperación del perfil se verifican antes de operar; no exigir instalador de escritorio.

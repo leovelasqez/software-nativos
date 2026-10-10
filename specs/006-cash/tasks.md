@@ -1,5 +1,13 @@
 # Tareas — Incremento 3
 
+## Alineación de Turno — 10-10-2026
+
+| ID | Entregable | Aceptación | Estado |
+| --- | --- | --- | --- |
+| TASK-006-ALIGN-01 | Eliminar la doble sangría y separar identidad/salida lateral | AC-006-14 | Verificado localmente |
+| TASK-006-ALIGN-02 | Verificar tamaños, temas, teclado y formularios con datos sintéticos | AC-006-14 | Verificado localmente |
+| TASK-006-ALIGN-03 | Commit, publicación Railway y evidencia de salud/artefactos | AC-006-14 | Pendiente |
+
 ## Comprobante de cierre — 07-10-2026
 
 | ID | Formato simplificado | Aceptación | Estado |

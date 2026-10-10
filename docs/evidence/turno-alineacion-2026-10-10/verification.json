@@ -1,0 +1,158 @@
+{
+  "acceptance": "AC-006-14",
+  "verifiedAt": "2026-10-10T13:49:47.008Z",
+  "results": [
+    {
+      "name": "reference",
+      "theme": "light",
+      "width": 1042,
+      "overflow": false,
+      "headingLeft": 183,
+      "textLeft": 183,
+      "actionsLeft": 183,
+      "identityWidth": 123,
+      "accountWidth": 123,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-reference-light.png"
+    },
+    {
+      "name": "reference",
+      "theme": "dark",
+      "width": 1042,
+      "overflow": false,
+      "headingLeft": 183,
+      "textLeft": 183,
+      "actionsLeft": 183,
+      "identityWidth": 123,
+      "accountWidth": 123,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-reference-dark.png"
+    },
+    {
+      "name": "desktop",
+      "theme": "light",
+      "width": 1440,
+      "overflow": false,
+      "headingLeft": 209,
+      "textLeft": 209,
+      "actionsLeft": 209,
+      "identityWidth": 139,
+      "accountWidth": 139,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-desktop-light.png"
+    },
+    {
+      "name": "desktop",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": false,
+      "headingLeft": 209,
+      "textLeft": 209,
+      "actionsLeft": 209,
+      "identityWidth": 139,
+      "accountWidth": 139,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-desktop-dark.png"
+    },
+    {
+      "name": "mobile",
+      "theme": "light",
+      "width": 390,
+      "overflow": false,
+      "headingLeft": 39,
+      "textLeft": 39,
+      "actionsLeft": 39,
+      "identityWidth": 343,
+      "accountWidth": 343,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-mobile-light.png"
+    },
+    {
+      "name": "mobile",
+      "theme": "dark",
+      "width": 390,
+      "overflow": false,
+      "headingLeft": 39,
+      "textLeft": 39,
+      "actionsLeft": 39,
+      "identityWidth": 343,
+      "accountWidth": 343,
+      "logoutBelow": true,
+      "expected": true,
+      "capture": "open-mobile-dark.png"
+    }
+  ],
+  "keyboard": {
+    "text": "Revisar movimientos",
+    "outline": "solid"
+  },
+  "form": {
+    "dialog": true,
+    "focus": "SELECT"
+  },
+  "close": {
+    "dialog": true,
+    "text": "Cerrar turno"
+  },
+  "closed": [
+    {
+      "name": "reference",
+      "theme": "light",
+      "width": 1042,
+      "overflow": false,
+      "textLeft": 183,
+      "buttonLeft": 183,
+      "noticeLeft": 183
+    },
+    {
+      "name": "reference",
+      "theme": "dark",
+      "width": 1042,
+      "overflow": false,
+      "textLeft": 183,
+      "buttonLeft": 183,
+      "noticeLeft": 183
+    },
+    {
+      "name": "desktop",
+      "theme": "light",
+      "width": 1440,
+      "overflow": false,
+      "textLeft": 209,
+      "buttonLeft": 209,
+      "noticeLeft": 209
+    },
+    {
+      "name": "desktop",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": false,
+      "textLeft": 209,
+      "buttonLeft": 209,
+      "noticeLeft": 209
+    },
+    {
+      "name": "mobile",
+      "theme": "light",
+      "width": 390,
+      "overflow": false,
+      "textLeft": 39,
+      "buttonLeft": 39,
+      "noticeLeft": 39
+    },
+    {
+      "name": "mobile",
+      "theme": "dark",
+      "width": 390,
+      "overflow": false,
+      "textLeft": 39,
+      "buttonLeft": 39,
+      "noticeLeft": 39
+    }
+  ]
+}
