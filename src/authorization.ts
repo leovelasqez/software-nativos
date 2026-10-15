@@ -1,10 +1,11 @@
 import { isAction, isGrant, isId, isPrincipal } from './contracts.ts';
 import type { Action } from './contracts.ts';
+import { MAX_CLOCK_SKEW_MS } from './authorization-clock.ts';
+export { MAX_CLOCK_SKEW_MS, isWithinGrantClock } from './authorization-clock.ts';
 export { defaultActions } from './permissions.ts';
 const offline = new Set<Action>(['data.read', 'order.write', 'sale.discount', 'sale.cancel',
   'sale.charge', 'sale.refund', 'shift.open', 'shift.close']);
 const recovery = new Set<Action>(['data.read', 'order.write', 'shift.close']);
-export const MAX_CLOCK_SKEW_MS = 5_000;
 export interface AccessRequest {
   principal: unknown; action: unknown; branchId: unknown; deviceId: unknown;
   mode: 'online' | 'offline';
@@ -17,9 +18,6 @@ export type AccessDecision = { allowed: true } | { allowed: false; reason: Reaso
 const deny = (reason: Reason): AccessDecision => ({ allowed: false, reason });
 const validTime = (value: unknown): value is number => typeof value === 'number'
   && Number.isSafeInteger(value) && value >= 0;
-export const isWithinGrantClock = (occurredAtMs: unknown, validatedAtMs: unknown): boolean =>
-  validTime(occurredAtMs) && validTime(validatedAtMs)
-  && occurredAtMs + MAX_CLOCK_SKEW_MS >= validatedAtMs;
 
 // REQ-001-02/03; REQ-007-03/05. Pure policy, not authentication or persistence.
 export function authorize(request: AccessRequest): AccessDecision {

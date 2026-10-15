@@ -35,6 +35,16 @@ Los archivos `.local/pos/pos.sqlite` y `.local/pos/vault.dpapi` se mantienen. Si
 
 El adaptador `src/pos/` y los archivos `desktop/` son históricos para compatibilidad y pruebas. No continuar el desarrollo del producto en Electron. No copiar bases entre cajas ni forzar otra vinculación para resolver un conflicto. El puente de archivos solo se habilita en desarrollo; no existe como acceso a archivos del servidor alojado.
 
+## Vendedores y comisiones — ampliación del 14-10-2026
+
+El dueño registra a las personas en **Vendedores** y asigna sus sucursales. No necesitan otro usuario ni contraseña: la cuenta y el responsable del turno se conservan. Al cobrar se selecciona el vendedor; Caja recuerda el último por cuenta y sucursal y muestra su nombre junto a la confirmación. El nuevo cliente exige registrar y sincronizar al menos un vendedor antes de confirmar cobros; pedidos, consulta, turnos y pendientes existentes se conservan.
+
+En esa misma pantalla, **Comisiones por producto** permite configurar un importe COP por unidad. Vacío es pendiente; cero indica explícitamente que el producto no genera comisión. Un descuento del 10% reduce también 10% la comisión; las devoluciones revierten la parte correspondiente. Propinas y domicilios no generan comisión. Cada propina corresponde al vendedor original, menos lo efectivamente devuelto. El canje de puntos es un medio de pago y no cambia el descuento usado para la comisión.
+
+Después de cambiar vendedores o comisiones, sincronizar Caja para descargar la configuración. Los valores se conservan en cada cobro; cambiar una regla no recalcula ventas anteriores, incluidas las que se cobraron con comisión pendiente. Las ventas históricas sin vendedor siguen identificadas como **Sin vendedor registrado**.
+
+**Informes → Ventas por vendedor** muestra productos y propinas netos, comisión conocida y líneas pendientes por período/sucursal. **Informes → Ventas** ofrece el mismo filtro con detalle de cada comprobante. Ambos permiten exportar todos los resultados a Excel. Los informes centrales incluyen lo sincronizado; Caja conserva sus cobros offline hasta reconectar.
+
 ## Funciones conservadas
 
 - Usuarios, sucursales, bodegas, permisos y auditoría.

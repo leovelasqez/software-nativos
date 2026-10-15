@@ -1,4 +1,5 @@
 const labels: Record<string, string> = {
+  sellerId:'Vendedor', sellerName:'Vendedor', sellerVersion:'Versión de vendedor', sellerSnapshotId:'Versión de equipo', commissionLines:'Comisiones por producto', unitAmount:'Comisión por unidad', ruleVersion:'Versión de comisión', commissionAmount:'Comisión total', commissionKnown:'Comisión conocida', commissionPending:'Líneas pendientes', commissionStatus:'Estado de comisión', saleCount:'Ventas', refundCount:'Devoluciones',
   id:'Identificador', kind:'Tipo', branchId:'Sucursal', occurredAt:'Fecha', occurredAtMs:'Fecha', receiptNumber:'Comprobante',
   name:'Nombre', reference:'Referencia', presentation:'Presentación', customer:'Cliente', customerId:'Cliente', document:'Documento', phone:'Celular',
   products:'Productos', discounts:'Descuentos', discount:'Descuento', redemption:'Canje de puntos', redeemedAmount:'Valor canjeado', tips:'Propinas', tip:'Propina', shipping:'Domicilio', refunds:'Devoluciones', cash:'Efectivo', digital:'Pagos digitales',
@@ -8,7 +9,7 @@ const labels: Record<string, string> = {
   lines:'Productos', payments:'Pagos', payment:'Pago', consumption:'Consumo de inventario', loyalty:'Puntos', earned:'Ganados', redeemed:'Canjeados', earnedReversed:'Puntos revertidos', redeemedRestored:'Puntos restituidos',
   saleId:'Venta relacionada', orderId:'Pedido', shiftId:'Turno', deviceId:'Caja', productId:'Producto', lineId:'Línea', notes:'Notas', recoverable:'Reingresa al inventario',
 };
-const moneyFields = new Set(['products','discounts','discount','redemption','redeemedAmount','tips','tip','shipping','refunds','cash','digital','total','subtotal','rounding','gross','amount','paidAmount','received','applied','cashApplied','cashDelta','change','tipPaid','shippingPaid','openingCash','expected','counted','difference']);
+const moneyFields = new Set(['commissionAmount','commissionKnown','unitAmount','products','discounts','discount','redemption','redeemedAmount','tips','tip','shipping','refunds','cash','digital','total','subtotal','rounding','gross','amount','paidAmount','received','applied','cashApplied','cashDelta','change','tipPaid','shippingPaid','openingCash','expected','counted','difference']);
 const dateFields = new Set(['occurredAt','occurredAtMs','openedAt','closedAt','createdAt']);
 export const isNumericReportColumn = (key: string) => moneyFields.has(key) || ['quantity', 'minimum', 'earned', 'redeemed', 'earnedReversed', 'redeemedRestored'].includes(key);
 const values: Record<string,string> = { sale:'Venta', refund:'Devolución', shift:'Turno', movement:'Movimiento', waste:'Desperdicio', internal_consumption:'Consumo interno', income:'Ingreso', expense:'Egreso', cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',breb:'Bre-B',daviplata:'Daviplata',nequi:'Nequi',centro:'Centro',milan:'Milán' };
@@ -24,7 +25,8 @@ export function reportValue(key: string, value: unknown): string {
   return ['kind','class','branchId','paymentMethod','method'].includes(key)?values[String(value)]??String(value):String(value);
 }
 export const reportColumns: Record<string,string[]> = {
-  sales:['kind','receiptNumber','occurredAt','customer','total'],
+  sales:['kind','receiptNumber','occurredAt','sellerName','customer','total','commissionAmount'],
+  sellers:['sellerName','saleCount','refundCount','products','tips','commissionKnown','commissionAmount','commissionPending','commissionStatus'],
   cash:['kind','openedAt','occurredAt','openingCash','expected','counted','difference','amount'],
   inventory:['name','reference','warehouse','quantity','minimum'],
   purchases:['purchasedOn','supplier','paymentMethod','paidAmount'],

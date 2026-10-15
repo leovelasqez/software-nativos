@@ -4,7 +4,7 @@ import { api, date } from './api.ts';
 import { allPages } from './Catalog.tsx';
 import { isNumericReportColumn, reportColumns, reportLabel, reportValue } from './report-format.ts';
 
-const kinds = [{ id: 'sales', name: 'Ventas' }, { id: 'cash', name: 'Caja' }, { id: 'inventory', name: 'Inventario' }, { id: 'purchases', name: 'Compras' }, { id: 'waste', name: 'Desperdicio y consumo' }, { id: 'loyalty', name: 'Fidelización' }];
+const kinds = [{ id: 'sales', name: 'Ventas' }, { id: 'sellers', name: 'Ventas por vendedor' }, { id: 'cash', name: 'Caja' }, { id: 'inventory', name: 'Inventario' }, { id: 'purchases', name: 'Compras' }, { id: 'waste', name: 'Desperdicio y consumo' }, { id: 'loyalty', name: 'Fidelización' }];
 type Report = { context: { lastSynchronizedAt: Record<string, string | null> }; items: Record<string, unknown>[]; totals: Record<string, string>; nextCursor: string | null };
 type Choice = { id: string; name: string };
 const methods = [{ id: 'cash', name: 'Efectivo' }, { id: 'card', name: 'Tarjeta' }, { id: 'transfer', name: 'Transferencia' }, { id: 'breb', name: 'Bre-B' }, { id: 'daviplata', name: 'Daviplata' }, { id: 'nequi', name: 'Nequi' }];
@@ -22,9 +22,12 @@ export function Reports({ branchId }: { branchId: string }) {
   const { productId, customerId, supplierId } = selection.branchId === branchId ? selection : emptyFilters;
   function selectFilter(key: keyof typeof emptyFilters, value: string) { setSelection(previous => ({ ...(previous.branchId === branchId ? previous : emptyFilters), branchId, [key]: value })); }
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [sellerId, setSellerId] = useState('');
+  const [sellers, setSellers] = useState<Choice[]>([]);
+  useEffect(() => { let active=true; setSellerId(''); setSellers([]); void api<{items:Choice[]}>(`/seller-options?branchId=${branchId}`).then(result=>{if(active)setSellers(result.items);}).catch(()=>{}); return()=>{active=false;}; },[branchId]);
   const [products, setProducts] = useState<Choice[]>([]); const [customers, setCustomers] = useState<Choice[]>([]); const [suppliers, setSuppliers] = useState<Choice[]>([]);
   const [report, setReport] = useState<Report | null>(null); const [error, setError] = useState(''); const [loading,setLoading] = useState(false); const generation=useRef(0);
-  const query = () => new URLSearchParams({ branchId, limit: '20', ...(from ? { from } : {}), ...(to ? { to } : {}), ...((kind === 'sales' || kind === 'waste') && productId ? { productId } : {}), ...((kind === 'sales' || kind === 'loyalty') && customerId ? { customerId } : {}), ...(kind === 'purchases' && supplierId ? { supplierId } : {}), ...((kind === 'sales' || kind === 'purchases') && paymentMethod ? { paymentMethod } : {}) });
+  const query = () => new URLSearchParams({ branchId, limit: '20', ...((kind === 'sales' || kind === 'sellers') && sellerId ? { sellerId } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}), ...((kind === 'sales' || kind === 'waste') && productId ? { productId } : {}), ...((kind === 'sales' || kind === 'loyalty') && customerId ? { customerId } : {}), ...(kind === 'purchases' && supplierId ? { supplierId } : {}), ...((kind === 'sales' || kind === 'purchases') && paymentMethod ? { paymentMethod } : {}) });
   async function load() {
     const current=++generation.current; setError(''); setReport(null); setLoading(true);
     try { const result=await api<Report>(`/reports/${kind}?${query()}`); if(current===generation.current)setReport(result); }
@@ -45,6 +48,7 @@ export function Reports({ branchId }: { branchId: string }) {
   return <><Heading eyebrow="CONSULTA ONLINE" title="Informes">Consulta ventas, inventario y movimientos confirmados. Las operaciones offline aparecen después de sincronizarse.</Heading>
     <section className="panel report-filters"><div className="fields">
       <label>Informe<select value={kind} onChange={e => { setKind(e.target.value); setPaymentMethod(''); }}>{kinds.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+      {(kind === 'sales' || kind === 'sellers') && <label>Vendedor<select aria-label="Vendedor del informe" value={sellerId} onChange={e=>setSellerId(e.target.value)}><option value="">Todos</option><option value="unassigned">Sin vendedor registrado</option>{sellers.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
       <label>Desde<input type="date" value={from} onChange={e => setFrom(e.target.value)} /></label>
       <label>Hasta<input type="date" value={to} onChange={e => setTo(e.target.value)} /></label>
       {(kind === 'sales' || kind === 'waste') && <label>Producto<select value={productId} onChange={e => selectFilter('productId', e.target.value)}><option value="">Todos</option>{products.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>}
@@ -54,6 +58,7 @@ export function Reports({ branchId }: { branchId: string }) {
       <div className="row-actions"><button className="secondary" disabled={loading} onClick={() => void load()}>Aplicar filtros</button><button className="primary" onClick={() => void exportXlsx()}>Exportar Excel</button></div>
     </div></section>
     {error && <Notice error>{error}</Notice>}{loading && <p className="empty" role="status">Consultando informe…</p>}
+    {kind === 'sellers' && <Notice>Productos y propinas netos de devoluciones del período. Las comisiones sin configurar se muestran pendientes; el importe conocido no representa el total mientras existan líneas pendientes. Las ventas anteriores conservan sus valores.</Notice>}
     {report && <section className="panel report-results"><header className="section-heading"><div><h2>{kinds.find(k=>k.id===kind)?.name}</h2><p className="small">Última sincronización: {Object.values(report.context.lastSynchronizedAt).some(Boolean) ? Object.values(report.context.lastSynchronizedAt).filter((value):value is string=>Boolean(value)).map(date).join(' · ') : 'Sin confirmar'}</p></div><span className="badge">{report.items.length} registros</span></header>
       {Object.values(report.totals).some(value=>value!=='0') && <div className="summary-grid">{Object.entries(report.totals).filter(([,value])=>value!=='0').map(([label,value])=><section className="stat-card" key={label}><span className="eyebrow">{reportLabel(label)}</span><strong>{reportValue(label,value)}</strong></section>)}</div>}
       {report.items.length ? <div className="table-wrap" role="region" aria-label="Resultados del informe" tabIndex={0}><table><thead><tr>{columns.map(key=><th key={key} className={isNumericReportColumn(key) ? 'numeric' : undefined}>{reportLabel(key)}</th>)}<th>Detalle</th></tr></thead><tbody>{report.items.map(item=><tr key={String(item.id)}>{columns.map(key=><td key={key} className={isNumericReportColumn(key) ? 'numeric' : undefined}>{reportValue(key,item[key])}</td>)}<td><details className="report-record"><summary>Ver detalle</summary><RecordDetails value={item}/></details></td></tr>)}</tbody></table></div> : <p className="empty">No hay registros para estos filtros.</p>}

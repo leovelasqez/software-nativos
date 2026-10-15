@@ -2,6 +2,7 @@ import { registerExcelImport } from './excel-import-api.ts';
 import { registerLoyalty } from './loyalty-api.ts';
 import Fastify from 'fastify';
 import { registerCustomers } from './customers-api.ts';
+import { registerSellers } from './sellers-api.ts';
 import { registerPos } from './pos-api.ts';
 import { registerCatalog } from './catalog-api.ts';
 import { registerReports } from './reports-api.ts';
@@ -44,6 +45,7 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
   registerNotifications(app, pool);
   registerPos(app, pool);
   registerCustomers(app, pool);
+  registerSellers(app, pool);
   registerLoyalty(app, pool);
   const dummyHash = await hashPassword(randomBytes(32).toString('hex'));
   app.addHook('onRequest', async (req, reply) => {

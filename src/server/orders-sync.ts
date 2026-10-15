@@ -1,5 +1,5 @@
 import { settleLoyalty } from './loyalty-api.ts';
-import { isOrderEvent, isOrderEventV3 } from '../orders-contract.ts';
+import { isOrderEvent, isOrderEventV3, isOrderEventV4 } from '../orders-contract.ts';
 import type { PoolClient } from 'pg';
 import type { Operation } from '../contracts.ts';
 import type { Authorization, Snapshot } from '../pos-domain.ts';
@@ -10,7 +10,7 @@ import { ApiError, notFound } from './security.ts';
 import { audit } from './db.ts';
 import { isWithinGrantClock } from '../authorization.ts';
 export async function handleOrdersSync(c:PoolClient,o:Operation,payload:unknown,a:Authorization,installationId:string){
-  const validate=o.payloadVersion===3?isOrderEventV3:isOrderEvent;
+  const validate=o.payloadVersion===4?isOrderEventV4:o.payloadVersion===3?isOrderEventV3:isOrderEvent;
   if(!validate(payload))throw new ApiError(422,'invalid_payload','Formato de pedido inválido.');
   const action=eventAction(payload);const recovery=action==='order.write';const grant=a.grant;
   if(!grant.actions.includes(action)||!isWithinGrantClock(payload.occurredAtMs,grant.validatedAtMs)||payload.occurredAtMs>Date.now()+300_000||!recovery&&payload.occurredAtMs>=grant.expiresAtMs)throw new ApiError(403,'grant_denied','Operación fuera de la autorización.');

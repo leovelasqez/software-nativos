@@ -38,7 +38,7 @@ export async function exercisePos(page: Page) {
     }
   }
   await page.getByRole('button', { name: 'Cobrar', exact: true }).click();
-  await expect(dialog.getByLabel('Buscar cliente', { exact: true })).toBeFocused(); await dialog.getByLabel('Importe 1 (COP)').fill('10000'); await dialog.getByRole('button', { name: 'Confirmar cobro' }).click(); await expect(dialog.getByRole('alert')).toContainText('insuficiente');
+  await expect(dialog.getByLabel('Vendedor', { exact: true })).toBeFocused(); await dialog.getByLabel('Importe 1 (COP)').fill('10000'); await dialog.getByRole('button', { name: 'Confirmar cobro' }).click(); await expect(dialog.getByRole('alert')).toContainText('insuficiente');
   await dialog.getByLabel('Importe 1 (COP)').fill('30000'); await dialog.getByRole('button', { name: 'Confirmar cobro' }).click(); await expect(dialog.getByRole('heading', { name: 'Comprobante interno' })).toBeVisible(); await expect(dialog).toContainText('28.000'); await expect(dialog).toContainText('2.000'); await expect(dialog).toContainText('Sin impuesto asignado');
   const report = await new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze(); expect(report.violations.map(v => v.id)).toEqual([]);
   await page.screenshot({ path: `${root}/mobile-receipt.png`, fullPage: true }); await page.keyboard.press('Escape');

@@ -127,7 +127,7 @@ export async function exerciseCajaUi(page: Page) {
   }
   await page.getByRole('button',{name:'Cobrar',exact:true}).click();
   const dialog=page.getByRole('dialog');
-  await expect(dialog.getByLabel('Buscar cliente', {exact:true})).toBeFocused();
+  await expect(dialog.getByLabel('Vendedor', {exact:true})).toBeFocused();
   await expect(dialog.getByLabel(/Cantidad a cobrar/)).toHaveCount(0);
   await expect(dialog.getByRole('button',{name:'Confirmar cobro'})).toBeInViewport();
   await dialog.getByLabel('Propina voluntaria').fill('1000');

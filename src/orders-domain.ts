@@ -4,6 +4,8 @@ import { decimal, formatted, CatalogError } from './catalog.ts';
 import { calculateSale, roundPeso } from './pos-domain.ts';
 import type { Order, OrderLine, Snapshot, Payment } from './pos-domain.ts';
 import type { Action } from './contracts.ts';
+import { attributeSale, attributeRefund } from './seller-calculation.ts';
+import type { SellerAttribution } from './sellers.ts';
 export interface Customer { id: string; name: string; document: string; phone: string; email: string; address: string }
 export interface Adjustment { kind: 'amount' | 'percent'; value: string }
 export interface LineV2 extends OrderLine { notes: string; discount: Adjustment; sentQuantity: string }
@@ -12,7 +14,7 @@ export interface Selection { lineId: string; quantity: string }
 export type CommandEvent = { kind: 'order.save'; order: OrderV2 }
   | { kind: 'order.prepare'; orderId: string; revision: number }
   | { kind: 'order.cancel'; orderId: string; revision: number; lines: (Selection & { preparedQuantity: string })[]; reason: string }
-  | { kind: 'sale.split'; orderId: string; revision: number; selection: Selection[]; customerId: string | null; tip: Adjustment; shipping: string; payments: Payment[]; points?:string; ruleId?:string; loyalty?:LoyaltyMeta }
+  | { kind: 'sale.split'; orderId: string; revision: number; selection: Selection[]; customerId: string | null; tip: Adjustment; shipping: string; payments: Payment[]; points?:string; ruleId?:string; loyalty?:LoyaltyMeta; sellerId?:string; sellerSnapshotId?:string }
   | { kind: 'sale.refund'; saleId: string; lines: (Selection & { recoverable: boolean })[]; tip: string; shipping: string; payments: Payment[]; reason: string };
 export type OrderEvent = CommandEvent & { occurredAtMs: number; shiftId: string | null };
 function fail(message: string): never { throw new CatalogError(message); }
@@ -79,8 +81,8 @@ export function checkout(order: OrderV2, selection: Selection[], snapshots: Snap
     ...(payments ? paymentTotals(formatted(total), payments) : { payments: [], change: '0', cashApplied: '0' }) };
   return { sale: result, order: { ...order, lines: remaining, shipping: formatted(decimal(order.shipping)-freight), revision: order.revision+1, closed: remaining.length === 0 } };
 }
-export type SaleV2 = ReturnType<typeof checkout>['sale'] & { id: string; orderId: string; receiptNumber: string; occurredAtMs: number; actorName: string; branchId: string; deviceId: string; customer: Customer | null };
-export interface RefundV2 { id: string; saleId: string; lines: (Selection & { recoverable: boolean; amount: string })[]; tip: string; shipping: string; total: string; cashApplied: string; loyalty?:{customerId:string;earnedReversed:string;redeemedRestored:string}; payments: Payment[]; consumption: { itemId: string; quantity: string }[]; reason: string; occurredAtMs: number; actorName: string }
+export type SaleV2 = ReturnType<typeof checkout>['sale'] & Partial<SellerAttribution> & { id: string; orderId: string; receiptNumber: string; occurredAtMs: number; actorName: string; branchId: string; deviceId: string; customer: Customer | null };
+export interface RefundV2 extends Partial<SellerAttribution> { id: string; saleId: string; lines: (Selection & { recoverable: boolean; amount: string })[]; tip: string; shipping: string; total: string; cashApplied: string; loyalty?:{customerId:string;earnedReversed:string;redeemedRestored:string}; payments: Payment[]; consumption: { itemId: string; quantity: string }[]; reason: string; occurredAtMs: number; actorName: string }
 export function legacySale(data: Record<string, unknown>, snapshots: Snapshot[]): SaleV2 {
   if ('products' in data) return data as unknown as SaleV2;
   const old = data as unknown as { id:string;receiptNumber:string;occurredAtMs:number;actorName:string;branchId:string;deviceId:string;lines:ReturnType<typeof calculateSale>['lines'];payment:Payment;total:string;subtotal:string;rounding:string;change:string;cashApplied:string;consumption:{itemId:string;quantity:string}[] };
@@ -146,7 +148,7 @@ export function applyOrderEvent(e: OrderEvent, c: OrderContext) {
   if (e.kind === 'order.save') order = validateSave(order, e.order, c.snapshots);
   else if (e.kind === 'sale.refund') {
     if (!c.originalSale || c.originalSale.deviceId !== c.deviceId || c.originalSale.branchId !== c.branchId) fail('Comprobante no disponible en esta caja.');
-    const result = refund(c.originalSale, c.refunds, e); refundRecord = { ...result, id: c.id, saleId: e.saleId, occurredAtMs: e.occurredAtMs, actorName: c.actorName }; movements = result.consumption; warehouseId = c.originalSale.warehouseId; cashDelta = result.cashApplied;
+    const result = refund(c.originalSale, c.refunds, e); refundRecord = { ...result, ...attributeRefund(c.originalSale, c.refunds, result.lines), id: c.id, saleId: e.saleId, occurredAtMs: e.occurredAtMs, actorName: c.actorName }; movements = result.consumption; warehouseId = c.originalSale.warehouseId; cashDelta = result.cashApplied;
   } else {
     if (!order || order.closed || order.id !== e.orderId || order.revision !== e.revision) fail('El pedido cambió o ya no está abierto.');
     if (e.kind === 'order.prepare') {
@@ -158,6 +160,10 @@ export function applyOrderEvent(e: OrderEvent, c: OrderContext) {
     } else {
       const result = checkout(order,e.selection,c.snapshots,e.tip,e.shipping,e.payments,e.loyalty); order = result.order;
       sale = { ...result.sale, id:c.id, orderId:e.orderId, customer:c.customer, receiptNumber:c.receiptNumber, occurredAtMs:e.occurredAtMs, actorName:c.actorName, branchId:c.branchId, deviceId:c.deviceId };
+      if (e.sellerId || e.sellerSnapshotId) {
+        if (!e.sellerId || !e.sellerSnapshotId) fail('Selecciona un vendedor para este cobro.');
+        Object.assign(sale, attributeSale(sale, c.snapshots, c.branchId, { sellerId: e.sellerId, sellerSnapshotId: e.sellerSnapshotId }, e.occurredAtMs));
+      }
       movements = sale.consumption.map(l => ({ ...l,quantity:'-'+l.quantity })); warehouseId = sale.warehouseId; cashDelta = sale.cashApplied;
     }
   }

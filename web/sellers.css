@@ -1,0 +1,25 @@
+.seller-row {
+  display: grid;
+  grid-template-columns: 37px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 19px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.commission-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 19px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.seller-row:last-child, .commission-row:last-child { border-bottom: 0; }
+.commission-row .user-info { flex: 1; min-width: 0; }
+.commission-row > span { white-space: nowrap; font-size: 13px; }
+@media (max-width: 700px) {
+  .seller-row { grid-template-columns: 37px minmax(0, 1fr) auto; gap: 10px; padding: 17px 16px; }
+  .seller-row > .status { grid-column: 2; grid-row: 2; }
+  .seller-row > button { grid-column: 3; grid-row: 1 / 3; }
+  .commission-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 17px 16px; }
+  .commission-row .user-info { grid-column: 1 / -1; }
+}

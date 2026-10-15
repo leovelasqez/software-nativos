@@ -19,6 +19,16 @@ test('AC-011-04/06 — dueño crea y verifica respaldo lógico; artefacto altera
     // Relational regression: the backup must restore parents before sale/event movements,
     // preserve configured seed rows, and include causal cost reconciliations.
     const actor = (await db.pool.query('SELECT id FROM app_users')).rows[0].id;
+    const seller = await app.inject({ method: 'POST', url: '/api/sellers', headers, payload: {
+      operationId: randomUUID(), name: 'Vendedor del respaldo', active: true, branchIds: ['centro'], reason: 'AC-020-07 respaldo de identidad' } });
+    assert.equal(seller.statusCode, 200, seller.body);
+    const product = await app.inject({ method: 'POST', url: '/api/products', headers, payload: {
+      operationId: randomUUID(), branchId: 'centro', reason: 'AC-020-07 producto de respaldo', type: 'finished', name: 'Producto del respaldo',
+      reference: 'BK-COMMISSION', category: 'Pruebas', presentation: 'Unidad', unit: 'unit', price: '10000', tax: null, description: '' } });
+    assert.equal(product.statusCode, 200, product.body);
+    const commission = await app.inject({ method: 'POST', url: '/api/seller-commissions/' + product.json().id, headers, payload: {
+      operationId: randomUUID(), expectedVersion: 0, amount: '1000', reason: 'AC-020-07 comisión de respaldo' } });
+    assert.equal(commission.statusCode, 200, commission.body);
     await db.pool.query("UPDATE branches SET name='Centro configurado' WHERE id='centro'");
     await db.pool.query("INSERT INTO inventory_items(id,name,reference,kind,base_unit) VALUES('backup-item','Artículo sintético','BK-1','raw','g')");
     await db.pool.query("INSERT INTO inventory_cost_reconciliations(id,warehouse_id,item_id,actor_id,unit_cost,effective_from,reason) VALUES('backup-cost','centro-venta','backup-item',$1,2,'2026-09-25','Conciliación sintética')",[actor]);
@@ -33,6 +43,8 @@ test('AC-011-04/06 — dueño crea y verifica respaldo lógico; artefacto altera
     const databaseTables = (await db.pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'schema_migrations'")).rows.map(row=>row.tablename).sort();
     assert.deepEqual(Object.keys(snapshot.rows).sort(),databaseTables, 'Every business table must be covered');
     assert.equal(snapshot.rows.inventory_cost_reconciliations.length,1);
+    assert.equal(snapshot.rows.sellers.length,1); assert.equal(snapshot.rows.seller_versions[0].data.name,'Vendedor del respaldo');
+    assert.equal(snapshot.rows.product_commissions.length,1); assert.equal(snapshot.rows.product_commission_versions[0].data.amount,'1000');
     assert.deepEqual(snapshot.rows.pos_shifts[0].resumed_installations,['backup-resumed']);
     const listed = await app.inject({ method: 'GET', url: '/api/backups', headers: { host: '127.0.0.1:4360', cookie: headers.cookie } }); assert.equal(listed.statusCode, 200); assert.deepEqual(listed.json().items.map((item: { id: string }) => item.id), [manifest.id]);
     const verified = await app.inject({ method: 'POST', url: `/api/backups/${manifest.id}/verify`, headers }); assert.equal(verified.statusCode, 200, verified.body);

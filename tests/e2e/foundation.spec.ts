@@ -1,4 +1,5 @@
 import {exerciseBrowser} from './browser-flow.ts';
+import { seedSeller, exerciseSellers } from './sellers-flow.ts';
 import {exerciseCajaAccess} from './caja-access-flow.ts';
 import { exerciseLoyalty } from './loyalty-flow.ts';
 import { test, expect } from '@playwright/test';
@@ -11,7 +12,7 @@ import { exercisePurchases } from './purchases-flow.ts';
 import { exerciseInventoryOperations } from './inventory-operations-flow.ts';
 
 test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditoría y temas', async ({ page }) => {
-  test.setTimeout(480_000);
+  test.setTimeout(720_000);
   const password = randomBytes(24).toString('base64url');
   const consoleErrors: string[] = [];
   page.on('pageerror', e => consoleErrors.push(e.message));
@@ -41,6 +42,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await dialog.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByText('Cajero verificado', { exact: true })).toBeVisible();
+  await seedSeller(page);
   await page.getByRole('navigation').getByRole('button', { name: 'Sucursales y bodegas' }).click();
   await page.getByLabel('Sucursal', { exact: true }).selectOption('centro');
   await expect(page.getByText('T82E · Activo', { exact: true })).toBeVisible();
@@ -103,6 +105,7 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await exerciseCatalog(page, password);
   await exerciseInventoryOperations(page);
   await exercisePurchases(page);
+  await exerciseSellers(page, password);
   await exerciseCajaAccess(page,password);
   await exercisePos(page);
   await page.goto('http://127.0.0.1:4320/'); await expect(page.getByRole('combobox', { name: 'Sucursal', exact: true })).toBeVisible(); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);

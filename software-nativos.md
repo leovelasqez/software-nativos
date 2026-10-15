@@ -40,6 +40,8 @@ Resumen, Ventas, Productos e Inventario, Recetas, Compras y Proveedores, Caja e 
 
 ## 4. Ventas
 
+Ampliación solicitada y aclarada el 14-10-2026: varias personas venden desde una misma cuenta y turno, identificando al vendedor por cobro para controlar ventas, propinas y comisiones. El vendedor es independiente de las credenciales y no cambia permisos ni responsabilidad del turno. Recordar el último seleccionado por caja/cuenta, permitiendo cambiarlo. Cada propina se asigna al vendedor de la venta. Comisión fija en COP por producto, reducida proporcionalmente por descuentos y revertida por devoluciones; los importes aún no definidos se conservan pendientes, distintos de cero. Guardar identidad y reglas históricas sin recalcular ventas anteriores. Ver spec 020.
+
 ### Atención y pedido
 
 - Atender mostrador, mesas, pedidos abiertos y domicilios registrados manualmente.

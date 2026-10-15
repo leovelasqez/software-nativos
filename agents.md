@@ -36,6 +36,8 @@ En la continuación de esa corrección del sistema publicado, el usuario reporta
 
 ## Contexto del negocio
 
+El 14-10-2026 el usuario solicita construir mediante SDD y probar antes de publicar en Railway la separación de vendedores de la cuenta de caja (spec 020). Autoriza la publicación de esa capacidad verificada en el servicio existente nativos-web/production. Propina al vendedor original, comisión fija por producto proporcional al descuento y neta de devoluciones, importes aún sin definir y último vendedor recordado. No crear vendedores ni comisiones comerciales ficticias. Conservar actor, permisos y responsable del turno.
+
 - Nativos opera en Milán y Centro, con una caja por local.
 - Un único sitio web para Administración y Caja; Caja funciona offline hasta siete días en el navegador (DEC-021, confirmación del 15-09-2026).
 - Catálogo, precios y recetas compartidos; existencias por bodega y sucursal.

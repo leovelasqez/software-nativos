@@ -77,3 +77,5 @@
   .pos-shell .pos-mobile-summary > .text-button { justify-self: start; }
   .pos-shell .pos-mobile-summary > .primary { grid-column: 2; }
 }
+.checkout-dialog .checkout-seller-feedback { grid-column: 1 / -1; margin: 0 0 4px; font-size: 13px; overflow-wrap: anywhere; }
+.checkout-dialog .checkout-seller-feedback b { font-size: 13px; }

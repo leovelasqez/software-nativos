@@ -8,3 +8,6 @@ export const isCommandEvent = ajv.compile<CommandEvent>(schema.commandEvent);
 import schemaV3 from '../contracts/orders-v3.schema.json' with { type: 'json' };
 export const isOrderEventV3 = ajv.compile<OrderEvent>(schemaV3.event);
 export const isCommandEventV3 = ajv.compile<CommandEvent>(schemaV3.commandEvent);
+import schemaV4 from '../contracts/orders-v4.schema.json' with { type: 'json' };
+export const isOrderEventV4 = ajv.compile<OrderEvent>(schemaV4.event);
+export const isCommandEventV4 = ajv.compile<CommandEvent>(schemaV4.commandEvent);

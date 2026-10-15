@@ -10,6 +10,7 @@ import { Dashboard } from './Dashboard.tsx';
 import { Icon } from './Icon.tsx';
 import type { IconName } from './Icon.tsx';
 import { Users } from './Users.tsx';
+import { Sellers } from './Sellers.tsx';
 import { Branches } from './Branches.tsx';
 import { Audit } from './Audit.tsx';
 import { Customers } from './Customers.tsx';
@@ -20,7 +21,7 @@ import { Reports } from './Reports.tsx';
 import { Backups } from './Backups.tsx';
 import { Notifications } from './Notifications.tsx';
 
-type Page = 'summary' | 'users' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups' | 'notifications';
+type Page = 'summary' | 'users' | 'sellers' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups' | 'notifications';
 const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   { id: 'summary', name: 'Resumen', icon: '◫' }, { id: 'branches', name: 'Sucursales y bodegas', icon: '⌂' },
   { id: 'products', name: 'Productos', icon: '◇' }, { id: 'recipes', name: 'Recetas', icon: '≋' }, { id: 'inventory', name: 'Inventario', icon: '▤' },
@@ -28,10 +29,11 @@ const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   { id: 'transfers', name: 'Traslados', icon: '⇄' }, { id: 'counts', name: 'Conteos y ajustes', icon: '±' },
   {id:'customers',name:'Clientes',icon:'♧'}, {id:'loyalty',name:'Fidelización',icon:'☆'},
   {id:'reports',name:'Informes',icon:'▥'},
+  {id:'sellers',name:'Vendedores',icon:'♧',admin:true},
   { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'notifications', name: 'Notificaciones', icon: '◌', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
 ];
 const pending = ['WhatsApp', 'Agentes de IA'];
-const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup' };
+const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', sellers: 'users', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup' };
 function App() {
   const [me, setMe] = useState<Me | null>(null); const [setup, setSetup] = useState(false);
   const [setupTokenRequired, setSetupTokenRequired] = useState(false);
@@ -90,6 +92,7 @@ function App() {
         {page === 'backups' && admin && <Backups />}
         {page === 'notifications' && admin && <Notifications key={branchId} branchId={branchId} />}
         {page === 'users' && admin && <Users me={me} onSessionRefresh={refresh} />}
+        {page === 'sellers' && admin && <Sellers me={me} />}
         {page === 'branches' && branchId && <Branches me={me} branchId={branchId} refresh={refresh} />}
         {page === 'audit' && admin && <Audit me={me} />}
       </main><footer className="workspace-footer">Nativos · Vida y bienestar<span>Administración y Caja · Sitio web</span></footer></div></div>;

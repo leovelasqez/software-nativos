@@ -20,7 +20,7 @@ export interface OfflineGrant {
 export interface Operation {
   version: 1; operationId: string; deviceId: string; branchId: string;
   actorId: string; sequence: number; previousOperationId: string | null;
-  payloadHash: string; payloadVersion: 1 | 2 | 3;
+  payloadHash: string; payloadVersion: 1 | 2 | 3 | 4;
 }
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 export const isPrincipal = ajv.compile<Principal>(identity);

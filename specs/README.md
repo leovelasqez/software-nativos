@@ -168,3 +168,6 @@ Ampliación del 25-09-2026, opción 1 del usuario: continuar el mismo turno desd
 ## Correcciones de aceptación — 25-09-2026
 
 NAT-UAT-01/02/03: AC-003-09/10/11 y REQ-003-04 incluyen operaciones de terminados en interfaz y servidor; AC-008-05 garantiza selectores paginados completos; AC-011-04/06 restaura dependencias y concilia contenido de las 48 tablas. [Evidencia de corrección](../docs/evidence/correccion-flujos-2026-09-25.md): 18 casos adicionales de navegador aprobados, regresiones de integración y límites operativos. Estado: implementado y verificado localmente, sin nuevo despliegue por este trabajo.
+## Vendedores bajo una misma cuenta — 14-10-2026
+
+[Spec 020](020-sellers/spec.md), [plan](020-sellers/plan.md) y [tareas](020-sellers/tasks.md): identidad comercial separada del usuario de acceso y del responsable de turno; comisión fija por producto proporcional al descuento y neta de devoluciones; propina al vendedor original. [Evidencia de verificación](../docs/evidence/sellers-2026-10-14.md). Publicación pendiente de cerrar las pruebas.

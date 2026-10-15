@@ -10,6 +10,7 @@ import { ApiError, authenticate, requireAdmin } from './security.ts';
 const tables = [
   'branches', 'warehouses', 'devices', 'app_users', 'sessions', 'login_attempts', 'audit_events',
   'catalog_products', 'product_versions', 'inventory_items', 'recipe_versions',
+  'sellers', 'seller_versions', 'product_commissions', 'product_commission_versions',
   'inventory_minimums', 'catalog_operations', 'pos_signing_key', 'pos_terminals', 'pos_snapshots',
   'pos_shifts', 'pos_sales', 'pos_receipts', 'customers', 'pos_orders_v2', 'pos_order_events', 'pos_refunds',
   'loyalty_rules', 'loyalty_members', 'loyalty_ledger', 'loyalty_cancellations', 'suppliers', 'purchases',

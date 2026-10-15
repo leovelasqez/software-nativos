@@ -35,14 +35,19 @@ async function terminal(c: PoolClient, req: FastifyRequest, deviceId: string) {
   if (!t || !t.active || !t.device_active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
   return t;
 }
-async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string; last_operation_id: string | null }): Promise<Snapshot> {
+async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string; last_operation_id: string | null }, sellerSupport = false): Promise<Snapshot> {
   const warehouse = (await c.query('SELECT id FROM warehouses WHERE branch_id=$1 AND is_default', [device.branch_id])).rows[0]; if (!warehouse) throw notFound();
   const products = (await c.query(`SELECT v.data,p.active_recipe_version FROM catalog_products p JOIN product_versions v ON v.product_id=p.id AND v.version=p.current_version WHERE p.archived_at IS NULL ORDER BY p.id`)).rows.map(r => ({ ...r.data, activeRecipeVersion: r.active_recipe_version, sellable: r.data.type === 'finished' || r.active_recipe_version !== null }));
   const recipes = (await c.query('SELECT r.data FROM recipe_versions r JOIN catalog_products p ON p.id=r.product_id AND p.active_recipe_version=r.version ORDER BY r.product_id')).rows.map(r => r.data);
   const stock = (await c.query(`SELECT i.id AS "itemId",coalesce(sum(m.quantity),0)::text AS quantity FROM inventory_items i LEFT JOIN inventory_movements m ON m.item_id=i.id AND m.warehouse_id=$1 GROUP BY i.id ORDER BY i.id`, [warehouse.id])).rows;
-  const snapshotId = payloadHash(JSON.stringify({ deviceId: device.device_id, warehouseId: warehouse.id, sequence: device.last_sequence, operationId: device.last_operation_id, products, recipes, stock }));
+  const sellers = (await c.query(`SELECT v.data FROM sellers s JOIN seller_versions v ON v.seller_id=s.id AND v.version=s.current_version
+    WHERE s.active AND $1=ANY(s.branch_ids) ORDER BY s.id`, [device.branch_id])).rows.map(row => row.data);
+  const commissions = (await c.query(`SELECT v.data FROM product_commissions p JOIN product_commission_versions v
+    ON v.product_id=p.product_id AND v.version=p.current_version ORDER BY p.product_id`)).rows.map(row => row.data);
+  const attribution = sellerSupport ? { sellers, commissions } : {};
+  const snapshotId = payloadHash(JSON.stringify({ deviceId: device.device_id, warehouseId: warehouse.id, sequence: device.last_sequence, operationId: device.last_operation_id, products, recipes, stock, ...attribution }));
   const existing = (await c.query('SELECT data FROM pos_snapshots WHERE id=$1', [snapshotId])).rows[0]; if (existing) return existing.data as Snapshot;
-  const data: Snapshot = { id: snapshotId, createdAtMs: Date.now(), branchId: device.branch_id, deviceId: device.device_id, warehouseId: warehouse.id, serverSequence: Number(device.last_sequence), serverOperationId: device.last_operation_id, products, recipes, stock };
+  const data: Snapshot = { id: snapshotId, createdAtMs: Date.now(), branchId: device.branch_id, deviceId: device.device_id, warehouseId: warehouse.id, serverSequence: Number(device.last_sequence), serverOperationId: device.last_operation_id, products, recipes, stock, ...attribution };
   await c.query('INSERT INTO pos_snapshots(id,device_id,data) VALUES($1,$2,$3)', [data.id, device.device_id, JSON.stringify(data)]); return data;
 }
 export function registerPos(app: FastifyInstance, pool: Pool) {
@@ -61,7 +66,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     return { deviceId: device.id, branchId: device.branch_id, installationId: b.installationId, token, publicKey: (await key(c)).public_key };
   }));
   app.post('/api/pos/authorize', { schema: routeSchema('/api/pos/authorize', 'post') }, req => tx(async c => {
-    const b = req.body as { deviceId: string; previous: Signed | null }; const device = await terminal(c, req, b.deviceId); const keys = await key(c);
+    const b = req.body as { deviceId: string; previous: Signed | null; sellerSupport?: boolean }; const device = await terminal(c, req, b.deviceId); const keys = await key(c);
     let actor: Actor;
     if (req.cookies.nativos_session) actor = await authenticate(c, req);
     else {
@@ -77,7 +82,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const authorization: Authorization = { principal: principal(actor.user), actorName: actor.user.name,
       grant: { version: 1, grantId: randomUUID(), actorId: actor.user.id, branchId: device.branch_id, deviceId: device.device_id, validatedAtMs: now, expiresAtMs: now + WEEK_MS, actions: actor.user.actions.filter(a => ['data.read','order.write','sale.charge','shift.open','shift.close','sale.discount','sale.cancel','sale.refund','cash.movement'].includes(a)) } };
     const openShift = (await c.query('SELECT s.id,s.actor_id AS "actorId",u.name AS "actorName" FROM pos_shifts s JOIN app_users u ON u.id=s.actor_id WHERE s.device_id=$1 AND s.closed_at IS NULL', [device.device_id])).rows[0] ?? null;
-    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift, sharedShifts:await sharedShifts(c,device.device_id,device.installation_id,actor.user.id), closedShiftIds:await closedShiftIds(c,device.device_id,device.installation_id) };
+    return { signed: signAuthorization(authorization, keys.private_key), snapshot: await snapshot(c, device, b.sellerSupport === true), customers: (await c.query('SELECT data FROM customers ORDER BY id')).rows.map(r=>r.data), loyalty:await loyaltyCache(c), openShift, sharedShifts:await sharedShifts(c,device.device_id,device.installation_id,actor.user.id), closedShiftIds:await closedShiftIds(c,device.device_id,device.installation_id) };
   }));
   app.post('/api/pos/shift/resume', {schema:routeSchema('/api/pos/shift/resume','post')}, req=>tx(async c=>{
     const actor=await authenticate(c,req),b=req.body as {deviceId:string;shiftId:string};
@@ -113,8 +118,8 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const grant = authorization.grant;
     if (grant.actorId !== o.actorId || grant.deviceId !== o.deviceId || grant.branchId !== o.branchId || device.branch_id !== o.branchId) throw new ApiError(403, 'scope_denied', 'Usuario, caja o sucursal no coinciden.');
     let payload: unknown; try { payload = JSON.parse(b.payload); } catch { throw new ApiError(422, 'invalid_payload', 'Contenido inválido.'); }
-    if (o.payloadVersion === 2 || o.payloadVersion === 3) {
-      if(o.payloadVersion===3&&(payload as {loyalty?:{redeemedPoints:string}}).loyalty?.redeemedPoints!=='0'&&(payload as {loyalty?:unknown}).loyalty){if(Date.now()>=grant.expiresAtMs)throw new ApiError(403,'grant_expired','Revalida el acceso para canjear.');}
+    if (o.payloadVersion === 2 || o.payloadVersion === 3 || o.payloadVersion === 4) {
+      if(o.payloadVersion>=3&&(payload as {loyalty?:{redeemedPoints:string}}).loyalty?.redeemedPoints!=='0'&&(payload as {loyalty?:unknown}).loyalty){if(Date.now()>=grant.expiresAtMs)throw new ApiError(403,'grant_expired','Revalida el acceso para canjear.');}
       const response = await handleOrdersSync(c,o,payload,authorization,device.installation_id);
       await c.query('INSERT INTO pos_receipts(operation_id,device_id,sequence,fingerprint,response,installation_id) VALUES($1,$2,$3,$4,$5,$6)',[o.operationId,o.deviceId,o.sequence,fingerprint,JSON.stringify(response),device.installation_id]);
       await c.query('UPDATE pos_terminals SET last_sequence=$2,last_operation_id=$3,last_sync_at=now() WHERE device_id=$1 AND installation_id=$4',[o.deviceId,o.sequence,o.operationId,device.installation_id]); return response;
