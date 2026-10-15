@@ -1,5 +1,13 @@
 # Plan — acceso a Caja
 
+## Corrección de sucursal por cuenta — 14-10-2026
+
+Agregar `lastTerminals` opcional por actor al agregado v1, compartido al cargar perfiles, sin migración destructiva. Login consulta identidad y sucursales online antes de elegir terminal, valida actor y conserva el perfil de origen completo en la misma escritura de IndexedDB. La preferencia solo selecciona: servidor y firmas siguen autorizando. Login offline verifica contraseña y firma del perfil elegido; el cambio manual conserva su sincronización previa.
+
+Extender `/api/pos/enroll` con `sourceDeviceId` opcional. Sin administración, exigir token activo de esa caja y misma instalación antes de vincular un destino autorizado. Primera activación requiere dueño. No exponer datos de origen ni modificar sus tokens/cursores. Probar motor real con firmas, PostgreSQL con tokens/instalaciones/permisos adversos y navegador con dueño en Milán seguido de cajero de Centro. Verificar regresiones y publicar la corrección del servicio existente.
+
+El traslado desde la caja anterior fija la caja importada como preferencia del actor verificado antes de recuperar la sesión. Probar el traslado de Milán sin mapa de preferencias previo, manteniendo su turno y base aunque Centro aparezca primero entre las cajas autorizadas. La petición local de traslado dispone de 60 segundos porque abre y descifra la caja anterior con DPAPI; las peticiones ordinarias conservan su plazo de cinco segundos. La prueba de respuesta perdida espera el commit y comprueba también el resultado del reintento.
+
 Migración 021 independiente del trabajo Excel 020: clave primaria compuesta `(device_id, installation_id)` en `pos_terminals`; acuses con instalación y unicidad por caja/instalación/secuencia. Rellenar la instalación histórica antes de permitir nuevas vinculaciones. Conservar triggers inmutables tras la migración transaccional. Turnos se asocian a su instalación al migrar y al abrir.
 
 El token identifica una sola instalación. `/pos/enroll` inserta o renueva únicamente esa pareja; `/authorize` y `/sync` usan su cursor. Los acuses de otra instalación se rechazan. Las verificaciones de turno en payloads 1/2/3 incluyen instalación. La autorización comunica el turno central vigente y el cliente consulta antes de abrir online. La apertura offline mantiene el mecanismo existente de conciliación, sin prometer exclusión distribuida durante cortes de red.

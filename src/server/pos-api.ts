@@ -57,8 +57,13 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
   }
   app.post('/api/pos/enroll', { schema: routeSchema('/api/pos/enroll', 'post') }, req => tx(async c => {
     const actor = await authenticate(c, req);
-    requireAdmin(actor);
-    const b = req.body as { deviceId: string; installationId: string };
+    const b = req.body as { deviceId: string; installationId: string; sourceDeviceId?: string };
+    if (actor.user.role === 'owner' && actor.user.actions.includes('settings.manage')) requireAdmin(actor);
+    else {
+      if (!b.sourceDeviceId) throw new ApiError(403, 'activation_required', 'El dueño debe activar Caja en este navegador.');
+      const source = await terminal(c, req, b.sourceDeviceId);
+      if (source.installation_id !== b.installationId) throw new ApiError(403, 'installation_mismatch', 'La activación corresponde a otro navegador.');
+    }
     const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [b.deviceId])).rows[0]; if (!device) throw notFound(); requireAccess(actor, device.branch_id);
     const token = randomBytes(32).toString('base64url');
     await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3) ON CONFLICT(device_id,installation_id) DO UPDATE SET token_hash=$3', [device.id, b.installationId, tokenHash(token)]);

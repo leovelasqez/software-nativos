@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Sucursal por cuenta — verificada para apertura (15-10-2026)
+
+REQ/AC-018-08 a 11: selección y recuerdo de caja por actor, activación del destino autorizado dentro del navegador, perfiles preservados y recuperación offline. El traslado antiguo conserva su caja y dispone de un plazo específico para DPAPI. TypeScript, dominio, PostgreSQL y recorrido de navegador aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia de entrega](../docs/evidence/opening-release-2026-10-15.md). La limpieza de datos está pendiente de la confirmación del dueño del corte de ambas cajas.
+
 ## Alineación de Turno — publicada (10-10-2026)
 
 REQ-006-07 / AC-006-14: títulos, datos y acciones comparten el borde interior de la tarjeta; identidad y salida lateral en filas propias. Verificación en escritorio/móvil, temas, teclado y formularios con datos sintéticos; publicación Railway con salud y artefactos comprobados. [Spec 006](006-cash/spec.md) y [evidencia](../docs/evidence/turno-alineacion-2026-10-10.md).

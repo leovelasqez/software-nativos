@@ -2,6 +2,8 @@
 
 Dirección confirmada por el usuario el 15-09-2026: Administración y Caja en el mismo sitio web, conservando hasta siete días de Caja sin internet y recuperación al cerrar/reabrir navegador. Se sustituye el requisito de aplicación Electron. La implementación anterior 0–5 se conserva como historia y compatibilidad; la transición web tiene [especificación propia](specs/012-unified-web/spec.md).
 
+Preparación de apertura del 15-10-2026: [revisión, pruebas y publicación del mismo commit en GitHub/producción/staging](docs/evidence/opening-release-2026-10-15.md). La limpieza conserva configuración, clientes, puntos y existencias y queda pendiente de que el dueño confirme ambas cajas detenidas y sincronizadas.
+
 ## Abrir el sitio local
 
 Desde esta carpeta, en Windows con Node 24.15 o compatible con package.json:
@@ -22,6 +24,8 @@ Desde la revisión del 09-10-2026, la configuración inicial está cerrada por d
 ## Caja en el navegador
 
 El dueño vincula una vez el navegador a Milán o Centro. Usa siempre el mismo origen y perfil de Edge/Chrome para esa caja. Las pestañas comparten instalación y datos; un bloqueo de escritura evita cobrar simultáneamente la misma revisión. Cada usuario conserva sus permisos y turno propio.
+
+Al entrar, Caja recupera la última sucursal autorizada usada por esa cuenta. Si todavía no tiene una preferencia válida, abre su primera caja autorizada; por ejemplo, una cuenta exclusiva de Centro entra directamente a Centro aunque el usuario anterior haya usado Milán. El navegador ya activado puede preparar esa caja sin otro acceso del dueño. Los perfiles conservan sus pedidos, turnos y pendientes por separado. Offline, solo se puede recuperar una caja ya validada para esa cuenta.
 
 Caja guarda pedidos, turno, ventas, pagos, consumo, comprobantes, devoluciones y pendientes en IndexedDB. Una venta solo se muestra confirmada después del commit local. Los canjes necesitan confirmación central. El catálogo descargado conserva versiones y excluye costos incluso si antes entró un dueño.
 

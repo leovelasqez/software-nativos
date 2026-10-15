@@ -2,6 +2,10 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| Selección online y recuerdo de caja por actor | AC-018-08 | Verificado localmente el 15-10-2026 |
+| Vincular destino autorizado desde navegador ya activado | AC-018-09 | Verificado localmente el 15-10-2026 |
+| Preservar perfiles ajenos, recuperación y acceso offline | AC-018-10/11 | Verificado localmente el 15-10-2026 |
+| Regresión de motor, permisos PostgreSQL y navegador; publicación | AC-018-08 a 11 | Verificado para la entrega de apertura; resultados de despliegue registrados fuera de Git para conservar el mismo SHA. [Evidencia](../../docs/evidence/opening-release-2026-10-15.md) |
 | Migrar instalaciones, acuses y turnos sin pérdida | AC-018-01/02/04 | Verificado localmente |
 | Ajustar enrolamiento, autorización y sincronización | AC-018-01/02/04 | Verificado localmente |
 | Conservar perfiles al alternar turnos abiertos | AC-018-03 | Verificado localmente |

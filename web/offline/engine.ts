@@ -35,6 +35,8 @@ export interface BrowserData{
  /** Cierres centrales conocidos cuyo detalle conserva el responsable original. */
  closedShiftIds?:string[];
  lastSellers?:Record<string,string>;
+ /** Última caja elegida por actor; nunca se hereda la de otra cuenta. */
+ lastTerminals?:Record<string,string>;
 }
 export const blankData=():BrowserData=>({version:1,installationId:crypto.randomUUID(),sequence:0,previous:null,lastSyncAtMs:null,high:0,users:{},grants:{},session:null,snapshots:[],snapshotId:null,customers:[],loyalty:null,orders:{},selected:{},shifts:[],sales:[],refunds:[],events:[],stock:[],outbox:[],commands:{},staged:null,failures:{}});
 const legacySequenceConflict='La secuencia ya fue utilizada por otra operación.';
@@ -44,7 +46,7 @@ let online=false;let message='';const startWall=Date.now(),startMono=performance
 export class BrowserEngine{
  constructor(readonly db:IDBDatabase,public data:BrowserData){}
  async save(){await writeState(this.db,this.data);}
- async remote<T>(path:string,body?:unknown,anonymous=false):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(5000),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
+ async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
  loginName(){const s=this.data.session;if(!s||s.expires<=Date.now())throw new Error('Inicia sesión en esta caja.');return s.login;}
  async auth(action:Action='data.read',login=this.loginName()){
   const t=this.data.terminal,u=this.data.users[login];if(!t||!u||u.revoked||this.data.retired)throw new Error('Inicia sesión en esta caja.');const a=await verify(u.signed,t.publicKey);
@@ -53,9 +55,9 @@ export class BrowserEngine{
   if(!decision.allowed)throw new Error(decision.reason==='offline_expired'?'Han pasado siete días. Inicia sesión online para volver a cobrar.':decision.reason==='clock_untrusted'?'El reloj retrocedió. Revalida tu acceso online.':'No tienes permiso para esta operación.');
   if(['sale.charge','sale.refund','shift.open'].includes(action)&&Date.now()+1000<startWall+performance.now()-startMono)throw new Error('El reloj retrocedió. Revalida tu acceso online.');return a;
  }
- async cachedActorId(login:string){
-  const user=this.data.users[login];
-  if(user?.signed.document&&this.data.terminal)return (await verify(user.signed,this.data.terminal.publicKey)).grant.actorId;
+ async cachedActorId(login:string,data=this.data){
+  const user=data.users[login];
+  if(user?.signed.document&&data.terminal)return (await verify(user.signed,data.terminal.publicKey)).grant.actorId;
   return user?.actorId;
  }
  async accept(login:string,verifier:string,result:{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache;openShift?:{id:string;actorId:string;actorName:string}|null;sharedShifts?:SharedShift[];closedShiftIds?:string[]},expectedActorId?:string){
@@ -88,28 +90,84 @@ export class BrowserEngine{
   login=login.toLowerCase();
   try{
    if(!sessionExists){const session=await this.remote<{actorId:string}>('/login',{login,password});expectedActorId=session.actorId;}
-   let me:{user:{id:string;login:string;role:string};branches:{id:string;name:string}[]}|undefined;
-   if(!expectedActorId||!this.data.terminal){
-    me=await this.remote('/me');
-    if(me!.user.login!==login||(expectedActorId!==undefined&&me!.user.id!==expectedActorId))throw new Error('La sesión online corresponde a otro usuario. Inicia sesión con tu cuenta para revalidar Caja.');
-    expectedActorId=me!.user.id;
-   }
-   const verifier=password?await passwordHash(password):this.data.users[login]?.passwordHash??'';
+   const me=await this.remote<{user:{id:string;login:string;role:string};branches:{id:string;name:string}[]}>('/me');
+   if(me.user.login!==login||(expectedActorId!==undefined&&me.user.id!==expectedActorId))throw new Error('La sesión online corresponde a otro usuario. Inicia sesión con tu cuenta para revalidar Caja.');
+   expectedActorId=me.user.id;
+   let verifier=password?await passwordHash(password):this.data.users[login]?.passwordHash??'';
    if(!password&&this.data.users[login]){
     const boundActorId=await this.cachedActorId(login);
     if((boundActorId!==undefined&&boundActorId!==expectedActorId)||(boundActorId===undefined&&Boolean(verifier)))throw new Error('La cuenta cambió. Ingresa tu contraseña para habilitar Caja de nuevo.');
    }
    if(!this.data.terminal){
-    if(me!.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');
-    const devices=[];
-    for(const b of me!.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+b.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({...d,branchName:b.name})));}
+    if(me.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');
+    const devices=await this.devicesFor(me.branches);
     this.data.users[login]={signed:{document:'',signature:''},passwordHash:verifier,revoked:false,actorId:expectedActorId};
     this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier};
    }
+   const devices=await this.devicesFor(me.branches),preferred=this.data.lastTerminals?.[expectedActorId];
+   const device=devices.find(d=>d.id===preferred)??devices[0];
+   if(!device)throw new Error('Tu cuenta no tiene una caja activa en sus sucursales autorizadas. Consulta al dueño.');
+   if(!password&&!verifier){
+    const profile=this.data.terminalProfiles?.[device.id],user=profile?.users[login];
+    if(profile&&user){
+     const actorId=await this.cachedActorId(login,profile);
+     if(actorId!==expectedActorId&&Boolean(user.passwordHash))throw new Error('La cuenta cambió. Ingresa tu contraseña para habilitar Caja de nuevo.');
+     if(actorId===expectedActorId)verifier=user.passwordHash;
+    }
+   }
+   if(!verifier)throw new Error('Ingresa tu contraseña para habilitar Caja en esta sucursal.');
+   await this.enterTerminal(device.id,login,verifier,expectedActorId);
+   message='';return {needsEnrollment:false};
+  }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;await this.offlineLogin(login,password,expectedActorId);return {needsEnrollment:false};}
+ }
+ async devicesFor(branches:{id:string;name:string}[]){
+  const devices:{id:string;name:string;branchName:string}[]=[];
+  for(const branch of branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+branch.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({id:d.id,name:d.name,branchName:branch.name})));}
+  return devices.sort((a,b)=>a.id.localeCompare(b.id));
+ }
+ loadProfile(deviceId:string,terminal?:BrowserData['terminal']){
+  const current=this.data,profiles=structuredClone(current.terminalProfiles??{});
+  if(current.terminal){const {terminalProfiles:_ignored,...profile}=structuredClone(current);profiles[current.terminal.deviceId]=profile;}
+  const saved=profiles[deviceId];
+  if(saved?.terminal&&(saved.terminal.deviceId!==deviceId||saved.installationId!==current.installationId||saved.terminal.installationId!==current.installationId))throw new Error('Perfil de otra instalación. Conserva los datos de Caja.');
+  const next=saved?structuredClone(saved):blankData();
+  next.installationId=current.installationId;next.terminalProfiles=profiles;next.lastTerminals={...current.lastTerminals};next.session=null;
+  if(terminal)next.terminal=terminal;
+  this.data=next;
+ }
+ async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string){
+  const previous=structuredClone(this.data);
+  try{
+   if(this.data.terminal?.deviceId!==deviceId){
+    const saved=this.data.terminalProfiles?.[deviceId];
+    const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId:this.data.installationId,sourceDeviceId:this.data.terminal?.deviceId});
+    this.loadProfile(deviceId,terminal);
+   }
    await this.sync(false);
-   await this.accept(login,verifier,await this.remote('/pos/authorize',{sellerSupport:true,deviceId:this.data.terminal.deviceId,previous:null}),expectedActorId);
-   this.data.session={login,expires:Date.now()+12*3600_000};await this.save();message='';return {needsEnrollment:false};
-  }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;const fail=this.data.failures[login];if(fail&&fail.until>Date.now())throw new Error('Espera antes de volver a intentar el acceso offline.');const u=this.data.users[login];if(!u||!u.passwordHash||!await verifyPassword(password,u.passwordHash)){const count=(fail?.count??0)+1;this.data.failures[login]={count,until:count>=5?Date.now()+300000:0};await this.save();throw new Error('Credenciales offline incorrectas.');}await this.auth('data.read',login);this.data.session={login,expires:Date.now()+12*3600_000};delete this.data.failures[login];await this.save();return {needsEnrollment:false};}
+   await this.accept(login,verifier,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}),actorId);
+   this.data.session={login,expires:Date.now()+12*3600_000};
+   await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[actorId]=deviceId;await this.save();
+  }catch(error){this.data=previous;await this.save();throw error;}
+ }
+ async offlineLogin(login:string,password:string,expectedActorId?:string){
+  const fail=this.data.failures[login];if(fail&&fail.until>Date.now())throw new Error('Espera antes de volver a intentar el acceso offline.');
+  const profiles=[this.data,...Object.values(this.data.terminalProfiles??{}).filter(p=>p.terminal?.deviceId!==this.data.terminal?.deviceId)];
+  const candidates:{deviceId:string;actorId:string}[]=[];
+  for(const profile of profiles){
+   const user=profile.users[login],terminal=profile.terminal;
+   if(!terminal||!user?.passwordHash||user.revoked||profile.retired||!await verifyPassword(password,user.passwordHash))continue;
+   let a:Authorization;try{a=await verify(user.signed,terminal.publicKey);}catch{continue;}
+   if(expectedActorId!==undefined&&a.grant.actorId!==expectedActorId)continue;
+   if(authorize({principal:a.principal,verifiedGrant:a.grant,action:'data.read',branchId:terminal.branchId,deviceId:terminal.deviceId,mode:'offline',nowMs:Date.now(),lastObservedAtMs:profile.high}).allowed)candidates.push({deviceId:terminal.deviceId,actorId:a.grant.actorId});
+  }
+  const preferred=candidates.find(c=>this.data.lastTerminals?.[c.actorId]===c.deviceId),candidate=preferred??candidates.sort((a,b)=>a.deviceId.localeCompare(b.deviceId))[0];
+  if(!candidate){const count=(fail?.count??0)+1;this.data.failures[login]={count,until:count>=5?Date.now()+300000:0};await this.save();throw new Error('Credenciales offline incorrectas.');}
+  const previous=structuredClone(this.data);
+  try{
+   if(this.data.terminal?.deviceId!==candidate.deviceId)this.loadProfile(candidate.deviceId);
+   await this.auth('data.read',login);this.data.session={login,expires:Date.now()+12*3600_000};delete this.data.failures[login];
+   this.data.lastTerminals??={};this.data.lastTerminals[candidate.actorId]=candidate.deviceId;await this.save();
+  }catch(error){this.data=previous;await this.save();throw error;}
  }
  async session(){const me=await this.remote<{user:{id:string;login:string}}>('/me');return this.login(me.user.login,'',true,me.user.id);}
  async preparePassword(password:string){
@@ -125,6 +183,7 @@ export class BrowserEngine{
   try{
    this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
    await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}));
+   const a=await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[a.grant.actorId]=deviceId;await this.save();
    await navigator.storage?.persist?.();return {ok:true};
   }catch(error){this.data=previous;await this.save();throw error;}
  }
@@ -133,36 +192,26 @@ export class BrowserEngine{
   const login=this.loginName(),verifier=this.data.users[login]!.passwordHash,actorId=await this.cachedActorId(login);
   if(this.data.terminal||this.data.outbox.length||this.data.sequence)throw new Error('Este navegador ya tiene una caja.');
   await this.save();
-  const imported=await this.remote<BrowserData>('/local-transition',{targetId:this.data.installationId});
+  // El traslado local abre la custodia DPAPI y puede tardar más que una consulta.
+  const imported=await this.remote<BrowserData>('/local-transition',{targetId:this.data.installationId},false,60_000);
   if(imported.version!==1||!imported.terminal||imported.terminal.installationId!==imported.installationId)throw new Error('Traslado incompatible.');
   this.data=imported;
   const importedActorId=await this.cachedActorId(login),boundActorId=importedActorId??actorId;
   this.data.users[login]={...(this.data.users[login]??{signed:{document:'',signature:''},revoked:false}),passwordHash:importedActorId===undefined||importedActorId===actorId?verifier:''};
   if(boundActorId!==undefined)this.data.users[login]!.actorId=boundActorId;
+  if(actorId!==undefined&&boundActorId===actorId){
+   this.data.lastTerminals??={};this.data.lastTerminals[boundActorId]=imported.terminal.deviceId;
+  }
   await this.save();await navigator.storage?.persist?.();return this.session();
  }
- async terminals(){const me=await this.remote<{branches:{id:string;name:string}[]}>('/me');const devices:{id:string;name:string;branchName:string}[]=[];for(const branch of me.branches){const detail=await this.remote<{devices:{id:string;name:string;active:boolean}[]}>('/branches/'+branch.id);devices.push(...detail.devices.filter(d=>d.active).map(d=>({id:d.id,name:d.name,branchName:branch.name})));}return devices;}
+ async terminals(){const me=await this.remote<{branches:{id:string;name:string}[]}>('/me');return this.devicesFor(me.branches);}
  async switchTerminal(deviceId:string){
   const current=this.data.terminal;if(!current||current.deviceId===deviceId)return this.state();
   await this.sync();
   if(this.data.outbox.length||this.data.staged)throw new Error('Sincroniza o resuelve los pendientes antes de cambiar de sucursal.');
-  const previous=structuredClone(this.data);
-  const login=this.loginName(), user=structuredClone(this.data.users[login]!);
-  const profiles=this.data.terminalProfiles??{};
-  const {terminalProfiles:_ignored,...currentProfile}=structuredClone(this.data);
-  profiles[current.deviceId]=currentProfile;
-  await this.save();
-  const saved=profiles[deviceId];
-  try {
-  if(saved){
-   this.data=structuredClone(saved);this.data.terminalProfiles=profiles;this.data.session={login,expires:Date.now()+12*3600_000};this.data.users[login]=user;
-   await this.sync(false);await this.accept(login,user.passwordHash,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}));
-  }else{
-   const next=blankData();next.installationId=current.installationId;next.session={login,expires:Date.now()+12*3600_000};next.users[login]=user;next.terminalProfiles=profiles;this.data=next;
-   await this.enroll(deviceId);
-  }
-  return await this.state();
-  }catch(error){this.data=previous;await this.save();throw error;}
+  const login=this.loginName(),user=this.data.users[login]!,a=await this.auth();
+  await this.enterTerminal(deviceId,login,user.passwordHash,a.grant.actorId);
+  return this.state();
  }
  ledgerFor(shift:Shift){
   const shared=this.data.sharedShifts?.[shift.id];

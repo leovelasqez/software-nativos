@@ -15,3 +15,9 @@ test-results/
 playwright-report/
 .playwright-cli/
 output/playwright/
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.dump
+*.backup

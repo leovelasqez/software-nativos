@@ -6,6 +6,8 @@ Metodología de desarrollo: **Spec Driven Development (SDD)**. Este archivo cons
 
 ## 1. Estado y objetivo
 
+Preparación de apertura del 15-10-2026: el dueño solicita registrar y publicar los cambios verificados y mantener GitHub, producción y staging en la misma versión. La limpieza solicitada conserva configuración, clientes, puntos y existencias actuales y retira historial operativo. Su ejecución queda pendiente de una confirmación posterior del dueño de que ambas cajas están detenidas y todos sus pendientes sincronizados; no se deduce del anuncio de apertura.
+
 Este documento consolida el plan y las modificaciones acordadas con el usuario. La implementación local está autorizada desde el mensaje del usuario del 13-09-2026; no se autoriza desplegar en producción, contratar servicios ni modificar Alegra. Existe una maqueta interactiva de referencia y una implementación local independiente de fundamentos (incrementos 0/1): usuarios, organización y auditoría persistente. Sus evidencias están en docs/evidence/. El incremento 2 agrega catálogo, recetas y existencias iniciales verificadas localmente. El incremento 3 agrega caja local y cobro offline sincronizable. El incremento 4 implementa pedidos múltiples, clientes, descuentos, división, medios combinados, comandas internas, desperdicio y devoluciones; el alcance y su interfaz están verificados localmente. El incremento 5 implementa fidelización, acumulación offline pendiente, canje central recuperable y devolución de puntos, verificados localmente (docs/evidence/increment-5.md). La maqueta no acredita capacidades implementadas.
 
 El objetivo es reemplazar Alegra para controlar ventas, inventario, ingresos, salidas, caja, clientes, proveedores, recetas, fidelización, usuarios, roles, informes y auditoría. El sistema tendrá un único sitio web que reúne Administración y Caja. Caja continuará operando sin internet hasta siete días y conservará pedidos, turnos y transacciones al cerrar y reabrir el navegador. No requiere aplicación Electron ni servicio POS instalado en los equipos clientes; la instalación del sitio como PWA será opcional. Cambio confirmado por el usuario el 15-09-2026.
@@ -22,6 +24,8 @@ Operación inicial:
 - Moneda: pesos colombianos. Zona horaria: America/Bogota. Interfaz en español.
 
 ## 2. Diseño visual
+
+Corrección de acceso del 14-10-2026: la caja elegida pertenece a la preferencia de cada cuenta, no a la última persona que usó el navegador. Al entrar, seleccionar una caja autorizada para ese usuario y conservar los datos de las demás sucursales. El primer acceso del navegador requiere dueño; la instalación ya activada puede preparar la caja asignada a otra cuenta. Offline requiere perfil previamente validado. Ver AC-018-08 a 11.
 
 - Aplicar la propuesta visual aprobada el 19-09-2026: fondo gris muy claro, tarjetas blancas, Inter e iconos lineales, conservando `#00bf63`. Oscuro gris carbón con superficies más claras y acentos verdes. Sustituye la referencia anterior a Alegra; ver `specs/017-visual-redesign/`.
 - Mantener la identidad de Nativos y la navegación lateral por módulos.

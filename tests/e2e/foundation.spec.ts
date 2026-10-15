@@ -1,6 +1,7 @@
 import {exerciseBrowser} from './browser-flow.ts';
 import { seedSeller, exerciseSellers } from './sellers-flow.ts';
 import {exerciseCajaAccess} from './caja-access-flow.ts';
+import {exerciseLoginTerminals} from './login-terminals-flow.ts';
 import { exerciseLoyalty } from './loyalty-flow.ts';
 import { test, expect } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
@@ -16,6 +17,10 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   const password = randomBytes(24).toString('base64url');
   const consoleErrors: string[] = [];
   page.on('pageerror', e => consoleErrors.push(e.message));
+  page.on('requestfailed', request => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith('/api/reports/')) console.log('report_request_failed', path, request.failure()?.errorText);
+  });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Configura tu acceso' })).toBeVisible();
   const runtime = JSON.parse(await readFile('.local/e2e-runtime.json', 'utf8')) as { setupToken: string };
@@ -107,8 +112,19 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await exercisePurchases(page);
   await exerciseSellers(page, password);
   await exerciseCajaAccess(page,password);
+  await exerciseLoginTerminals(page,password);
   await exercisePos(page);
-  await page.goto('http://127.0.0.1:4320/'); await expect(page.getByRole('combobox', { name: 'Sucursal', exact: true })).toBeVisible(); if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click(); await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click(); expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
+  await page.goto('http://127.0.0.1:4320/');
+  await expect(page.getByRole('combobox', { name: 'Sucursal', exact: true })).toBeVisible();
+  if (await page.getByRole('button', { name: 'Mostrar navegación' }).isVisible()) await page.getByRole('button', { name: 'Mostrar navegación' }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Informes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Informes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ventas', exact: true })).toBeVisible({ timeout: 30_000 });
+  const download = page.waitForEvent('download', { timeout: 30_000 });
+  const exported = page.waitForResponse(response => new URL(response.url()).pathname === '/api/reports/sales/export', { timeout: 30_000 });
+  await page.getByRole('button', { name: 'Exportar Excel', exact: true }).click();
+  expect((await exported).status()).toBe(200);
+  expect((await download).suggestedFilename()).toMatch(/nativos-sales.*\.xlsx/);
   await exerciseLoyalty(page);
   await exerciseBrowser(password);
   expect(consoleErrors).toEqual([]);

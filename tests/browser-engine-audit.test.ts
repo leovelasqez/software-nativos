@@ -38,7 +38,8 @@ async function createEngine(installation){
   const engine=new BrowserEngine({},data);engine.cookieActor='actor-a';engine.save=async()=>{};
   engine.remote=async(path,body)=>{
     const actor=engine.cookieActor;
-    if(path==='/me')return {user:{id:actor,login:actor,role:'cashier'},branches:[]};
+    if(path==='/me')return {user:{id:actor,login:actor,role:'cashier'},branches:[{id:'centro',name:'Centro'}]};
+    if(path==='/branches/centro')return {devices:[{id:'centro-caja',name:'Caja',active:true}]};
     if(path==='/pos/authorize')return responseFor(engine,actor);
     if(path==='/pos/shift/resume'){assert.equal(actor,central.shift.actorId);central.resumed.push(installation);return {id:central.shift.id};}
     if(path==='/pos/sync'){
@@ -68,7 +69,7 @@ const second=await createEngine('browser-2');await second.resumeShift();
 const beforeSecond=commercial(second);
 await assert.rejects(second.cashMovementCommand(randomUUID(),input),/ya tiene una corrección/);
 assert.equal(commercial(second),beforeSecond);
-first.cookieActor='actor-b';await first.login('actor-b','',true);
+first.cookieActor='actor-b';await first.login('actor-b','synthetic-password',true);
 await second.shiftCommand(randomUUID(),'shift.close','100');await second.sync();await first.sync();
 const state=await first.state(),retained=first.data.shifts.find(s=>s.id===originalShiftId),response=responseFor(first,'actor-b');
 assert.equal(state.user.id,'actor-b');assert.equal(state.shift,null);assert.equal(response.openShift,null);assert.equal(response.sharedShifts.length,0);
