@@ -36,6 +36,8 @@ En la continuación de esa corrección del sistema publicado, el usuario reporta
 
 ## Contexto del negocio
 
+El 15-10-2026 el usuario autoriza publicar la conexión MCP de consulta verificada (spec 010, REQ-010-05/06): «Si, publicala». Publicar en el servicio existente `nativos-web`, entorno `production`, y verificar salud y fronteras de autenticación. La continuación incluye configurar Codex con una credencial privada de solo lectura si existe una sesión autorizada del dueño; no exponer secretos ni modificar ventas, inventario o Alegra. Conservar los cambios ajenos de Caja que ya estaban en el árbol y excluirlos del paquete de este incremento.
+
 El 14-10-2026 el usuario solicita construir mediante SDD y probar antes de publicar en Railway la separación de vendedores de la cuenta de caja (spec 020). Autoriza la publicación de esa capacidad verificada en el servicio existente nativos-web/production. Propina al vendedor original, comisión fija por producto proporcional al descuento y neta de devoluciones, importes aún sin definir y último vendedor recordado. No crear vendedores ni comisiones comerciales ficticias. Conservar actor, permisos y responsable del turno.
 
 - Nativos opera en Milán y Centro, con una caja por local.

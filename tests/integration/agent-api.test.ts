@@ -42,7 +42,7 @@ test('AC-010-01/02/03/04 — agente limitado, importación atómica y revocació
     const otherBranch = await app.inject({ method: 'GET', url: '/api/agent/v1/reports/inventory?branchId=milan', headers: { host: '127.0.0.1:4370', authorization: `Bearer ${agent.token}` } });
     assert.equal(otherBranch.statusCode, 403, otherBranch.body);
     const importDraft = { kind: 'inventory', operationId: randomUUID(), branchId: 'centro', reason: 'Carga desde archivo validado', rows: [{ row: 2, kind: 'entry', itemId: 'agent-item', warehouseId: 'centro-venta', quantity: '3', unit: 'unit', reason: 'Entrada del archivo' }, { row: 3, kind: 'initial', itemId: 'agent-initial-item', warehouseId: 'centro-venta', quantity: '4', unit: 'unit', reason: 'Inicial del archivo' }, { row: 4, kind: 'adjustment_out', itemId: 'agent-item', warehouseId: 'centro-venta', quantity: '2', unit: 'unit', reason: 'Ajuste del archivo' }] };
-    const agentHeaders = { host: '127.0.0.1:4370', authorization: `Bearer ${agent.token}`, 'x-nativos-request': '1' };
+    const agentHeaders = { host: '127.0.0.1:4370', authorization: `Bearer ${agent.token}`, 'x-nativos-request': '1', accept: 'application/json, text/event-stream' };
     const preview = await app.inject({ method: 'POST', url: '/api/agent/v1/imports/preview', payload: importDraft, headers: agentHeaders });
     assert.equal(preview.statusCode, 200, preview.body); assert.equal(preview.json().valid, true);
     const confirmed = await app.inject({ method: 'POST', url: '/api/agent/v1/imports/confirm', payload: { ...importDraft, previewFingerprint: preview.json().previewFingerprint }, headers: agentHeaders });
@@ -77,7 +77,7 @@ test('AC-010-01/02/03/04 — agente limitado, importación atómica y revocació
     assert.equal(mcpProducts.statusCode, 200, mcpProducts.body); assert.equal(mcpProducts.json().result.isError, undefined); assert.ok(JSON.parse(mcpProducts.json().result.content[0].text).items.length >= 2);
     const readOnly = await app.inject({ method: 'POST', url: '/api/agents', payload: { name: 'Sólo lectura MCP', branchIds: ['centro'], actions: ['data.read'], reason: 'Prueba de límite MCP' }, headers });
     assert.equal(readOnly.statusCode, 201, readOnly.body);
-    const deniedMcp = await app.inject({ method: 'POST', url: '/api/agent/v1/mcp', payload: { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'nativos_inventory_import_preview', arguments: importDraft } }, headers: { host: '127.0.0.1:4370', authorization: `Bearer ${readOnly.json().token}`, 'x-nativos-request': '1' } });
+    const deniedMcp = await app.inject({ method: 'POST', url: '/api/agent/v1/mcp', payload: { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'nativos_inventory_import_preview', arguments: importDraft } }, headers: { ...agentHeaders, authorization: `Bearer ${readOnly.json().token}` } });
     assert.equal(deniedMcp.statusCode, 200, deniedMcp.body); assert.equal(deniedMcp.json().result.isError, true); assert.match(deniedMcp.json().result.content[0].text, /forbidden/);
     const rotated = await app.inject({ method: 'POST', url: `/api/agents/${agent.id}/rotate`, payload: { reason: 'Rotación programada de credencial' }, headers });
     assert.equal(rotated.statusCode, 200, rotated.body);

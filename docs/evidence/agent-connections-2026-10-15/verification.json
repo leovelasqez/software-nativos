@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-15",
+  "scope": "local synthetic databases and browser profiles",
+  "typecheck": "passed",
+  "unit": {
+    "passed": 75,
+    "failed": 0
+  },
+  "integration": {
+    "passed": 84,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 833094.0949
+  },
+  "mcpClient": "official SDK 1.32.1 over real HTTP socket",
+  "browser": {
+    "passed": 1,
+    "failed": 0,
+    "channel": "msedge",
+    "accessibilityViolations": 0,
+    "viewports": [
+      1440,
+      390
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "build": "passed",
+  "diffCheck": "passed",
+  "deploymentPerformed": false,
+  "commercialCredentialsCreated": false,
+  "clientCodexOrClaudeSessionVerified": false
+}

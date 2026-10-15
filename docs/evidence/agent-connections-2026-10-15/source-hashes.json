@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-15",
+  "normalization": "LF",
+  "hashes": {
+    "src/server/agent-mcp.ts": "36929879f4ee990a469627694aaab5189b1238b6df3a36e568859ee93da1f0d3",
+    "src/server/agent-api.ts": "0a81d91c8e42723f98d3cd12a670dfab99752076e14f4c0f2351ecfba5194a02",
+    "src/server/app.ts": "349b574150baacf28ae8df075ab4f8567a9c1591a359c4d0b78e76c20a5627bd",
+    "web/Agents.tsx": "5d7f7d4910ebf59f57c49c63ea650e7c5f007c9258cda9ff295beac03f432f7e",
+    "web/main.tsx": "539c66cb878648ed7a0640b48828c1c3260383d3006ff24a0ba3a0eb3b95474c",
+    "web/theme.css": "e3f86d80d65d4eea39c42f42b1da72b94f0fc3dc2277e4b272c0e825bc111087",
+    "tests/integration/agent-mcp.test.ts": "7dbafa54b84b4bac9d0c9f67e3923b62a5d30566c0eb6a5ff6c2f7772de7e149",
+    "tests/e2e/agents.spec.ts": "1a8ee43ea68e5654e7d29a395abb24b56a03c06116a6c759dc4826f32d7d5946",
+    "playwright.agents.config.ts": "2697bd1c33f587ca87e1b6241f84ef536123a1c6685b7eefaba9d6c03d95e849",
+    "contracts/agent-api-v1.json": "7840009706369de872f32a6c9d274b67f8058fd01a748e65b145dcc9b761364c",
+    "package.json": "8c99a3c61ef0e290a759422e9d00eedaf93a26ad0b96def75e7a74d883016716",
+    "package-lock.json": "e67020b1679a025ef6715389f07da11e7e5e845ff722a5dfaa69c54b33771dfe"
+  }
+}

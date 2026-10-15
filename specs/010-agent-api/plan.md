@@ -1,6 +1,18 @@
 # Plan técnico — API y MCP para agentes, incremento 7A
 
-Estado: preparado para implementación local. Fuente: `spec.md`, DEC-001, DEC-004, DEC-012 y arquitectura vigente de sitio web único.
+## Ampliación de consulta — 15-10-2026
+
+Reutilizar las rutas de dominio y sustituir el despacho JSON-RPC manual por el SDK oficial MCP v1 con Streamable HTTP stateless y respuesta JSON. Crear servidor/transporte por petición, sin sesiones en memoria. Mantener `/api/agent/v1/mcp` para capacidades existentes y añadir `/api/agent/v1/mcp/read-only` con lista fija de consultas. Autenticar antes del transporte; conservar Host/Origin y eximir de CSRF únicamente POST en esos dos endpoints, autenticados siempre por Bearer. GET/DELETE devuelven 405, sin SSE persistente.
+
+Un catálogo de herramientas compartido define argumentos estrictos, filtros de informes y acciones requeridas. Filtrar descubrimiento por acciones y volver a autorizar en cada consulta. El contexto descubre sucursales/bodegas autorizadas, fecha de consulta y última sincronización; no adivina ventas offline pendientes. No cambia costos, inventario, ventas ni importaciones.
+
+Agregar listado administrativo sin secretos y creación de consulta con acciones fijadas por servidor. La pantalla de dueño usa estado React efímero para la credencial recién emitida; no incluye tokens en ejemplos/configuración, URL, localStorage ni logs. Renovación/revocación requieren motivo. Documentar Codex (Bearer desde variable de entorno) y Claude Code (HTTP con variable de entorno); la conexión Claude web/Desktop que requiera OAuth no se declara soportada.
+
+Pruebas: cliente SDK por socket real en base sintética; denegaciones de permisos/CSRF/origen, filtros/paginación, rotación/revocación y ausencia de efectos comerciales. Flujo E2E de administración y revisión visual con móvil, teclado y ambos temas. Typecheck, unitarios, integración focalizada y build. Sin migración nueva, despliegue ni credenciales comerciales.
+
+## Antecedente técnico del incremento 7A
+
+Base implementada y verificada localmente. Las menciones siguientes a decisiones pendientes describen el contexto original de 7A; la ampliación de consulta anterior conserva los costos fuera de su alcance. Fuente: `spec.md`, DEC-001, DEC-004, DEC-012 y arquitectura vigente de sitio web único.
 
 ## Incremento seleccionado
 

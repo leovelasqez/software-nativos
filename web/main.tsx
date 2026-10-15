@@ -20,8 +20,9 @@ import { Counts, Transfers } from './InventoryOperations.tsx';
 import { Reports } from './Reports.tsx';
 import { Backups } from './Backups.tsx';
 import { Notifications } from './Notifications.tsx';
+import { Agents } from './Agents.tsx';
 
-type Page = 'summary' | 'users' | 'sellers' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups' | 'notifications';
+type Page = 'summary' | 'users' | 'sellers' | 'branches' | 'audit' | 'products' | 'recipes' | 'inventory' | 'transfers' | 'counts' | 'purchases' | 'customers' | 'loyalty' | 'reports' | 'backups' | 'notifications' | 'agents';
 const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   { id: 'summary', name: 'Resumen', icon: '◫' }, { id: 'branches', name: 'Sucursales y bodegas', icon: '⌂' },
   { id: 'products', name: 'Productos', icon: '◇' }, { id: 'recipes', name: 'Recetas', icon: '≋' }, { id: 'inventory', name: 'Inventario', icon: '▤' },
@@ -30,10 +31,11 @@ const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   {id:'customers',name:'Clientes',icon:'♧'}, {id:'loyalty',name:'Fidelización',icon:'☆'},
   {id:'reports',name:'Informes',icon:'▥'},
   {id:'sellers',name:'Vendedores',icon:'♧',admin:true},
+  {id:'agents',name:'Agentes de IA',icon:'◌',admin:true},
   { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'notifications', name: 'Notificaciones', icon: '◌', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
 ];
-const pending = ['WhatsApp', 'Agentes de IA'];
-const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', sellers: 'users', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup' };
+const pending = ['WhatsApp'];
+const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', sellers: 'users', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup', agents: 'users' };
 function App() {
   const [me, setMe] = useState<Me | null>(null); const [setup, setSetup] = useState(false);
   const [setupTokenRequired, setSetupTokenRequired] = useState(false);
@@ -77,7 +79,7 @@ function App() {
       <details className="upcoming"><summary>Módulos en preparación</summary>{pending.map(name => <span key={name}>{name}<small>Pendiente</small></span>)}</details></nav>
     <div className="sidebar-account"><span className="avatar">{me.user.name.slice(0, 1).toUpperCase()}</span><div><strong>{me.user.name}</strong><small>{roles[me.user.role]}</small></div><button className="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={async () => { try { await api('/logout', 'POST', {}); setMe(null); setPage('summary'); } catch (e) { setError((e as Error).message); } }}><Icon name="logout"/></button></div></aside>
     <div className="workspace"><header className="topbar"><span className="page-breadcrumb"><Icon name={pageIcons[page]}/>{pages.find(p => p.id === page)?.name}</span><div className="topbar-actions"><label>Sucursal<select aria-label="Sucursal" value={activeBranch} onChange={e => { setOverviewBranch(e.target.value); if (e.target.value !== 'all') setBranchId(e.target.value); }}>{allowAll && <option value="all">Todas las sucursales</option>}{me.branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label><ThemeToggle /></div></header>
-      <div className="mobile-consultations" role="group" aria-label="Consultas rápidas"><button aria-pressed={page === 'summary'} onClick={() => navigate('summary')}><Icon name="reports"/>Ventas</button><button aria-pressed={page === 'inventory'} onClick={() => navigate('inventory')}><Icon name="boxes"/>Inventario</button></div>
+      <nav className="mobile-consultations" aria-label="Consultas rápidas"><button aria-pressed={page === 'summary'} onClick={() => navigate('summary')}><Icon name="reports"/>Ventas</button><button aria-pressed={page === 'inventory'} onClick={() => navigate('inventory')}><Icon name="boxes"/>Inventario</button></nav>
       <main id="main" tabIndex={-1} className="content">{error && <Notice error>{error}</Notice>}
         {page === 'summary' && <Dashboard key={activeBranch} branchId={activeBranch} branches={me.branches} firstName={me.user.name.split(' ')[0]!} inventory={(id, warehouse) => navigate('inventory', id, warehouse)} />}
         {page === 'loyalty' && <Loyalty key={branchId} branchId={branchId} me={me} />}
@@ -91,6 +93,7 @@ function App() {
         {page === 'reports' && <Reports key={activeBranch} branchId={activeBranch} />}
         {page === 'backups' && admin && <Backups />}
         {page === 'notifications' && admin && <Notifications key={branchId} branchId={branchId} />}
+        {page === 'agents' && admin && <Agents me={me} />}
         {page === 'users' && admin && <Users me={me} onSessionRefresh={refresh} />}
         {page === 'sellers' && admin && <Sellers me={me} />}
         {page === 'branches' && branchId && <Branches me={me} branchId={branchId} refresh={refresh} />}

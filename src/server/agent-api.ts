@@ -10,6 +10,7 @@ import type { Item, Product, Recipe, RecipeLine, RecipeOption } from '../catalog
 import { audit, publicUser, transaction } from './db.ts';
 import type { Actor } from './db.ts';
 import { ApiError, authenticate, authenticateAgent, hashPassword, requireAccess, requireAdmin, tokenHash } from './security.ts';
+import { registerAgentMcp } from './agent-mcp.ts';
 
 const permittedActions = new Set<Action>(['data.read', 'product.create', 'recipe.create', 'purchase.read', 'purchase.write', 'inventory.manage']);
 const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
@@ -19,7 +20,6 @@ type ImportRow = { row: number; kind: 'initial' | 'entry' | 'adjustment_in' | 'a
 type InventoryImport = { kind: 'inventory'; operationId: string; branchId: string; reason: string; previewFingerprint?: string; rows: ImportRow[] };
 type CatalogRow = { row: number; product: Omit<Product, 'id' | 'version' | 'activeRecipeVersion' | 'sellable'>; recipe: { name: string; instructions: string; lines: RecipeLine[]; options: RecipeOption[] } | null };
 type CatalogImport = { kind: 'catalog'; operationId: string; branchId: string; reason: string; previewFingerprint?: string; rows: CatalogRow[] };
-type McpRequest = { jsonrpc: '2.0'; id?: string | number | null; method: string; params?: { name?: string; arguments?: Record<string, unknown> } };
 const importValidator = new Ajv2020({ strict: true, allErrors: true }).compile(importSchema);
 
 function queryLimit(value: string | undefined) { const limit = Number(value ?? '50'); return Number.isInteger(limit) && limit >= 1 && limit <= 100 ? limit : null; }
@@ -94,29 +94,27 @@ function validateInput(input: AgentInput) {
     throw new ApiError(400, 'invalid_agent', 'Revisa nombre, sucursales, permisos y motivo del agente.');
 }
 
-const mcpTools = [
-  { name: 'nativos_products_list', description: 'Consulta paginada de productos autorizados.', inputSchema: { type: 'object', required: ['branchId'], properties: { branchId: { type: 'string' }, after: { type: 'string' }, limit: { type: 'string' }, q: { type: 'string' } } } },
-  { name: 'nativos_recipes_list', description: 'Consulta recetas activas autorizadas.', inputSchema: { type: 'object', required: ['branchId'], properties: { branchId: { type: 'string' }, after: { type: 'string' }, limit: { type: 'string' } } } },
-  { name: 'nativos_inventory_list', description: 'Consulta existencias por bodega autorizada.', inputSchema: { type: 'object', required: ['branchId'], properties: { branchId: { type: 'string' }, after: { type: 'string' }, limit: { type: 'string' } } } },
-  { name: 'nativos_movements_list', description: 'Consulta movimientos sin costos.', inputSchema: { type: 'object', required: ['branchId'], properties: { branchId: { type: 'string' }, after: { type: 'string' }, limit: { type: 'string' } } } },
-  { name: 'nativos_report_get', description: 'Consulta un informe autorizado.', inputSchema: { type: 'object', required: ['branchId', 'kind'], properties: { branchId: { type: 'string' }, kind: { type: 'string' } } } },
-  { name: 'nativos_inventory_import_preview', description: 'Valida un lote de inventario sin persistirlo.', inputSchema: { type: 'object' } },
-  { name: 'nativos_inventory_import_confirm', description: 'Confirma un lote de inventario validado.', inputSchema: { type: 'object', required: ['previewFingerprint'] } },
-  { name: 'nativos_catalog_import_preview', description: 'Valida productos y recetas sin persistirlos.', inputSchema: { type: 'object' } },
-  { name: 'nativos_catalog_import_confirm', description: 'Confirma productos y recetas validados.', inputSchema: { type: 'object', required: ['previewFingerprint'] } }
-] as const;
-const mcpRoutes: Record<string, { method: 'GET' | 'POST'; path: string }> = {
-  nativos_products_list: { method: 'GET', path: '/api/agent/v1/products' }, nativos_recipes_list: { method: 'GET', path: '/api/agent/v1/recipes' },
-  nativos_inventory_list: { method: 'GET', path: '/api/agent/v1/inventory' }, nativos_movements_list: { method: 'GET', path: '/api/agent/v1/movements' },
-  nativos_report_get: { method: 'GET', path: '/api/agent/v1/reports' }, nativos_inventory_import_preview: { method: 'POST', path: '/api/agent/v1/imports/preview' },
-  nativos_inventory_import_confirm: { method: 'POST', path: '/api/agent/v1/imports/confirm' }, nativos_catalog_import_preview: { method: 'POST', path: '/api/agent/v1/imports/catalog/preview' },
-  nativos_catalog_import_confirm: { method: 'POST', path: '/api/agent/v1/imports/catalog/confirm' }
-};
-
 export function registerAgents(app: FastifyInstance, pool: Pool) {
+  registerAgentMcp(app, pool);
   async function mutate<T>(run: (client: PoolClient) => Promise<T>) {
     return transaction(pool, async c => { await c.query('SELECT pg_advisory_xact_lock(7301)'); return run(c); });
   }
+  app.get('/api/agents', async req => {
+    const actor = await authenticate(pool, req); requireAdmin(actor);
+    const items = (await pool.query(`SELECT u.id,u.name,u.branch_ids AS "branchIds",u.actions,(u.active AND a.active) AS active,
+      a.created_at AS "createdAt",a.rotated_at AS "rotatedAt" FROM app_users u JOIN agent_credentials a ON a.user_id=u.id
+      WHERE u.kind='agent' AND u.branch_ids <@ $1::text[] ORDER BY a.created_at DESC,u.id`, [actor.user.branch_ids])).rows;
+    return { items };
+  });
+  app.post('/api/agents/read-only', { schema: { body: { type: 'object', additionalProperties: false, properties: {
+    name: { type: 'string', minLength: 2, maxLength: 100 }, branchIds: { type: 'array', minItems: 1, maxItems: 20, items: { type: 'string', pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$' } },
+    reason: { type: 'string', minLength: 3, maxLength: 500 }
+  }, required: ['name', 'branchIds', 'reason'] } } }, async (req, reply) => {
+    // Creation stays in the same domain transaction, with actions fixed on the server.
+    const input = req.body as Omit<AgentInput, 'actions'>;
+    const response = await app.inject({ method: 'POST', url: '/api/agents', headers: { host: req.headers.host!, cookie: req.headers.cookie ?? '', 'x-nativos-request': '1' }, payload: { ...input, actions: ['data.read'] } });
+    return reply.code(response.statusCode).send(response.json());
+  });
   app.post('/api/agents', { schema: { body: { type: 'object', additionalProperties: false, properties: {
     name: { type: 'string', minLength: 2, maxLength: 100 }, branchIds: { type: 'array', minItems: 1, maxItems: 20, items: { type: 'string', pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$' } },
     actions: { type: 'array', minItems: 1, items: { type: 'string' } }, reason: { type: 'string', minLength: 3, maxLength: 500 }
@@ -158,6 +156,15 @@ export function registerAgents(app: FastifyInstance, pool: Pool) {
   app.get('/api/agent/v1/me', async req => {
     const actor = await authenticateAgent(pool, req);
     return { id: actor.user.id, name: actor.user.name, branchIds: actor.user.branch_ids, actions: actor.user.actions };
+  });
+  app.get('/api/agent/v1/context', async req => {
+    const actor = await authenticateAgent(pool, req);
+    const ids = actor.user.branch_ids;
+    for (const branchId of ids) requireAccess(actor, branchId);
+    const branches = (await pool.query(`SELECT b.id,b.name,(SELECT max(t.last_sync_at) FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE d.branch_id=b.id) AS "lastSynchronizedAt",
+      coalesce((SELECT json_agg(json_build_object('id',w.id,'name',w.name) ORDER BY w.name,w.id) FROM warehouses w WHERE w.branch_id=b.id),'[]'::json) AS warehouses
+      FROM branches b WHERE b.id=ANY($1::text[]) ORDER BY b.name,b.id`, [ids])).rows;
+    return { agent: { id: actor.user.id, name: actor.user.name }, generatedAt: new Date().toISOString(), branches };
   });
   app.get('/api/agent/v1/products', async req => {
     const { query, limit } = await agentRead(pool, req);
@@ -249,24 +256,4 @@ export function registerAgents(app: FastifyInstance, pool: Pool) {
     await audit(c, actor, 'agent.catalog_imported', input.reason, { importId, operationId: input.operationId, rows: products.length }, input.branchId, [input.branchId]);
     return response;
   }));
-  app.post('/api/agent/v1/mcp', { bodyLimit: 1_100_000 }, async (req, reply) => {
-    await authenticateAgent(pool, req);
-    const body = req.body as McpRequest;
-    const id = body?.id ?? null;
-    const fail = (code: number, message: string) => reply.send({ jsonrpc: '2.0', id, error: { code, message } });
-    if (!body || body.jsonrpc !== '2.0' || typeof body.method !== 'string') return fail(-32600, 'Solicitud MCP inválida.');
-    if (body.method === 'initialize') return { jsonrpc: '2.0', id, result: { protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'nativos-agent-api', version: '1.0.0' } } };
-    if (body.method === 'tools/list') return { jsonrpc: '2.0', id, result: { tools: mcpTools } };
-    if (body.method !== 'tools/call' || !body.params || typeof body.params.name !== 'string') return fail(-32601, 'Método MCP no disponible.');
-    const route = mcpRoutes[body.params.name]; if (!route) return fail(-32602, 'Herramienta MCP no disponible.');
-    const args = body.params.arguments ?? {};
-    const path = route.path + (body.params.name === 'nativos_report_get' ? '/' + encodeURIComponent(String(args.kind ?? '')) : '');
-    const url = route.method === 'GET' ? path + '?' + new URLSearchParams(Object.entries(args).filter(([key, value]) => key !== 'kind' && typeof value === 'string') as [string, string][]).toString() : path;
-    const headers = { host: req.headers.host ?? 'localhost', authorization: req.headers.authorization ?? '', 'x-nativos-request': '1' };
-    const delegated = route.method === 'POST'
-      ? await app.inject({ method: 'POST', url, payload: args, headers })
-      : await app.inject({ method: 'GET', url, headers });
-    const content = { type: 'text', text: delegated.body };
-    return { jsonrpc: '2.0', id, result: delegated.statusCode >= 400 ? { content: [content], isError: true } : { content: [content] } };
-  });
 }

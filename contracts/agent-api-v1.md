@@ -1,5 +1,14 @@
 # Contrato v1 — API y MCP de agentes
 
+## Ampliación de consulta — 15-10-2026
+
+- `GET /api/agents`: sólo dueño con `settings.manage`; lista agentes completamente dentro de sus sucursales: `{items:[{id,name,branchIds,actions,active,createdAt,rotatedAt}]}` sin token/hash. `active` combina usuario y credencial.
+- `POST /api/agents/read-only`: sólo dueño; `{name,branchIds,reason}` con las mismas restricciones de creación existentes; fija `actions:["data.read"]` en servidor y devuelve `{id,name,branchIds,actions,token}` una sola vez. Renovar/revocar reutiliza rutas existentes.
+- `GET /api/agent/v1/context`: Bearer con `data.read`; `{agent:{id,name},generatedAt,branches:[{id,name,lastSynchronizedAt,warehouses:[{id,name}]}]}`. Sólo sucursales asignadas. `lastSynchronizedAt:null` significa sin sincronización registrada, no ausencia de pendientes.
+- `POST /api/agent/v1/mcp/read-only`: MCP Streamable HTTP stateless del SDK oficial, JSON, sin `X-Nativos-Request`, manteniendo Host/Origin. Autenticación Bearer por petición; nunca cookie. GET/DELETE responden 405. Admite inicialización, notificaciones y herramientas del SDK. Descubre y permite sólo `nativos_context_get`, `nativos_products_list`, `nativos_recipes_list`, `nativos_inventory_list`, `nativos_movements_list`, `nativos_report_get` cuando tiene `data.read`. La ruta MCP histórica conserva importaciones según permisos.
+- Herramientas de consulta: argumentos de objeto estrictos; `branchId` obligatorio salvo contexto, `after` y `limit` (entero 1–100 o representación decimal para compatibilidad); productos añade `q`; informes requiere `kind` (`sales`, `sellers`, `cash`, `inventory`, `purchases`, `waste`, `loyalty`) y admite `from`, `to`, `productId`, `customerId`, `supplierId`, `paymentMethod`, `sellerId`. Cada tipo de informe valida sus filtros por API, en zona America/Bogota. La respuesta conserva `nextCursor`, totales y contexto de sincronización originales.
+- Errores de dominio de herramienta: contenido MCP `isError:true`, sin excepciones/secretos internos; argumentos desconocidos o inválidos no se ejecutan. Anotaciones de consulta `readOnlyHint:true`, `destructiveHint:false`, `idempotentHint:true`, `openWorldHint:false`. La anotación no sustituye la autorización del servidor.
+
 Estado: contrato local verificado del incremento 7A. El documento consumible OpenAPI 3.1 es `agent-api-v1.json`. Todas las operaciones son online y usan `Authorization: Bearer <token>`; el token es opaco, revocable y no se registra ni devuelve después de su creación.
 
 ## Identidad y permisos
@@ -22,4 +31,4 @@ La importación de catálogo/recetas se define por separado en `agent-catalog-im
 
 ## MCP
 
-`POST /api/agent/v1/mcp` acepta JSON-RPC 2.0 con Bearer token en cada llamada. Implementa `initialize`, `tools/list` y `tools/call`; las herramientas fijas son `nativos_products_list`, `nativos_recipes_list`, `nativos_inventory_list`, `nativos_movements_list`, `nativos_report_get` y las cuatro operaciones `nativos_{inventory,catalog}_import_{preview,confirm}`. Sus argumentos y resultados delegan a las rutas documentadas arriba, por lo que una denegación HTTP se devuelve como contenido MCP con `isError: true` y no puede eludir permisos. No existe herramienta de SQL, shell, archivos arbitrarios ni ejecución de URLs.
+`POST /api/agent/v1/mcp` usa Streamable HTTP stateless del SDK oficial, JSON-RPC 2.0 y Bearer token en cada llamada. El SDK atiende `initialize` y notificaciones; se implementan `tools/list` y `tools/call`. Las herramientas son `nativos_context_get`, `nativos_products_list`, `nativos_recipes_list`, `nativos_inventory_list`, `nativos_movements_list`, `nativos_report_get` y las cuatro operaciones `nativos_{inventory,catalog}_import_{preview,confirm}`, filtradas por permisos. Sus argumentos y resultados delegan a las rutas documentadas arriba, por lo que una denegación HTTP se devuelve como contenido MCP con `isError: true` y no puede eludir permisos. No existe herramienta de SQL, shell, archivos arbitrarios ni ejecución de URLs. La conexión exclusiva de consulta usa `/api/agent/v1/mcp/read-only` y nunca publica ni ejecuta importaciones.

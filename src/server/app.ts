@@ -9,6 +9,7 @@ import { registerReports } from './reports-api.ts';
 import { registerDashboard } from './dashboard-api.ts';
 import { registerBackups } from './backup-api.ts';
 import { registerAgents } from './agent-api.ts';
+import { MCP_PATH, READ_ONLY_MCP_PATH } from './agent-mcp.ts';
 import { registerNotifications } from './notifications-api.ts';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import cookie from '@fastify/cookie';
@@ -55,7 +56,9 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
     if (!healthRequest && req.headers.host !== allowed.host) throw new ApiError(403, 'invalid_host', 'Origen no permitido.');
     if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
     if (req.headers.origin && req.headers.origin !== origin) throw new ApiError(403, 'invalid_origin', 'Origen no permitido.');
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-nativos-request'] !== '1')
+    // DELETE on these stateless endpoints is authenticated and returns 405 without changing data.
+    const bearerMcp = ['POST', 'DELETE'].includes(req.method) && [MCP_PATH, READ_ONLY_MCP_PATH].includes(req.url.split('?')[0]!);
+    if (!bearerMcp && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-nativos-request'] !== '1')
       throw new ApiError(403, 'csrf_required', 'Solicitud no permitida. Recarga la aplicación.');
   });
   app.setErrorHandler((error, _req, reply) => {

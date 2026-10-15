@@ -171,3 +171,7 @@ NAT-UAT-01/02/03: AC-003-09/10/11 y REQ-003-04 incluyen operaciones de terminado
 ## Vendedores bajo una misma cuenta — 14-10-2026
 
 [Spec 020](020-sellers/spec.md), [plan](020-sellers/plan.md) y [tareas](020-sellers/tasks.md): identidad comercial separada del usuario de acceso y del responsable de turno; comisión fija por producto proporcional al descuento y neta de devoluciones; propina al vendedor original. [Evidencia de verificación](../docs/evidence/sellers-2026-10-14.md). Pruebas aprobadas y publicación verificada en Railway el 14-10-2026.
+
+## Conexión MCP de consulta — 15-10-2026
+
+REQ-010-05/06 y AC-010-05/06/07: [spec 010](010-agent-api/spec.md), plan, tareas y [contrato](../contracts/agent-api-v1.md). Streamable HTTP del SDK oficial, endpoint exclusivo de lectura, descubrimiento de sucursales/bodegas y filtros de informes. Pantalla de dueño para crear credenciales de consulta, listar sin secretos, renovar y revocar. [Guía de Codex y Claude Code](../docs/operations/agent-connections.md) y [evidencia local](../docs/evidence/agent-connections-2026-10-15.md). No acredita despliegue de este incremento ni conexión comercial desde esos clientes.

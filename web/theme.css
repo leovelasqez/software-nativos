@@ -9,3 +9,9 @@
 @import url('./summary-layout.css');
 @import url('./admin-layout.css');
 @import url('./pos-layout-fixes.css');
+/* Agent connection examples never contain credentials. */
+.agent-connection-guide { padding: 1.5rem; }
+.agent-connection-guide pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; font-size: .82rem; }
+.agent-connection-guide input { width: 100%; min-width: 0; }
+.agent-connection-guide details { margin: 1rem 0; }
+.agent-connection-guide summary { cursor: pointer; font-weight: 600; }

@@ -1,6 +1,15 @@
 # Tareas — API y MCP para agentes, incremento 7A
 
-Estado: preparado. Ver `plan.md` y `spec.md`.
+## Conexión de consulta — 15-10-2026
+
+| ID | Entregable | Requisitos / aceptación | Estado |
+| --- | --- | --- | --- |
+| TASK-010-07 | Contrato de endpoint de lectura, contexto y filtros; guía de clientes | REQ-010-05/06; AC-010-05/06/07 | Verificado localmente — contrato y `docs/operations/agent-connections.md` |
+| TASK-010-08 | Transporte SDK Streamable HTTP, autorización y catálogo de consultas | REQ-010-05; AC-010-05/06 | Verificado localmente — cliente SDK por HTTP real, 6 casos incluidos los escenarios de seguridad |
+| TASK-010-09 | Administración de conexiones de consulta sin persistir tokens en navegador | REQ-010-06; AC-010-07 | Verificado localmente — API y E2E de creación/rotación/revocación; secretos ausentes en listado, auditoría y almacenamiento web |
+| TASK-010-10 | Pruebas de integración, cliente SDK, navegador y evidencia | REQ-010-05/06; AC-010-05/06/07 | Verificado localmente — typecheck, 75 unitarias, 84 integraciones seriales, E2E Edge 1/1, axe en cuatro combinaciones, build y diff-check; evidencia en `docs/evidence/agent-connections-2026-10-15.md` |
+
+Estado: base 7A verificada localmente. El estado de la ampliación de consulta se registra en la tabla anterior. Ver `plan.md` y `spec.md`.
 
 | ID | Entregable concreto | Requisitos / escenarios | Depende de | Evidencia esperada | Estado |
 | --- | --- | --- | --- | --- | --- |
