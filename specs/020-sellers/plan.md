@@ -1,6 +1,6 @@
 # Plan técnico de 020
 
-Estado: Verificada localmente; publicación pendiente. Decisiones comerciales confirmadas en spec.md.
+Estado: Publicada y verificada en Railway el 14-10-2026. Decisiones comerciales confirmadas en spec.md.
 
 ## Diseño
 

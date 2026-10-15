@@ -1,6 +1,6 @@
 # 020 — Vendedores en una misma cuenta de caja
 
-Estado: Verificada localmente; publicación pendiente. Autorización: solicitud del usuario del 14-10-2026 de revisar el código, construir mediante SDD y probar antes de publicar en Railway.
+Estado: Publicada y verificada en Railway el 14-10-2026. Autorización: solicitud del usuario del 14-10-2026 de revisar el código, construir mediante SDD y probar antes de publicar en Railway.
 
 ## Objetivo y alcance
 
