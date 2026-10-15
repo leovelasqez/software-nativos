@@ -64,6 +64,16 @@ El agente debe recorrer `nextCursor` para completar detalles y no volver a sumar
 
 ## 6. Renovación, revocación y diagnóstico
 
+### Configuración de este equipo — 15-10-2026
+
+El servidor `nativos` ya quedó configurado en Codex con un `http_headers_helper` local. La credencial **Codex consultas** del dueño tiene sólo `data.read` para Centro y Milán; se guarda con cifrado Windows DPAPI CurrentUser en la configuración privada del usuario, fuera del repositorio. En este equipo no es necesario definir `NATIVOS_AGENT_TOKEN`; las instrucciones de variable de entorno anteriores son una alternativa para otras instalaciones.
+
+Al renovar la credencial en Nativos, ejecutar en PowerShell el archivo privado `C:\Users\pc\.codex\mcp-secrets\nativos\set-token.ps1` y pegar la nueva credencial en su entrada oculta. El script actualiza el archivo cifrado sin mostrar el token. Después abrir una conversación nueva o reiniciar la conexión de Codex. La configuración se verificó con el SDK MCP y con `mcpServerStatus/list` del cliente real Codex CLI 0.154.0, sin crear chats ni invocar modelos.
+
+El helper está documentado en la [referencia oficial de configuración de Codex](https://developers.openai.com/codex/config-reference), campo `mcp_servers.<id>.http_headers_helper`.
+
+### Comportamiento general
+
 Renovar invalida inmediatamente el token anterior. Actualizar la variable privada y reiniciar la conexión del asistente. Revocar invalida las siguientes peticiones, incluso para clientes ya inicializados. Los registros comerciales e importaciones anteriores se conservan.
 
 - 401: credencial ausente, antigua, inválida o revocada. La cookie del dueño no autentica MCP.

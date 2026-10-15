@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-15T14:28:31.136Z",
+  "client": "Codex CLI 0.154.0 app-server",
+  "server": "nativos",
+  "toolNames": [
+    "nativos_recipes_list",
+    "nativos_report_get",
+    "nativos_inventory_list",
+    "nativos_context_get",
+    "nativos_movements_list",
+    "nativos_products_list"
+  ],
+  "connected": true,
+  "startupStatus": null,
+  "threadCreated": false,
+  "modelInvoked": false,
+  "otherMcpServersDisabledForThisCheck": true
+}

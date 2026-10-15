@@ -1,0 +1,62 @@
+{
+  "verifiedAt": "2026-10-15T14:17:01.984Z",
+  "origin": "https://nativos-web-production.up.railway.app",
+  "credentialProtection": "Windows DPAPI CurrentUser, local header helper",
+  "toolNames": [
+    "nativos_context_get",
+    "nativos_products_list",
+    "nativos_recipes_list",
+    "nativos_inventory_list",
+    "nativos_movements_list",
+    "nativos_report_get"
+  ],
+  "branches": [
+    {
+      "id": "centro",
+      "name": "Centro",
+      "lastSynchronizedAt": "2026-10-08T00:47:14.096Z"
+    },
+    {
+      "id": "milan",
+      "name": "Milán",
+      "lastSynchronizedAt": "2026-10-14T23:22:28.523Z"
+    }
+  ],
+  "checks": [
+    {
+      "tool": "nativos_products_list",
+      "succeeded": true,
+      "paginationSupported": true
+    },
+    {
+      "tool": "nativos_recipes_list",
+      "succeeded": true,
+      "paginationSupported": true
+    },
+    {
+      "tool": "nativos_inventory_list",
+      "succeeded": true,
+      "paginationSupported": true
+    },
+    {
+      "tool": "nativos_movements_list",
+      "succeeded": true,
+      "paginationSupported": true
+    },
+    {
+      "tool": "nativos_report_get",
+      "succeeded": true,
+      "dateFilterVerified": true,
+      "authorizedBranches": [
+        "centro",
+        "milan"
+      ]
+    }
+  ],
+  "commercialWritesPerformed": false,
+  "agentId": "f4cbbc5f-b173-464c-b51c-5fb834ea65ed",
+  "agentName": "Codex consultas",
+  "actions": [
+    "data.read"
+  ]
+}

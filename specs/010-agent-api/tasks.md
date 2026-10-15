@@ -8,6 +8,7 @@
 | TASK-010-08 | Transporte SDK Streamable HTTP, autorización y catálogo de consultas | REQ-010-05; AC-010-05/06 | Verificado localmente — cliente SDK por HTTP real, 6 casos incluidos los escenarios de seguridad |
 | TASK-010-09 | Administración de conexiones de consulta sin persistir tokens en navegador | REQ-010-06; AC-010-07 | Verificado localmente — API y E2E de creación/rotación/revocación; secretos ausentes en listado, auditoría y almacenamiento web |
 | TASK-010-10 | Pruebas de integración, cliente SDK, navegador y evidencia | REQ-010-05/06; AC-010-05/06/07 | Verificado localmente — typecheck, 75 unitarias, 84 integraciones seriales, E2E Edge 1/1, axe en cuatro combinaciones, build y diff-check; evidencia en `docs/evidence/agent-connections-2026-10-15.md` |
+| TASK-010-11 | Publicar el commit aislado y activar consulta privada de Codex | REQ-010-05/06; AC-010-05/06/07 | Publicado y verificado — Railway SUCCESS, 13 recursos coincidentes, ocho fronteras protegidas, credencial del dueño para Centro/Milán cifrada fuera del repo y seis herramientas cargadas por Codex CLI; evidencia de publicación |
 
 Estado: base 7A verificada localmente. El estado de la ampliación de consulta se registra en la tabla anterior. Ver `plan.md` y `spec.md`.
 

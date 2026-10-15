@@ -1,6 +1,6 @@
 # 010 — API y MCP para agentes de IA
 
-Estado: base 7A verificada localmente. Ampliación de consulta del 15-10-2026 implementada y verificada con cliente MCP oficial y navegador; publicación y conexión a clientes Codex/Claude con credenciales reales pendientes. Fuente: plan, sección 13.
+Estado: base 7A verificada localmente. Ampliación de consulta del 15-10-2026 publicada en Railway y conectada a Codex: credencial privada cifrada para Centro/Milán y seis herramientas cargadas en el cliente real. Claude Code no conectado. Ver `docs/evidence/agent-connections-publication-2026-10-15.md`. Fuente: plan, sección 13.
 
 ## Requisitos
 
@@ -26,7 +26,7 @@ Diseñar contrato de autenticación, permisos, consulta paginada, trabajo de imp
 
 ## Conexión de consulta — 15-10-2026
 
-Autorización: el usuario solicita implementar la conexión a Codex o Claude empezando por consultas de solo lectura. Se prepara y verifica localmente; la publicación de este incremento y las credenciales reales quedan pendientes de la entrega verificable.
+Autorización: el usuario solicita implementar la conexión a Codex o Claude empezando por consultas de solo lectura. Tras la entrega local verificada autoriza «Si, publicala». Se publica el incremento en `nativos-web/production` y se prepara la conexión privada de Codex sin exponer secretos.
 
 - REQ-010-05: ofrecer MCP Streamable HTTP interoperable, con Bearer por petición, descubrimiento de sucursales/bodegas autorizadas y herramientas de consulta con filtros y paginación completos. Un endpoint exclusivo de lectura rechaza cualquier herramienta de escritura incluso con una credencial más amplia.
 - REQ-010-06: el dueño administra conexiones de consulta desde Agentes de IA, selecciona sucursales y crea credenciales con solo `data.read`. Puede listar, renovar y revocar sin recuperar secretos existentes. Mostrar el token nuevo una sola vez, sin guardarlo en almacenamiento del navegador.
