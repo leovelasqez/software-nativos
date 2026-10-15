@@ -11,6 +11,8 @@ import { registerBackups } from './backup-api.ts';
 import { registerAgents } from './agent-api.ts';
 import { MCP_PATH, READ_ONLY_MCP_PATH } from './agent-mcp.ts';
 import { registerNotifications } from './notifications-api.ts';
+import { whatsappConfig } from './whatsapp.ts';
+import type { WhatsAppConfig, SendTransport } from './whatsapp.ts';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
@@ -28,9 +30,9 @@ import { routeSchema } from './api-contract.ts';
 interface UserInput { name: string; login: string; password: string; role: Role; branchIds: string[]; actions?: Action[]; active?: boolean; reason: string }
 interface ResourceInput { name: string; reason: string; active: boolean; isDefault: boolean; printerModel: string | null }
 type Params = { id: string; resourceId: string };
-export interface AppOptions { pool: Pool; origin: string; setupToken?: string; staticRoot?: string; backupDirectory?: string; backupRestoreDatabase?: string; backupRestoreConnection?: PoolConfig }
+export interface AppOptions { pool: Pool; origin: string; setupToken?: string; staticRoot?: string; backupDirectory?: string; backupRestoreDatabase?: string; backupRestoreConnection?: PoolConfig; whatsapp?: WhatsAppConfig; notificationTransport?: SendTransport; notificationScheduler?: boolean }
 
-export async function createApp({ pool, origin, setupToken, staticRoot, backupDirectory, backupRestoreDatabase, backupRestoreConnection }: AppOptions) {
+export async function createApp({ pool, origin, setupToken, staticRoot, backupDirectory, backupRestoreDatabase, backupRestoreConnection, whatsapp = whatsappConfig(), notificationTransport, notificationScheduler = true }: AppOptions) {
   const allowed = new URL(origin);
   const localSetup = allowed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(allowed.hostname);
   const setupTokenRequired = setupToken !== undefined || !localSetup;
@@ -43,8 +45,8 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
   registerDashboard(app, pool);
   registerBackups(app, pool, backupDirectory, backupRestoreDatabase, backupRestoreConnection);
   registerAgents(app, pool);
-  registerNotifications(app, pool);
-  registerPos(app, pool);
+  registerNotifications(app, pool, whatsapp, notificationTransport, notificationScheduler);
+  registerPos(app, pool, whatsapp);
   registerCustomers(app, pool);
   registerSellers(app, pool);
   registerLoyalty(app, pool);
@@ -58,7 +60,8 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
     if (req.headers.origin && req.headers.origin !== origin) throw new ApiError(403, 'invalid_origin', 'Origen no permitido.');
     // DELETE on these stateless endpoints is authenticated and returns 405 without changing data.
     const bearerMcp = ['POST', 'DELETE'].includes(req.method) && [MCP_PATH, READ_ONLY_MCP_PATH].includes(req.url.split('?')[0]!);
-    if (!bearerMcp && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-nativos-request'] !== '1')
+    const whatsappWebhook = req.method === 'POST' && req.url.split('?')[0] === '/api/whatsapp/webhook';
+    if (!bearerMcp && !whatsappWebhook && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-nativos-request'] !== '1')
       throw new ApiError(403, 'csrf_required', 'Solicitud no permitida. Recarga la aplicación.');
   });
   app.setErrorHandler((error, _req, reply) => {

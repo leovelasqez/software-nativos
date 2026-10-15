@@ -16,6 +16,7 @@ import { payloadHash, signAuthorization, verifyAuthorization } from '../pos-cryp
 import { handleOrdersSync } from './orders-sync.ts';
 import { CatalogError, decimal, formatted } from '../catalog.ts';
 import { queueShiftClosed } from './notifications-api.ts';
+import { whatsappConfig } from './whatsapp.ts';
 import { isWithinGrantClock } from '../authorization.ts';
 import { sharedShifts, closedShiftIds } from './shift-continuation.ts';
 
@@ -50,7 +51,7 @@ async function snapshot(c: PoolClient, device: { device_id: string; branch_id: s
   const data: Snapshot = { id: snapshotId, createdAtMs: Date.now(), branchId: device.branch_id, deviceId: device.device_id, warehouseId: warehouse.id, serverSequence: Number(device.last_sequence), serverOperationId: device.last_operation_id, products, recipes, stock, ...attribution };
   await c.query('INSERT INTO pos_snapshots(id,device_id,data) VALUES($1,$2,$3)', [data.id, device.device_id, JSON.stringify(data)]); return data;
 }
-export function registerPos(app: FastifyInstance, pool: Pool) {
+export function registerPos(app: FastifyInstance, pool: Pool, notificationConfig = whatsappConfig()) {
   async function tx<T>(run: (c: PoolClient) => Promise<T>) {
     try { return await transaction(pool, async c => { await c.query('SELECT pg_advisory_xact_lock(7301)'); return run(c); }); }
     catch (e) { if (e instanceof CatalogError) throw new ApiError(422, 'invalid_payload', e.message); throw e; }
@@ -167,7 +168,7 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [payload.movementId, payload.shiftId, o.deviceId, o.branchId, o.actorId, payload.class, payload.method, payload.amount, formatted(cashDelta), payload.reversesMovementId, payload.reason.trim(), occurred, JSON.stringify(payload)]);
       } else {
         await c.query(`UPDATE pos_shifts SET closed_at=$2,counted=$3,expected=opening_cash+(SELECT coalesce(sum(cash_applied),0) FROM pos_sales WHERE shift_id=$1)+(SELECT coalesce(sum(cash_applied),0) FROM pos_refunds WHERE shift_id=$1)+(SELECT coalesce(sum(cash_delta),0) FROM pos_cash_movements WHERE shift_id=$1),difference=$3::numeric-opening_cash-(SELECT coalesce(sum(cash_applied),0) FROM pos_sales WHERE shift_id=$1)-(SELECT coalesce(sum(cash_applied),0) FROM pos_refunds WHERE shift_id=$1)-(SELECT coalesce(sum(cash_delta),0) FROM pos_cash_movements WHERE shift_id=$1) WHERE id=$1`, [payload.shiftId, occurred, payload.counted]);
-        await queueShiftClosed(c, payload.shiftId);
+        await queueShiftClosed(c, payload.shiftId, notificationConfig);
       }
     }
     const response = { kind: 'accepted', receipt: o, reviewRequired };

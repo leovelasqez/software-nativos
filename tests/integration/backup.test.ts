@@ -37,12 +37,16 @@ test('AC-011-04/06 — dueño crea y verifica respaldo lógico; artefacto altera
     await db.pool.query("INSERT INTO pos_sales(id,order_id,shift_id,device_id,branch_id,actor_id,receipt_number,data,cash_applied,occurred_at,review_required) VALUES('backup-sale','backup-order','backup-shift','centro-caja','centro',$1,'backup-receipt','{}',10000,now(),false)",[actor]);
     await db.pool.query("INSERT INTO pos_order_events(id,device_id,actor_id,data) VALUES('backup-event','centro-caja',$1,'{}')",[actor]);
     await db.pool.query("INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reason,sale_id,event_id) VALUES('backup-movement','backup-item','centro-venta','sale',-100,'Venta sintética','backup-sale','backup-event')");
+    await db.pool.query("INSERT INTO notification_intents(id,dedupe_key,type,branch_id,causal_id,recipient_role,state,data) VALUES('backup-notification','backup-notification','shift_closed','centro','backup-shift','owner','delivered','{}')");
+    await db.pool.query("INSERT INTO notification_attempts(id,intent_id,outcome,provider_message_id,started_at,finished_at) VALUES('backup-attempt','backup-notification','delivered','wamid.backup',now(),now())");
+    await db.pool.query("INSERT INTO notification_delivery_events(id,intent_id,delivery_id,provider_message_id,status) VALUES('backup-delivery','backup-notification','backup-attempt','wamid.backup','delivered')");
     const created = await app.inject({ method: 'POST', url: '/api/backups', headers }); assert.equal(created.statusCode, 201, created.body);
     const manifest = created.json(); assert.equal(manifest.coverage, 'server-synchronized-only'); assert.match(manifest.sha256, /^[a-f0-9]{64}$/);
     const snapshot = JSON.parse(await readFile(resolve(directory, `backup-${manifest.id}.json`),'utf8'));
     const databaseTables = (await db.pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'schema_migrations'")).rows.map(row=>row.tablename).sort();
     assert.deepEqual(Object.keys(snapshot.rows).sort(),databaseTables, 'Every business table must be covered');
     assert.equal(snapshot.rows.inventory_cost_reconciliations.length,1);
+    assert.equal(snapshot.rows.notification_delivery_events.length,1);assert.equal(snapshot.rows.notification_attempts.length,1);
     assert.equal(snapshot.rows.sellers.length,1); assert.equal(snapshot.rows.seller_versions[0].data.name,'Vendedor del respaldo');
     assert.equal(snapshot.rows.product_commissions.length,1); assert.equal(snapshot.rows.product_commission_versions[0].data.amount,'1000');
     assert.deepEqual(snapshot.rows.pos_shifts[0].resumed_installations,['backup-resumed']);

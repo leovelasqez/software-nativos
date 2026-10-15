@@ -1,5 +1,23 @@
 # Plan técnico — Notificaciones confirmadas, incremento 7B
 
+## Incremento autorizado del 15-10-2026 (prevalece sobre el diseño histórico)
+
+Estado: verificado localmente; publicación en staging en curso. REQ-009-05 a 08, AC-009-05 a 11. Sólo dueño; un cierre más consolidado diario por evento, mínimos consolidados a las 08:00 con recuperación durante el mismo día. Entrega real desactivada y despliegue sólo staging.
+
+Dominio `notification-report.ts`: datos tipados de instantánea, formateo del mensaje y filas Excel. Persistencia `notification-reports.ts`: cálculo compartido `buildShiftReceipt`, normalización de ventas históricas y consultas del día por sucursal. El cierre crea instantánea dentro de su transacción existente; despacho posterior fuera del lock comercial. La última sincronización del evento causal se incluye aunque el acuse se termine de guardar después. Los resúmenes declaran cobertura limitada a operaciones sincronizadas y no aseguran ausencia de pendientes offline.
+
+Migración aditiva 024: modo `legacy/preview/live`, metadatos de despacho, historial append-only de estados del proveedor y `notification_daily_runs` para completar también cortes sin faltantes. Mantener intenciones viejas sin reinterpretarlas ni borrarlas. Las nuevas usan versión 2, exclusivamente destinatario lógico owner y la lista completa de sucursales incluida en el payload. La clave diaria usa una sucursal ancla sólo para compatibilidad de almacenamiento; la autorización comprueba todas las sucursales del documento. Las muestras manuales tienen clave propia y siempre modo preview, sin interferir con el corte automático. La respuesta de sincronización despierta el despachador después del commit; la evaluación por minuto recupera pendientes.
+
+`whatsapp.ts`: configuración validada desde entorno, URL fija de Meta con versión explícita, plantilla con un parámetro de resumen sin saltos de línea y botón URL dinámico con ID. `notification-delivery.ts`: reclamar con lock de fila, commit antes de red, estados accepted/sent/delivered/read además de fallos; backoff acotado, timeout/5xx incierto y recuperación de sending antiguo. Webhook admite firma HMAC sobre bytes originales, challenge verificado, deduplicación y protección de estados terminales. Correlación mediante ID y callback opaco del intento para recibir eventos incluso antes de terminar el POST. Verificar dueño activo y alcance antes de cada envío. No permitir URL o token arbitrarios desde la interfaz.
+
+API/pantalla WhatsApp: estado de configuración sin valores secretos, lista paginada, detalle, Excel y simulación independiente, enlace `/?notification=ID` después de iniciar sesión. Mantener filtros por sucursal con comprobación integral de alcance. El modo preview nunca se despacha, incluso tras activación futura. No hay botón de activación en navegador.
+
+Pruebas: dominio de importes/fechas/texto, integración PostgreSQL de generación/alcance/paginación/simulaciones/concurrencia/webhooks/timeout/reinicio; navegador con datos sintéticos, exportación, autenticación, escritorio/móvil, temas y accesibilidad. Verificar restauración de nuevas tablas en respaldo local. `npm run check` y recorridos E2E afectados antes de empaquetar un commit exacto y publicarlo en staging; comparar recursos públicos y fronteras de autenticación. No copiar datos ni credenciales de producción.
+
+Pendientes operativos: portafolio Meta, elegibilidad de coexistencia del número comercial, receptor personal, plantillas aprobadas, versión Graph, credenciales, presupuesto y retención de proveedor. El desarrollo no depende de completar el alta. No almacenar datos reales de proveedor ni ejecutar envíos hasta su configuración y autorización posterior.
+
+## Diseño histórico del incremento 7B
+
 Estado: lista para implementación local de la cola y observabilidad. No autoriza ni configura un proveedor externo. Fuente: REQ-009-01 a 04, DEC-010 y sección 12 del plan funcional.
 
 ## Incremento seleccionado

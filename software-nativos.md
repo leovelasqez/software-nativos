@@ -220,14 +220,14 @@ Utilizar una integración de WhatsApp Business Platform. El número emisor, dest
 - Avisar cuando el saldo alcance o quede por debajo del mínimo configurado.
 - Incluir sucursal, bodega, artículo, cantidad disponible, unidad y mínimo.
 - Permitir configurar destinatarios, frecuencia y agrupación de avisos.
-- Configuración inicial acordada: resumen diario de inventario bajo a las 8:00 a. m., hora de Colombia, dirigido al dueño y al encargado del local. Los números concretos están pendientes de configurar.
+- Configuración vigente del 15-10-2026: resumen diario de inventario bajo de ambos locales a las 8:00 a. m., hora de Colombia, dirigido únicamente al dueño en su celular personal. No hay encargados por local. Emisor: WhatsApp Business del negocio; números y alta Meta pendientes.
 - Evitar enviar un mensaje repetido por cada venta del mismo artículo.
 - Si hubo desconexión, evaluar el saldo actualizado después de sincronizar antes de enviar la alerta.
 
 ### Cierre de turno
 
 - Enviar automáticamente al confirmar y sincronizar el cierre.
-- Destinatarios iniciales: dueño y encargado del local. Enviar inmediatamente después de que el cierre quede confirmado y sincronizado, sujeto a disponibilidad del servicio.
+- Destinatario único: dueño. Cada cierre confirmado y sincronizado prepara un solo aviso con cierre y consolidado de ventas de Centro y Milán de la fecha colombiana del cierre, sujeto a disponibilidad del servicio. No esperar al otro local: indicar consolidado parcial si queda turno abierto o falta un cierre del día. Mostrar ventas netas, cantidad, medios, propinas/domicilios netos y última sincronización; advertir que sólo incluye hechos sincronizados.
 - Incluir sucursal, cajero, horario, ventas, medios de pago, base, entradas, salidas, devoluciones, efectivo esperado, contado y diferencia.
 - Mostrar propinas y domicilios separados.
 - Incluir un enlace autenticado al reporte completo con descarga en Excel.

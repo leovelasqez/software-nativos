@@ -69,7 +69,7 @@ El 14-10-2026 el usuario solicita construir mediante SDD y probar antes de publi
 17. Base de puntos: precios finales con impuestos, menos descuentos y canje. Límite de canje sobre productos después de descuentos y antes de canje. Devolver puntos utilizados y dinero pagado proporcionalmente a los productos devueltos; nunca convertir puntos en efectivo.
 18. El cambio se entrega solo sobre efectivo; no aceptar excedentes digitales como cambio en efectivo.
 19. Pasados siete días sin validación online, bloquear nuevos cobros y conservar consulta autorizada, pedidos guardados y cierre del turno, sin perder pendientes.
-20. WhatsApp inicial: dueño y encargado del local; mínimos diariamente a las 8:00 a. m. de Colombia y cierre inmediato tras confirmación/sincronización. Configurar números reales antes de activar envíos.
+20. WhatsApp vigente 15-10-2026: sólo dueño en su celular personal, emisor Business del negocio. Mínimos consolidados a las 8:00 a. m. Colombia; cada cierre sincronizado reúne cierre y ventas del día de Centro/Milán, con cobertura parcial y última sincronización. El usuario autoriza implementar con SDD y desplegar únicamente staging. No hay portafolio Meta configurado: mantener envío real desactivado y no cambiar producción.
 
 ## Organización e implementación propuesta
 

@@ -1,5 +1,7 @@
 # Contrato v1 — Intenciones de notificación
 
+Histórico. Desde el 15-10-2026 las nuevas intenciones siguen [v2](notifications-v2.md): sólo dueño, consolidado, simulación independiente y adaptador desactivado. Las filas v1 se conservan y nunca son elegibles para despacho real.
+
 Estado: contrato local para REQ-009-01 a 04. No contiene una cuenta de WhatsApp ni autoriza envío externo.
 
 ## Intención

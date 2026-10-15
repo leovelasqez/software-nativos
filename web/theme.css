@@ -15,3 +15,6 @@
 .agent-connection-guide input { width: 100%; min-width: 0; }
 .agent-connection-guide details { margin: 1rem 0; }
 .agent-connection-guide summary { cursor: pointer; font-weight: 600; }
+
+.whatsapp-message{padding:1rem;border-radius:var(--radius,12px);background:var(--surface-secondary,var(--bg));border:1px solid var(--border);overflow-wrap:anywhere}.whatsapp-full-report{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.whatsapp-report .row-actions{flex-wrap:wrap;gap:.6rem;margin-top:1rem}.whatsapp-report details{margin-top:1rem}.whatsapp-report .stat-card small{display:block;line-height:1.5}.whatsapp-report .section-heading{flex-wrap:wrap;gap:1rem}
+.whatsapp-report .table-wrap{overflow-x:auto;max-width:100%}.whatsapp-report table{min-width:860px}.whatsapp-report table th,.whatsapp-report table td{white-space:nowrap;word-break:normal;overflow-wrap:normal}

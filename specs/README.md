@@ -179,3 +179,7 @@ NAT-UAT-01/02/03: AC-003-09/10/11 y REQ-003-04 incluyen operaciones de terminado
 ## Conexión MCP de consulta — 15-10-2026
 
 REQ-010-05/06 y AC-010-05/06/07: [spec 010](010-agent-api/spec.md), plan, tareas y [contrato](../contracts/agent-api-v1.md). Streamable HTTP del SDK oficial, endpoint exclusivo de lectura, descubrimiento de sucursales/bodegas y filtros de informes. Pantalla de dueño para crear credenciales de consulta, listar sin secretos, renovar y revocar. [Guía de Codex y Claude Code](../docs/operations/agent-connections.md), [evidencia local](../docs/evidence/agent-connections-2026-10-15.md) y [publicación verificada en Railway](../docs/evidence/agent-connections-publication-2026-10-15.md). Codex conectado con seis herramientas y credencial cifrada para Centro/Milán; Claude Code no conectado.
+
+## Reportes WhatsApp del dueño — 15-10-2026
+
+Spec 009 ampliada: REQ-009-05 a 08 y AC-009-05 a 11. Destinatario único dueño personal, emisor Business del negocio; cierre más consolidado de Centro/Milán por cierre sincronizado y mínimos a las 08:00 Colombia. [Contrato v2](../contracts/notifications-v2.md), [guía de configuración](../docs/operations/whatsapp.md) y [evidencia](../docs/evidence/whatsapp-2026-10-15.md). Desarrollo y publicación en staging autorizados; envío real desactivado y alta Meta pendiente. La evidencia registra pruebas y resultado de publicación por separado.

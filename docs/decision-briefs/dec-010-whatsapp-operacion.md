@@ -1,18 +1,18 @@
 # DEC-010 — Decisión requerida: operación de WhatsApp Business
 
-Estado: propuesta operativa; no autoriza envíos ni contratación. Afecta REQ-009-01 a 04 y AC-009-04/05.
+Estado: implementación y publicación en staging autorizadas el 15-10-2026. Alta Meta y envíos reales pendientes. Afecta REQ-009-01 a 08 y AC-009-04 a 11. Configuración y recuperación vigentes en [guía operativa](../operations/whatsapp.md).
 
 ## Ya definido
 
 - Resumen de mínimos: diariamente a las 08:00 de Colombia.
-- Cierre: inmediatamente después de confirmación y sincronización.
-- Destinatarios lógicos: dueño y encargado de cada sucursal.
+- Cierre más consolidado de ventas del día de Centro/Milán: inmediatamente después de cada confirmación y sincronización. Un único mensaje por cierre, parcial mientras falte el cierre de otro local.
+- Destinatario único: celular personal del dueño. No hay encargados. Emisor: número de WhatsApp Business del negocio, preservando aplicación mediante coexistencia si es elegible.
 - La aplicación ya guarda intenciones deduplicadas y estados locales, sin teléfono ni credenciales.
 
 ## Datos que debe suministrar/validar la operación
 
 1. Proveedor elegido y cuenta de WhatsApp Business autorizada.
-2. Número emisor y números destinatarios por rol/sucursal, con consentimiento y responsable de actualización.
+2. Número emisor comercial y número personal receptor del dueño; no destinatarios por sucursal.
 3. Plantillas aprobadas para mínimo y cierre, incluyendo idioma, variables y enlace autenticado al informe.
 4. Ambiente de prueba separado, secreto de acceso y responsable de rotación; nunca incluirlos en el repositorio, registros o payload comercial.
 5. Presupuesto/costo, límite de envío y retención de los identificadores de proveedor.
@@ -31,7 +31,7 @@ Cuando el proveedor responde timeout, 5xx o no entrega un identificador verifica
 
 ## Preguntas que requieren respuesta
 
-- ¿Qué proveedor/cuenta/número emisor se usará?
-- ¿Qué números concretos corresponden a dueño y encargado en Milán/Centro?
+- El adaptador usa Cloud API de Meta; falta crear portafolio/cuenta y confirmar la incorporación del número existente mediante coexistencia.
+- Faltan los valores del emisor y receptor personal; configurar por entorno sin incluirlos en el repositorio.
 - ¿Quién confirma manualmente un estado incierto y en qué plazo?
 - ¿Qué conservación se requiere para registros de entrega y errores?

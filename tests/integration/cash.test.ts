@@ -13,7 +13,7 @@ import { buildShiftReceipt } from '../../src/shift-receipt.ts';
 test('Incremento 6 — movimientos manuales de caja conservan libro, corrección y cierre', { timeout: 120_000 }, async () => {
   const directory = resolve('.local/cash-test-' + randomUUID()); const password = randomBytes(24).toString('base64url');
   const db = await startLocalPostgres(directory, { password: randomBytes(32).toString('hex') });
-  const app = await createApp({ pool: db.pool, origin: 'http://127.0.0.1:4340' });
+  const app = await createApp({ pool: db.pool, origin: 'http://127.0.0.1:4340', notificationScheduler: false });
   try {
     await migrate(db.pool);
     const inject = (url: string, payload?: object, headers: Record<string, string> = {}) => app.inject({ method: 'POST', url, ...(payload === undefined ? {} : { payload }), headers: { host: '127.0.0.1:4340', 'x-nativos-request': '1', ...headers } });
@@ -62,14 +62,15 @@ test('Incremento 6 — movimientos manuales de caja conservan libro, corrección
     const isolatedHistory = await inject('/api/pos/authorize', { deviceId, previous: null }, { cookie, 'x-pos-token': independent.json().token });
     assert.deepEqual(isolatedHistory.json().sharedShifts, []);
     const closeIntents = await db.pool.query("SELECT recipient_role,type,state,data FROM notification_intents WHERE causal_id=$1 ORDER BY recipient_role", [shiftId]);
-    assert.equal(closeIntents.rowCount, 2); assert.deepEqual(closeIntents.rows.map(row => ({ recipientRole: row.recipient_role, type: row.type, state: row.state, shiftId: row.data.id, salesTotal: row.data.salesTotal, salesByMethod: row.data.salesByMethod })), [{ recipientRole: 'branch_manager', type: 'shift_closed', state: 'pending', shiftId, salesTotal: '0', salesByMethod: {} }, { recipientRole: 'owner', type: 'shift_closed', state: 'pending', shiftId, salesTotal: '0', salesByMethod: {} }]);
+    assert.equal(closeIntents.rowCount, 1); assert.equal(closeIntents.rows[0].recipient_role, 'owner');
+    assert.equal(closeIntents.rows[0].data.close.shiftId, shiftId); assert.equal(closeIntents.rows[0].data.totals.sales, '0');
+    assert.equal(closeIntents.rows[0].data.close.totals.correction, '50000');
     await db.pool.query("INSERT INTO inventory_items(id,name,reference,kind,base_unit) VALUES('notification-item','Artículo aviso','notification-item','raw','unit')");
     await db.pool.query("INSERT INTO inventory_minimums(warehouse_id,item_id,minimum) VALUES('centro-venta','notification-item','2')");
     const lowStock = await inject('/api/notifications/low-stock/run', { operationId: randomUUID(), branchId: 'centro', reason: 'Evaluación diaria de mínimos' }, { cookie }); assert.equal(lowStock.statusCode, 200, lowStock.body); assert.equal(lowStock.json().lowStockRows, 1);
-    assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
+    assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '1');
     const morning = new Date(`${lowStock.json().date}T13:00:00.000Z`); assert.equal(isDailyLowStockWindow(morning), true); assert.equal(isDailyLowStockWindow(new Date(morning.getTime() - 60 * 60 * 1000)), false);
-    // La ejecución manual y el programador comparten la clave diaria: no generan
-    // un segundo mensaje para el mismo local, fecha y rol.
+    // La muestra manual nunca ocupa el corte automático ni se convierte en envío.
     assert.equal(await runDailyLowStock(db.pool, morning), 1); assert.equal(await runDailyLowStock(db.pool, morning), 1); assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');
     await db.pool.query("INSERT INTO inventory_movements(id,item_id,warehouse_id,kind,quantity,reason) VALUES('notification-restock','notification-item','centro-venta','initial','3','Reposición antes del corte')");
     assert.equal(await runDailyLowStock(db.pool, new Date(morning.getTime() + 24 * 60 * 60 * 1000)), 0); assert.equal((await db.pool.query("SELECT count(*) FROM notification_intents WHERE type='low_stock_daily'")).rows[0].count, '2');

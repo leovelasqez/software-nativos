@@ -19,7 +19,7 @@ Dos sucursales, una caja por local; descuento de ingredientes al cobrar; inventa
 | DEC-007 | Verificada localmente; DEC-020 | Confirmación central atómica, intención local durable y recuperación/cancelación serializada ante pérdida de conexión. | Canje online antes de habilitarlo. |
 | DEC-008 | Diferida para piloto posterior | Milán: T80A; Centro: T82E; ambas USB 80 mm. El 17-09-2026 el usuario indicó que no hay operador/hardware disponible para aceptación física; el lanzamiento real permanece bloqueado hasta ejecutar el protocolo. | Prueba de hardware y distribución. |
 | DEC-009 | Descartada por el dueño, 18-09-2026 | No se requiere confirmación del contador, procedimiento con Alegra, numeración, contingencia ni integración fiscal para operar esta versión. Caja emite comprobantes internos; la fiscalidad externa queda fuera de alcance y no bloquea el lanzamiento. | Sin dependencia operativa. |
-| DEC-010 | Adaptador real desactivado | Se conservan cola, simulación y observabilidad local; el usuario decidió no activar WhatsApp real para cerrar el MVP. No se requieren números ni proveedor hasta un incremento posterior autorizado. | Integración externa posterior. |
+| DEC-010 | Implementación y staging autorizados 15-10-2026; envío real desactivado | Sólo dueño personal, emisor Business del negocio. Cada cierre sincronizado reúne cierre y consolidado diario Centro/Milán; mínimos consolidados 08:00. Implementar Cloud API y pruebas sintéticas, sin Meta/números/plantillas reales ni cambios de producción. Conservar aplicación actual mediante coexistencia sujeta a elegibilidad. | Spec 009, contrato notifications-v2. Activación externa posterior. |
 | DEC-011 | Migración histórica diferida | El MVP se cierra sin historia de Alegra porque no existe exportación completa. Se conserva contrato y puerta de importación; no se inventan datos ni se modifica Alegra. | Migración posterior. |
 | DEC-012 | Railway desplegado; cierre de recuperación pendiente | El usuario eligió Railway el 18-09-2026. El sitio y PostgreSQL privado quedaron desplegados y saludables, con PITR habilitado y almacenamiento conectado. Antes de operar faltan restauración aislada, presupuesto, responsable, RPO, RTO y retención; ninguna copia central cubre pendientes exclusivos de IndexedDB. | Evidencia `docs/evidence/railway-deployment-2026-09-18.md`; cierre de GO-04 pendiente. |
 | DEC-013 | Negocio resuelto | El cajero indica unidades ya preparadas al cancelar o quitar productos enviados; esas unidades generan desperdicio y las restantes se cancelan sin consumo. No requiere aprobación. | Contrato de cantidades y auditoría pendiente de implementación. |
@@ -50,7 +50,7 @@ Fuente: el usuario respondió «Si» a las cinco propuestas de base de puntos, r
 2. Devolver proporcionalmente puntos usados y dinero efectivamente pagado, sin convertir puntos a efectivo; conservar reversión de puntos generados. DEC-006; AC-005-08.
 3. Cambio solo sobre efectivo, sin excedentes digitales convertidos a efectivo. DEC-014; AC-004-10.
 4. Agotados siete días offline, bloquear nuevos cobros y conservar consulta, pedidos y cierre de turno. DEC-003; AC-007-06.
-5. Dueño y encargado reciben mínimos diariamente a las 8:00 a. m. de Colombia y cierre inmediato tras sincronizar. DEC-010; AC-009-05.
+5. Decisión inicial histórica de dueño/encargado sustituida el 15-10-2026: sólo dueño personal, mínimos consolidados a las 08:00 y cierre más ventas del día tras cada sincronización. DEC-010; AC-009-05 a 11.
 
 ### Registro de decisiones posteriores
 

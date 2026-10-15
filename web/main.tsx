@@ -32,17 +32,17 @@ const pages: { id: Page; name: string; icon: string; admin?: boolean }[] = [
   {id:'reports',name:'Informes',icon:'▥'},
   {id:'sellers',name:'Vendedores',icon:'♧',admin:true},
   {id:'agents',name:'Agentes de IA',icon:'◌',admin:true},
-  { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'notifications', name: 'Notificaciones', icon: '◌', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
+  { id: 'users', name: 'Usuarios y roles', icon: '♧', admin: true }, { id: 'audit', name: 'Auditoría', icon: '≡', admin: true }, { id: 'notifications', name: 'WhatsApp', icon: '◌', admin: true }, { id: 'backups', name: 'Respaldo y recuperación', icon: '▣', admin: true },
 ];
-const pending = ['WhatsApp'];
+const linkedNotification = () => /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(new URLSearchParams(location.search).get('notification')??'');
 const pageIcons: Record<Page, IconName> = { summary: 'dashboard', branches: 'branches', products: 'package', recipes: 'recipes', inventory: 'boxes', purchases: 'purchases', transfers: 'transfers', counts: 'counts', customers: 'users', loyalty: 'loyalty', reports: 'reports', sellers: 'users', users: 'users', audit: 'audit', notifications: 'notifications', backups: 'backup', agents: 'users' };
 function App() {
   const [me, setMe] = useState<Me | null>(null); const [setup, setSetup] = useState(false);
   const [setupTokenRequired, setSetupTokenRequired] = useState(false);
   const [ready, setReady] = useState(false); const [error, setError] = useState('');
-  const [page, setPage] = useState<Page>('summary'); const [branchId, setBranchId] = useState(''); const [menuOpen, setMenuOpen] = useState(false);
+  const [page, setPage] = useState<Page>(()=>linkedNotification()?'notifications':'summary'); const [branchId, setBranchId] = useState(''); const [menuOpen, setMenuOpen] = useState(false);
   const [overviewBranch, setOverviewBranch] = useState('all'); const [inventoryWarehouse, setInventoryWarehouse] = useState('');
-  function navigate(next: Page, targetBranch?: string, warehouse = '') { setInventoryWarehouse(next === 'inventory' ? warehouse : ''); if (targetBranch) { setBranchId(targetBranch); setOverviewBranch(targetBranch); } setPage(next); setMenuOpen(false); }
+  function navigate(next: Page, targetBranch?: string, warehouse = '') { if(next!=='notifications'&&new URLSearchParams(location.search).has('notification'))history.replaceState(null,'','/'); setInventoryWarehouse(next === 'inventory' ? warehouse : ''); if (targetBranch) { setBranchId(targetBranch); setOverviewBranch(targetBranch); } setPage(next); setMenuOpen(false); }
   async function refresh() {
     const value = await api<Me>('/me'); setMe(value); setBranchId(old => value.branches.some(b => b.id === old) ? old : value.branches[0]?.id ?? '');
   }
@@ -65,7 +65,7 @@ function App() {
     <main className="auth-main"><div className="auth-theme"><ThemeToggle /></div><div className="auth-card"><span className="eyebrow">{setup ? 'PRIMER ACCESO' : 'BIENVENIDO DE NUEVO'}</span><h2>{setup ? 'Configura tu acceso' : 'Inicia sesión'}</h2><p>{setup ? 'Crea el usuario del dueño para comenzar a administrar Nativos.' : 'Ingresa con el usuario asignado a tu equipo.'}</p>
       {error ? <><Notice error>{error}</Notice><button className="secondary" onClick={() => void init()}>Volver a conectar</button></> : <SaveForm label={setup ? 'Crear mi acceso' : 'Entrar a Nativos'} onSave={async data => {
         await api(setup ? '/setup' : '/login', 'POST', { ...(setup ? { name: String(data.get('name')), ...(setupTokenRequired ? { setupToken: String(data.get('setupToken')) } : {}) } : {}), login: String(data.get('login')), password: String(data.get('password')) });
-        setSetup(false); await refresh(); setPage('summary');
+        setSetup(false); await refresh(); setPage(linkedNotification()?'notifications':'summary');
       }}>{setup && <label>Nombre completo<input name="name" minLength={2} maxLength={100} required autoComplete="name" /></label>}
         {setup && setupTokenRequired && <label>Clave de instalación<input name="setupToken" aria-label="Clave de instalación" type="password" minLength={43} maxLength={128} required autoComplete="off" spellCheck={false} /><small>Usa la clave privada suministrada para esta instalación.</small></label>}
         <label>Usuario<input name="login" minLength={3} maxLength={64} required pattern="[a-zA-Z0-9_.\-]+" autoComplete="username" autoCapitalize="none" spellCheck={false} /></label>
@@ -76,7 +76,7 @@ function App() {
   const activeBranch = allowAll && (overviewBranch === 'all' || me.branches.some(b => b.id === overviewBranch)) ? overviewBranch : branchId;
   return <div className="app-shell"><a className="skip-link" href="#main">Ir al contenido</a><aside className={`sidebar ${menuOpen ? 'is-open' : ''}`}><div className="sidebar-brand"><Logo /><button className="mobile-menu" aria-label="Mostrar navegación" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'close' : 'menu'}/></button></div>
     <nav aria-label="Navegación principal"><span className="nav-label">TU ESPACIO</span><button aria-current={page === 'summary' ? 'page' : undefined} onClick={() => navigate('summary')}><Icon name="dashboard"/>Resumen</button><a className="nav-link" href="/caja"><Icon name="store"/>Caja y ventas</a>{pages.filter(p => p.id !== 'summary' && (!p.admin || admin)).map(p => <button key={p.id} aria-current={page === p.id ? 'page' : undefined} onClick={() => navigate(p.id)}><Icon name={pageIcons[p.id]}/>{p.name}</button>)}
-      <details className="upcoming"><summary>Módulos en preparación</summary>{pending.map(name => <span key={name}>{name}<small>Pendiente</small></span>)}</details></nav>
+      </nav>
     <div className="sidebar-account"><span className="avatar">{me.user.name.slice(0, 1).toUpperCase()}</span><div><strong>{me.user.name}</strong><small>{roles[me.user.role]}</small></div><button className="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={async () => { try { await api('/logout', 'POST', {}); setMe(null); setPage('summary'); } catch (e) { setError((e as Error).message); } }}><Icon name="logout"/></button></div></aside>
     <div className="workspace"><header className="topbar"><span className="page-breadcrumb"><Icon name={pageIcons[page]}/>{pages.find(p => p.id === page)?.name}</span><div className="topbar-actions"><label>Sucursal<select aria-label="Sucursal" value={activeBranch} onChange={e => { setOverviewBranch(e.target.value); if (e.target.value !== 'all') setBranchId(e.target.value); }}>{allowAll && <option value="all">Todas las sucursales</option>}{me.branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label><ThemeToggle /></div></header>
       <nav className="mobile-consultations" aria-label="Consultas rápidas"><button aria-pressed={page === 'summary'} onClick={() => navigate('summary')}><Icon name="reports"/>Ventas</button><button aria-pressed={page === 'inventory'} onClick={() => navigate('inventory')}><Icon name="boxes"/>Inventario</button></nav>
@@ -93,6 +93,7 @@ function App() {
         {page === 'reports' && <Reports key={activeBranch} branchId={activeBranch} />}
         {page === 'backups' && admin && <Backups />}
         {page === 'notifications' && admin && <Notifications key={branchId} branchId={branchId} />}
+        {page === 'notifications' && !admin && <Notice error>Este reporte requiere acceso del dueño. <button className="secondary" onClick={()=>navigate('summary')}>Ir al resumen</button></Notice>}
         {page === 'agents' && admin && <Agents me={me} />}
         {page === 'users' && admin && <Users me={me} onSessionRefresh={refresh} />}
         {page === 'sellers' && admin && <Sellers me={me} />}
