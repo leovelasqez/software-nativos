@@ -1,6 +1,6 @@
 # 009 — Notificaciones por WhatsApp
 
-Estado: verificada localmente; publicación en staging en curso. Incremento de dueño autorizado el 15-10-2026: «arranca con la implementacion siguiendo la metodologia SDD y despliega en el entorno de pruebas que tenemos en railway». Publicación autorizada sólo en staging. La activación real depende de Meta, números y plantillas; no se envían mensajes durante las pruebas.
+Estado: verificada y publicada en staging el 15-10-2026 (despliegue f7834cb8-95b9-4d38-a09c-2617fd75f3e8). Incremento de dueño autorizado: «arranca con la implementacion siguiendo la metodologia SDD y despliega en el entorno de pruebas que tenemos en railway». Publicación autorizada sólo en staging. La activación real depende de Meta, números y plantillas; no se envían mensajes durante las pruebas. Ver docs/evidence/whatsapp-2026-10-15.md.
 
 ## Requisitos
 

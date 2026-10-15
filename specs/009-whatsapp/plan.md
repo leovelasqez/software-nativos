@@ -2,7 +2,7 @@
 
 ## Incremento autorizado del 15-10-2026 (prevalece sobre el diseño histórico)
 
-Estado: verificado localmente; publicación en staging en curso. REQ-009-05 a 08, AC-009-05 a 11. Sólo dueño; un cierre más consolidado diario por evento, mínimos consolidados a las 08:00 con recuperación durante el mismo día. Entrega real desactivada y despliegue sólo staging.
+Estado: verificado y publicado en staging el 15-10-2026. REQ-009-05 a 08, AC-009-05 a 11. Sólo dueño; un cierre más consolidado diario por evento, mínimos consolidados a las 08:00 con recuperación durante el mismo día. Entrega real desactivada y despliegue sólo staging.
 
 Dominio `notification-report.ts`: datos tipados de instantánea, formateo del mensaje y filas Excel. Persistencia `notification-reports.ts`: cálculo compartido `buildShiftReceipt`, normalización de ventas históricas y consultas del día por sucursal. El cierre crea instantánea dentro de su transacción existente; despacho posterior fuera del lock comercial. La última sincronización del evento causal se incluye aunque el acuse se termine de guardar después. Los resúmenes declaran cobertura limitada a operaciones sincronizadas y no aseguran ausencia de pendientes offline.
 

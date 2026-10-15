@@ -8,7 +8,7 @@
 | TASK-009-08 | Instantáneas consolidadas y comprobante compartido, migración aditiva | REQ-009-02/03/05 / AC-009-05/06/07 | 07 | Dominio y PostgreSQL | Verificada — incluye corte vacío y muestra manual independiente |
 | TASK-009-09 | Adaptador desactivado, despachador durable y webhook firmado | REQ-009-07/08 / AC-009-09/10 | 08 | Transporte sintético, timeout, concurrencia y recuperación | Verificada con transporte sintético; activación real pendiente |
 | TASK-009-10 | Pantalla WhatsApp, enlace autenticado, Excel y prueba sin envío | REQ-009-06/08 / AC-009-08/11 | 08–09 | API y navegador en ambos temas/tamaños | Verificada localmente — E2E, permisos, descarga y accesibilidad |
-| TASK-009-11 | Verificación, guía de configuración y despliegue sólo staging | Todos / AC-009-11 | 08–10 | Check, E2E y publicación identificable | Verificación local completa; publicación en curso |
+| TASK-009-11 | Verificación, guía de configuración y despliegue sólo staging | Todos / AC-009-11 | 08–10 | Check, E2E y publicación identificable | Completada — staging f7834cb8, salud OK, 12 recursos coinciden y 10 fronteras; producción sin cambios |
 
 ## Tareas históricas
 
