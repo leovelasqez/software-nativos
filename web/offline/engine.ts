@@ -98,11 +98,15 @@ export class BrowserEngine{
     const boundActorId=await this.cachedActorId(login);
     if((boundActorId!==undefined&&boundActorId!==expectedActorId)||(boundActorId===undefined&&Boolean(verifier)))throw new Error('La cuenta cambió. Ingresa tu contraseña para habilitar Caja de nuevo.');
    }
-   if(!this.data.terminal){
-    if(me.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');
+   let legacyAvailable=false;
+   if(!this.data.terminal&&me.user.role==='owner'){
+    try{legacyAvailable=Boolean((await this.remote<{available:boolean}>('/local-transition')).available);}
+    catch(e){if(!(e instanceof RemoteError)||![403,404].includes(e.status))throw e;}
+   }
+   if(legacyAvailable){
     const devices=await this.devicesFor(me.branches);
     this.data.users[login]={signed:{document:'',signature:''},passwordHash:verifier,revoked:false,actorId:expectedActorId};
-    this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier};
+    this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier,legacy:true};
    }
    const devices=await this.devicesFor(me.branches),preferred=this.data.lastTerminals?.[expectedActorId];
    const device=devices.find(d=>d.id===preferred)??devices[0];
@@ -140,13 +144,17 @@ export class BrowserEngine{
   try{
    if(this.data.terminal?.deviceId!==deviceId){
     const saved=this.data.terminalProfiles?.[deviceId];
-    const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId:this.data.installationId,sourceDeviceId:this.data.terminal?.deviceId});
+    // A failed first preparation can retry without replacing an unseen server token.
+    const installationId=this.data.terminal?this.data.installationId:crypto.randomUUID();
+    const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId,sourceDeviceId:this.data.terminal?.deviceId});
+    this.data.installationId=installationId;
     this.loadProfile(deviceId,terminal);
    }
    await this.sync(false);
    await this.accept(login,verifier,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}),actorId);
    this.data.session={login,expires:Date.now()+12*3600_000};
    await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[actorId]=deviceId;await this.save();
+   if(!previous.terminal)await navigator.storage?.persist?.().catch(()=>false);
   }catch(error){this.data=previous;await this.save();throw error;}
  }
  async offlineLogin(login:string,password:string,expectedActorId?:string){
@@ -181,7 +189,8 @@ export class BrowserEngine{
  async enroll(deviceId:string){
   const login=this.loginName(),previous=structuredClone(this.data);
   try{
-   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
+   const installationId=this.data.terminal?this.data.installationId:crypto.randomUUID();
+   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId});this.data.installationId=installationId;
    await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}));
    const a=await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[a.grant.actorId]=deviceId;await this.save();
    await navigator.storage?.persist?.();return {ok:true};

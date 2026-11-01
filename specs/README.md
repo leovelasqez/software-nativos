@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Acceso solo con usuario y contraseña — verificado localmente (01-11-2026)
+
+REQ/AC-018-12 a 14 sustituyen la primera activación por el dueño por preparación automática online en cualquier navegador. Conservan sucursales, permisos, datos locales y validación previa para offline. TypeScript, 75 pruebas unitarias, 84 de integración, 2 recorridos E2E y revisión visual aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia](../docs/evidence/caja-password-access-2026-11-01/README.md). Publicación pendiente.
+
 ## Sucursal por cuenta — verificada para apertura (15-10-2026)
 
 REQ/AC-018-08 a 11: selección y recuerdo de caja por actor, activación del destino autorizado dentro del navegador, perfiles preservados y recuperación offline. El traslado antiguo conserva su caja y dispone de un plazo específico para DPAPI. TypeScript, dominio, PostgreSQL y recorrido de navegador aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia de entrega](../docs/evidence/opening-release-2026-10-15.md). La limpieza de datos está pendiente de la confirmación del dueño del corte de ambas cajas.

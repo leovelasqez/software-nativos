@@ -48,12 +48,6 @@ export async function exerciseSellers(parent: Page, password: string) {
   const ana = sellers.find(s => s.name === 'Ana de ventas E2E')!.id, other = sellers.find(s => s.name === 'Vendedor de prueba')!.id;
   await mkdir('test-results/sellers', { recursive: true });
   await page.goto('/caja');
-  await expect(page.getByRole('heading', { name: 'Activa esta caja', exact: true }).or(page.getByLabel('Sucursal', { exact: true }))).toBeVisible();
-  if (await page.getByRole('heading', { name: 'Activa esta caja', exact: true }).isVisible()) {
-    await page.getByLabel('Equipo', { exact: true }).selectOption('milan-caja');
-    const input = page.getByLabel('Contraseña para habilitar Caja sin conexión'); if (await input.isVisible()) await input.fill(password);
-    await page.getByRole('button', { name: 'Activar caja', exact: true }).click();
-  }
   await expect(page.getByLabel('Sucursal', { exact: true })).toBeVisible();
   if (await page.getByLabel('Sucursal', { exact: true }).inputValue() !== 'milan-caja') await page.getByLabel('Sucursal', { exact: true }).selectOption('milan-caja');
   await page.getByRole('navigation').getByRole('button', { name: 'Turno', exact: true }).click();

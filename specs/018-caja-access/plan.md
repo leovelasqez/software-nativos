@@ -1,10 +1,20 @@
 # Plan — acceso a Caja
 
+## Acceso automático — 01-11-2026
+
+AC-018-12 a 14, autorizado por la solicitud de usuario y contraseña sin restricción de navegador. `BrowserEngine.login` usa la misma elección por actor para perfiles nuevos y existentes y llama a `enterTerminal` con el verificador de la contraseña autenticada. El alta y la descarga firmada terminan antes de mostrar Caja. Solicitar persistencia del almacenamiento después del alta, sin convertir su concesión en requisito de acceso. Una sesión recuperada sin verificador solicita la contraseña mediante el login habitual.
+
+`POST /api/pos/enroll` exige sesión activa, dispositivo activo y `data.read` para la sucursal destino; no exige dueño ni token de otra caja. Mantener `sourceDeviceId` opcional por compatibilidad, sin usarlo como requisito. Para una pareja ya existente, exigir su token vigente y conservarlo junto con su cursor. Una respuesta de preparación perdida al añadir otra caja puede recuperarse con un token de origen vigente de la misma instalación, renovando solo el destino y conservando su cursor; no reactivar registros revocados. Una instalación nueva usa UUID aleatorio; si falla antes de guardarse, reintentar con otra instalación vacía sin reemplazar registros existentes. Sin migraciones SQL ni cambios en las operaciones/grants o en IndexedDB. No se habilitan usuarios ni se modifican datos comerciales.
+
+El puente histórico `/local-transition` se consulta solo para un dueño sin terminal; cuando tiene datos disponibles conserva el flujo explícito de traslado antes de preparar una caja nueva. No existe ese puente en producción y no añade una activación al acceso habitual.
+
+Validación: motor real con firmas y dos usuarios/sucursales, PostgreSQL con navegadores independientes, autenticación y permisos negativos, protección de instalaciones existentes, errores y reintentos. Adaptar los recorridos existentes de navegador al ingreso directo; comprobar cajero como primer usuario de contextos vacíos, dueño directo, acceso desde Administración, conservación offline y traslado histórico. Ejecutar `npm run check` y regresión E2E; revisar formulario en escritorio/móvil y ambos temas. La publicación se trata por separado de la implementación local; este checkout parte de `origin/main` y excluye WhatsApp de staging.
+
 ## Corrección de sucursal por cuenta — 14-10-2026
 
 Agregar `lastTerminals` opcional por actor al agregado v1, compartido al cargar perfiles, sin migración destructiva. Login consulta identidad y sucursales online antes de elegir terminal, valida actor y conserva el perfil de origen completo en la misma escritura de IndexedDB. La preferencia solo selecciona: servidor y firmas siguen autorizando. Login offline verifica contraseña y firma del perfil elegido; el cambio manual conserva su sincronización previa.
 
-Extender `/api/pos/enroll` con `sourceDeviceId` opcional. Sin administración, exigir token activo de esa caja y misma instalación antes de vincular un destino autorizado. Primera activación requiere dueño. No exponer datos de origen ni modificar sus tokens/cursores. Probar motor real con firmas, PostgreSQL con tokens/instalaciones/permisos adversos y navegador con dueño en Milán seguido de cajero de Centro. Verificar regresiones y publicar la corrección del servicio existente.
+Diseño histórico, sustituido por el acceso automático del 01-11-2026: extender `/api/pos/enroll` con `sourceDeviceId` opcional y exigir dueño en la primera activación. Se conservan los datos, tokens y cursores de origen y las pruebas de aislamiento entre cuentas.
 
 El traslado desde la caja anterior fija la caja importada como preferencia del actor verificado antes de recuperar la sesión. Probar el traslado de Milán sin mapa de preferencias previo, manteniendo su turno y base aunque Centro aparezca primero entre las cajas autorizadas. La petición local de traslado dispone de 60 segundos porque abre y descifra la caja anterior con DPAPI; las peticiones ordinarias conservan su plazo de cinco segundos. La prueba de respuesta perdida espera el commit y comprueba también el resultado del reintento.
 

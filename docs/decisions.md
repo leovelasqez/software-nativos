@@ -140,6 +140,8 @@ Usuario sustituye Administración web + Caja Electron por un sitio web y confirm
 
 ## DEC-022 — Caja accesible desde varios navegadores (24-09-2026)
 
+Actualización del 01-11-2026: el usuario elimina la activación inicial por el dueño y solicita solo usuario y contraseña. AC-018-12/13/14 sustituyen esa parte de AC-018-09. Preparación automática online limitada por permisos del usuario, sin migrar ni borrar datos. Los tokens se conservan para identificar instalaciones y sincronización; no son una aprobación manual de acceso. El modo privado puede entrar, pero su almacenamiento temporal no garantiza conservar pendientes después del cierre.
+
 El usuario solicita abrir Centro y Milán sin restricción de navegador. Sustituye la instalación exclusiva de DEC-018 y el bloqueo de cambio con turno abierto de spec 015. Cada pareja caja/instalación conserva token y cadena causal propia; los acuses antiguos se asocian a su instalación sin cambiar su contenido. Se conserva un turno activo por caja y la titularidad del navegador que lo abrió. Cambiar de sucursal archiva el perfil completo y permite volver a su turno. No se copian datos locales entre navegadores ni se descartan pendientes. Ver spec 018.
 
 ### Ampliación de DEC-022 — Continuar turno (25-09-2026)

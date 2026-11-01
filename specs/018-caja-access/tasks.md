@@ -2,6 +2,9 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| TASK-018-12: acceso automático en servidor, motor e interfaz | AC-018-12/13 | Verificado localmente el 01-11-2026 |
+| TASK-018-13: regresión de permisos, instalaciones, perfiles y offline | AC-018-12/13/14 | 75 unitarias y 84 de integración aprobadas; 3 de motor repetidas tras ajuste final |
+| TASK-018-14: recorrido de navegador y evidencia de entrega | AC-018-12/13/14 | 2 E2E aprobados y revisión visual; [evidencia](../../docs/evidence/caja-password-access-2026-11-01/README.md). Publicación pendiente |
 | Selección online y recuerdo de caja por actor | AC-018-08 | Verificado localmente el 15-10-2026 |
 | Vincular destino autorizado desde navegador ya activado | AC-018-09 | Verificado localmente el 15-10-2026 |
 | Preservar perfiles ajenos, recuperación y acceso offline | AC-018-10/11 | Verificado localmente el 15-10-2026 |
