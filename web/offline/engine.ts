@@ -120,7 +120,7 @@ export class BrowserEngine{
     }
    }
    if(!verifier)throw new Error('Ingresa tu contraseña para habilitar Caja en esta sucursal.');
-   await this.enterTerminal(device.id,login,verifier,expectedActorId);
+   await this.enterTerminal(device.id,login,verifier,expectedActorId,password);
    message='';return {needsEnrollment:false};
   }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;await this.offlineLogin(login,password,expectedActorId);return {needsEnrollment:false};}
  }
@@ -139,9 +139,10 @@ export class BrowserEngine{
   if(terminal)next.terminal=terminal;
   this.data=next;
  }
- async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string){
+ async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string,password=''){
   const previous=structuredClone(this.data);
   try{
+   const existingProfile=this.data.terminal?.deviceId===deviceId||Boolean(this.data.terminalProfiles?.[deviceId]?.terminal);
    if(this.data.terminal?.deviceId!==deviceId){
     const saved=this.data.terminalProfiles?.[deviceId];
     // A failed first preparation can retry without replacing an unseen server token.
@@ -149,6 +150,15 @@ export class BrowserEngine{
     const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId,sourceDeviceId:this.data.terminal?.deviceId});
     this.data.installationId=installationId;
     this.loadProfile(deviceId,terminal);
+   }
+   if(existingProfile&&password){
+    const oldToken=this.data.terminal!.token;
+    this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId,login,password});
+    if(this.data.terminal!.token!==oldToken)for(const entry of this.data.outbox){
+     if(entry.errorCode==='device_revoked'||entry.errorCode==='device_auth'){
+      entry.state='retry';entry.error=null;entry.errorCode=null;
+     }
+    }
    }
    await this.sync(false);
    await this.accept(login,verifier,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}),actorId);

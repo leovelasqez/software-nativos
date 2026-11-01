@@ -1,6 +1,6 @@
 # Caja con usuario y contraseña — 01-11-2026
 
-Estado: implementado y verificado localmente. Publicación pendiente.
+Estado: publicado en `nativos-web/production`, despliegue `e85d4dfa-b52c-4335-90d0-aecf63d308fe`, commit `278a5f4`. Salud y huellas del cliente verificadas. El rechazo de un token antiguo en Centro tiene una [corrección de continuación](../caja-centro-revalidation-2026-11-01.md).
 
 ## Solicitud y alcance
 

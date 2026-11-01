@@ -144,8 +144,28 @@ test('AC-018-01/02/04 — migración, navegadores independientes, permisos y tur
       assert.equal(recovery.statusCode,200,recovery.body);
       assert.equal((await request('/api/pos/authorize',{deviceId:'centro-caja',previous:null},recovery.json().token)).statusCode,200);
       assert.equal((await request('/api/pos/enroll',{deviceId:'milan-caja',installationId:randomUUID()})).statusCode,403);
+      // AC-018-15: repair this same browser with its current account credentials.
+      const cursorBefore=(await db.pool.query('SELECT last_sequence,last_operation_id FROM pos_terminals WHERE device_id=$1 AND installation_id=$2',[fresh.deviceId,fresh.installationId])).rows[0];
+      const shiftsBefore=(await db.pool.query('SELECT * FROM pos_shifts ORDER BY id')).rows;
+      const credentials={deviceId:fresh.deviceId,installationId:fresh.installationId,login:'access-cashier',password};
+      for(const failure of ['stale','missing','inactive']){
+        const oldToken=fresh.token;
+        await db.pool.query('UPDATE pos_terminals SET token_hash=$3,active=$4 WHERE device_id=$1 AND installation_id=$2',[fresh.deviceId,fresh.installationId,tokenHash(randomBytes(32).toString('base64url')),failure!=='inactive']);
+        assert.equal((await request('/api/pos/enroll',{...credentials,password:'incorrect-synthetic-password'},oldToken)).statusCode,401);
+        assert.equal((await request('/api/pos/enroll',{...credentials,login:'access-owner'},oldToken)).statusCode,401);
+        const restored=await request('/api/pos/enroll',credentials,failure==='missing'?undefined:oldToken);
+        assert.equal(restored.statusCode,200,restored.body);assert.equal(restored.json().installationId,fresh.installationId);
+        fresh.token=restored.json().token;assert.notEqual(fresh.token,oldToken);
+        assert.equal((await authorize(fresh)).snapshot.serverSequence,fresh.sequence);
+        assert.equal((await request('/api/pos/authorize',{deviceId:fresh.deviceId,previous:null},oldToken)).statusCode,403);
+        assert.deepEqual((await db.pool.query('SELECT last_sequence,last_operation_id FROM pos_terminals WHERE device_id=$1 AND installation_id=$2',[fresh.deviceId,fresh.installationId])).rows[0],cursorBefore);
+      }
+      assert.deepEqual((await db.pool.query('SELECT * FROM pos_shifts ORDER BY id')).rows,shiftsBefore);
+      const recoveryAudit=(await db.pool.query("SELECT changes FROM audit_events WHERE action='pos.reauthorized'")).rows;
+      assert.equal(recoveryAudit.length,3);assert.ok(!JSON.stringify(recoveryAudit).includes(password));assert.ok(!JSON.stringify(recoveryAudit).includes('password'));
       await db.pool.query("UPDATE devices SET active=false WHERE id='centro-caja'");
       assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:randomUUID()})).statusCode,404);
+      assert.equal((await request('/api/pos/enroll',credentials)).statusCode,404);
       await db.pool.query("UPDATE devices SET active=true WHERE id='centro-caja'");
       const actions=(await db.pool.query('SELECT actions FROM app_users WHERE id=$1',[user.json().id])).rows[0].actions;
       await db.pool.query('UPDATE app_users SET actions=$2 WHERE id=$1',[user.json().id,[]]);

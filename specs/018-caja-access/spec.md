@@ -2,6 +2,8 @@
 
 ## Acceso con usuario y contraseña — 01-11-2026
 
+Corrección tras el rechazo «El equipo no está autorizado» en Centro: AC-018-15 exige que una cuenta autenticada pueda revalidar la autorización antigua de su navegador presentando de nuevo sus mismas credenciales. Conservar instalación, secuencia, pendientes, pedidos y turnos; no borrar ni sustituir el perfil. La revalidación exige coincidencia entre cuenta de sesión y usuario/contraseña, sucursal permitida y equipo activo; no amplía permisos. Un identificador de instalación o una cookie sin contraseña no bastan para reemplazar un token inválido. Los datos de contraseña viajan solo durante el login y nunca se guardan ni auditan. La corrección continúa el despliegue autorizado por «Haz el despliegue en Railway».
+
 Autorización: el usuario solicita «lo unico que se debe requerir es la opcion de usuario y contraseña, no quiero que haya una restriccion por navegador». Sustituye el requisito de primera activación por el dueño de AC-018-09. Alcance: entrada online desde cualquier navegador, incluidos perfiles nuevos y privados, con los permisos vigentes de la cuenta.
 
 - REQ/AC-018-12: dado un navegador sin datos de Caja y una cuenta activa con una caja autorizada, al validar usuario y contraseña se prepara automáticamente la instalación y se entra a esa caja, sin dueño, token de origen ni formulario de activación. Conserva la selección por cuenta de AC-018-08; también aplica al dueño y al ingreso desde Administración. Un segundo navegador recibe su propia instalación sin invalidar el primero.

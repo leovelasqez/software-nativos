@@ -8,7 +8,7 @@
     "/api/pos/enroll": {
       "post": {
         "operationId": "post__api_pos_enroll",
-        "description": "AC-018-12/13: prepara una caja autorizada con sesión de usuario, sin activación del dueño. Una instalación existente exige un token vigente de esa misma instalación; sourceDeviceId es opcional para recuperar una preparación interrumpida desde otra caja del mismo navegador. Conserva los cursores y no reactiva instalaciones revocadas.",
+        "description": "AC-018-12/13: prepara una caja autorizada con sesión de usuario, sin activación del dueño. Una instalación existente exige un token vigente de esa misma instalación; sourceDeviceId es opcional para recuperar una preparación interrumpida desde otra caja del mismo navegador. Conserva los cursores. La recuperación de una autorización antigua exige login y password válidos de la misma cuenta de sesión; puede renovar el token y reactivar esa instalación si el equipo sigue activo.",
         "parameters": [],
         "responses": {
           "200": {
@@ -272,6 +272,16 @@
                   "installationId": {
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                  },
+                  "login": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
                   },
                   "sourceDeviceId": {
                     "type": "string",

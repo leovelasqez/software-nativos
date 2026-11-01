@@ -2,6 +2,7 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| TASK-018-15: revalidar autorizaciones antiguas con las credenciales de la cuenta y conservar pendientes/turno | AC-018-15 | Verificado: TypeScript/build, 75 unitarias, 5 de integración y recorrido E2E completo; publicación autorizada |
 | TASK-018-12: acceso automático en servidor, motor e interfaz | AC-018-12/13 | Verificado localmente el 01-11-2026 |
 | TASK-018-13: regresión de permisos, instalaciones, perfiles y offline | AC-018-12/13/14 | 75 unitarias y 84 de integración aprobadas; 3 de motor repetidas tras ajuste final |
 | TASK-018-14: recorrido de navegador y evidencia de entrega | AC-018-12/13/14 | 2 E2E aprobados y revisión visual; [evidencia](../../docs/evidence/caja-password-access-2026-11-01/README.md). Publicación pendiente |

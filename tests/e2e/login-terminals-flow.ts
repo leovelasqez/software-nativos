@@ -20,6 +20,38 @@ export async function exerciseLoginTerminals(parent: Page, password: string) {
     await expect(page.locator('.sidebar-account strong')).toHaveText('Cajero verificado');
     await page.screenshot({ path: 'test-results/login-terminals/fresh-cashier.png', fullPage: true });
     await logout();
+    // AC-018-15: reproduce Centro's saved, obsolete browser token in real IndexedDB.
+    const beforeRecovery = await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve,reject) => {
+        const request=indexedDB.open('nativos-caja',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+      });
+      try {
+        const read=(name:string)=>new Promise<any>((resolve,reject)=>{
+          const request=db.transaction('state','readonly').objectStore('state').get(name);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+        });
+        const [key,record]=await Promise.all([read('key'),read('root')]);
+        const data=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(record.iv)},key,record.cipher)));
+        const original={installationId:data.installationId,sequence:data.sequence,orders:data.orders,shifts:data.shifts};
+        data.terminal.token='obsolete-browser-token';data.users['e2e-cashier'].revoked=true;
+        const iv=crypto.getRandomValues(new Uint8Array(12));
+        const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(data)));
+        await new Promise<void>((resolve,reject)=>{
+          const transaction=db.transaction('state','readwrite');transaction.objectStore('state').put({iv,cipher},'root');transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);
+        });
+        return original;
+      } finally { db.close(); }
+    });
+    let sameInstallation=false;
+    const observeRecovery=(request:import('@playwright/test').Request)=>{
+      if(new URL(request.url()).pathname==='/api/pos/enroll')sameInstallation=request.postDataJSON().installationId===beforeRecovery.installationId;
+    };
+    page.on('request',observeRecovery);
+    await login('e2e-cashier');
+    await expect(page.getByLabel('Sucursal', { exact:true })).toHaveValue('centro-caja');
+    await expect(page.locator('.sidebar-account strong')).toHaveText('Cajero verificado');
+    expect(sameInstallation).toBe(true);page.off('request',observeRecovery);
+    await page.screenshot({path:'test-results/login-terminals/revalidated-centro.png',fullPage:true});
+    await logout();
     await login('e2e-owner');
     await expect(page.getByLabel('Sucursal', { exact: true })).toHaveValue('centro-caja');
     await page.getByLabel('Sucursal', { exact: true }).selectOption('milan-caja');

@@ -1,8 +1,12 @@
 # Índice de especificaciones y trazabilidad
 
+## Revalidación de accesos guardados de Centro — 01-11-2026
+
+AC-018-15 corrige el rechazo de una autorización antigua al entrar con credenciales válidas. Conserva instalación, pendientes, turnos y cursores. [Especificación](018-caja-access/spec.md) y [evidencia](../docs/evidence/caja-centro-revalidation-2026-11-01.md). Continúa el despliegue autorizado del acceso con usuario y contraseña.
+
 ## Acceso solo con usuario y contraseña — verificado localmente (01-11-2026)
 
-REQ/AC-018-12 a 14 sustituyen la primera activación por el dueño por preparación automática online en cualquier navegador. Conservan sucursales, permisos, datos locales y validación previa para offline. TypeScript, 75 pruebas unitarias, 84 de integración, 2 recorridos E2E y revisión visual aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia](../docs/evidence/caja-password-access-2026-11-01/README.md). Publicación pendiente.
+REQ/AC-018-12 a 14 sustituyen la primera activación por el dueño por preparación automática online en cualquier navegador. Conservan sucursales, permisos, datos locales y validación previa para offline. TypeScript, 75 pruebas unitarias, 84 de integración, 2 recorridos E2E y revisión visual aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia](../docs/evidence/caja-password-access-2026-11-01/README.md). Publicado como `278a5f4`.
 
 ## Sucursal por cuenta — verificada para apertura (15-10-2026)
 

@@ -40,6 +40,7 @@ async function createEngine(installation){
     const actor=engine.cookieActor;
     if(path==='/me')return {user:{id:actor,login:actor,role:'cashier'},branches:[{id:'centro',name:'Centro'}]};
     if(path==='/branches/centro')return {devices:[{id:'centro-caja',name:'Caja',active:true}]};
+    if(path==='/pos/enroll')return structuredClone(engine.data.terminal);
     if(path==='/pos/authorize')return responseFor(engine,actor);
     if(path==='/pos/shift/resume'){assert.equal(actor,central.shift.actorId);central.resumed.push(installation);return {id:central.shift.id};}
     if(path==='/pos/sync'){

@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
 import { audit, principal, transaction } from './db.ts';
 import type { Actor, UserRow } from './db.ts';
-import { ApiError, authenticate, requireAccess, tokenHash, notFound } from './security.ts';
+import { ApiError, authenticate, requireAccess, tokenHash, notFound, verifyPassword } from './security.ts';
 import { routeSchema } from './api-contract.ts';
 import { isOperation, WEEK_MS } from '../contracts.ts';
 import type { Operation } from '../contracts.ts';
@@ -57,21 +57,29 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
   }
   app.post('/api/pos/enroll', { schema: routeSchema('/api/pos/enroll', 'post') }, req => tx(async c => {
     const actor = await authenticate(c, req);
-    const b = req.body as { deviceId: string; installationId: string; sourceDeviceId?: string };
+    const b = req.body as { deviceId: string; installationId: string; sourceDeviceId?: string; login?: string; password?: string };
     const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [b.deviceId])).rows[0]; if (!device) throw notFound(); requireAccess(actor, device.branch_id);
     const existing = (await c.query('SELECT active,token_hash FROM pos_terminals WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId])).rows[0];
     let token: string;
     if (existing) {
-      // Credentials allow a new browser, not replacement of another browser's queue.
-      if (!existing.active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
-      const current = await terminal(c, req, b.sourceDeviceId ?? device.id);
-      if (current.installation_id !== b.installationId) throw new ApiError(403, 'installation_mismatch', 'Conserva los datos de la instalación original de Caja.');
-      token = req.headers['x-pos-token'] as string;
-      if (current.device_id !== device.id) {
-        // Retry a lost enrollment response using proof of this same installation.
+      try {
+        if (!existing.active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
+        const current = await terminal(c, req, b.sourceDeviceId ?? device.id);
+        if (current.installation_id !== b.installationId) throw new ApiError(403, 'installation_mismatch', 'Conserva los datos de la instalación original de Caja.');
+        token = req.headers['x-pos-token'] as string;
+        if (current.device_id !== device.id) {
+          token = randomBytes(32).toString('base64url');
+          await c.query('UPDATE pos_terminals SET token_hash=$3 WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId, tokenHash(token)]);
+          await audit(c, actor, 'pos.enrolled', 'Recuperación de preparación de Caja en la misma instalación', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
+        }
+      } catch (error) {
+        if (!(error instanceof ApiError) || !['device_auth','device_revoked','installation_mismatch'].includes(error.code)) throw error;
+        if (!b.login || !b.password) throw error;
+        if (b.login.toLowerCase() !== actor.user.login || !await verifyPassword(b.password, actor.user.password_hash))
+          throw new ApiError(401, 'invalid_credentials', 'Inicia sesión de nuevo con tu usuario y contraseña para recuperar Caja.');
         token = randomBytes(32).toString('base64url');
-        await c.query('UPDATE pos_terminals SET token_hash=$3 WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId, tokenHash(token)]);
-        await audit(c, actor, 'pos.enrolled', 'Recuperación de preparación de Caja en la misma instalación', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
+        await c.query('UPDATE pos_terminals SET token_hash=$3,active=true WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId, tokenHash(token)]);
+        await audit(c, actor, 'pos.reauthorized', 'Revalidación de Caja con credenciales de la cuenta', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
       }
     } else {
       token = randomBytes(32).toString('base64url');

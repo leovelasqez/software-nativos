@@ -35,11 +35,17 @@ globalThis.fetch=async(url,init)=>{
  if(path.startsWith('/branches/')){const branch=path.split('/').at(-1);assert.ok(cookie.branchIds.includes(branch));return json({devices:[{id:branch+'-caja',name:'Caja',active:!noDevices}]});}
  if(path==='/pos/enroll'){
   assert.ok(cookie.branchIds.includes(body.deviceId.split('-')[0]));
+  if(body.password){assert.equal(body.login,cookie.login);assert.equal(body.password,password);}
   if(loseEnrollment){loseEnrollment=false;throw new Error('Synthetic lost enrollment response');}
   return json({deviceId:body.deviceId,branchId:body.deviceId.split('-')[0],installationId:body.installationId,token:'token-'+body.deviceId,publicKey});
  }
+ if(path==='/pos/sync'){
+  assert.equal(init.headers['X-Pos-Token'],'token-'+body.operation.deviceId);
+  return json({kind:'accepted',receipt:body.operation});
+ }
  if(path==='/pos/authorize'){
   if(deny)return json({code:'forbidden',message:'Destino no autorizado'},403);
+  if(init.headers['X-Pos-Token']!=='token-'+body.deviceId)return json({code:'device_revoked',message:'El equipo no está autorizado. Se conservarán las operaciones pendientes.'},403);
   const user=hijack?users.owner:cookie,branch=body.deviceId.split('-')[0],now=Date.now()-1000;
   assert.ok(user.branchIds.includes(branch));assert.equal(init.headers['X-Pos-Token'],'token-'+body.deviceId);
   const actions=defaultActions(user.role);
@@ -68,6 +74,21 @@ const initialEnrollment=requests.findLast(r=>r.path==='/pos/enroll');
 assert.equal(initialEnrollment.body.sourceDeviceId,undefined);assert.equal(initialEnrollment.token,undefined);
 const another=new BrowserEngine({},blankData());another.save=async()=>{};
 await another.login('centro',password);assert.notEqual(another.data.installationId,fresh.data.installationId);
+// AC-018-15: an old browser keeps its installation, shift and exact pending envelope.
+const savedInstallation=fresh.data.installationId,authorization=await fresh.auth();
+const pending={operation:{version:1,operationId:'11111111-1111-4111-8111-111111111111',deviceId:'centro-caja',branchId:'centro',actorId:'centro-id',sequence:1,previousOperationId:null,payloadVersion:2,payloadHash:'a'.repeat(64)},payload:'{"kind":"order.save"}',signedId:authorization.grant.grantId,state:'reconciliation_required',error:'El equipo no está autorizado.',errorCode:'device_revoked'};
+fresh.data.grants[pending.signedId]=fresh.data.users.centro.signed;
+fresh.data.outbox.push(pending);fresh.data.sequence=1;fresh.data.previous='11111111-1111-4111-8111-111111111111';
+fresh.data.shifts.push({id:'centro-shift',actorId:'centro-id',actorName:'centro',openingCash:'100',expected:'100',openedAtMs:Date.now(),closedAtMs:null,counted:null,difference:null});
+fresh.data.terminal.token='stale-token';fresh.data.users.centro.revoked=true;
+const staleBefore=structuredClone(fresh.data),pendingEnvelope={operation:pending.operation,payload:pending.payload,signed:fresh.data.users.centro.signed};
+await assert.rejects(fresh.login('centro','incorrect'),/Credenciales incorrectas/);assert.deepEqual(fresh.data,staleBefore);
+await assert.rejects(fresh.session(),/El equipo no está autorizado/);assert.deepEqual(fresh.data,staleBefore);
+await fresh.login('centro',password);
+assert.equal(fresh.data.installationId,savedInstallation);assert.equal(fresh.data.sequence,1);assert.equal(fresh.data.previous,'11111111-1111-4111-8111-111111111111');
+assert.deepEqual(fresh.data.shifts,staleBefore.shifts);assert.equal(fresh.data.outbox.length,0,JSON.stringify(fresh.data.outbox));
+assert.deepEqual(requests.findLast(r=>r.path==='/pos/sync').body,pendingEnvelope);
+assert.equal(fresh.data.users.centro.revoked,false);assert.ok(!JSON.stringify(fresh.data).includes(password));
 assert.equal((await e.login('owner',password)).needsEnrollment,false);
 await e.switchTerminal('milan-caja');
 assert.equal(e.data.lastTerminals['owner-id'],'milan-caja');
