@@ -41,6 +41,7 @@ function Pos() {
   const [renamingOrder,setRenamingOrder] = useState<OrderV2 | null>(null);
   const operation = useRef({ key: '', id: '' }); const customerOperation=useRef({key:'',id:''});
   async function refresh() { try{setState(await call<State>('/v2/state'));}catch(e){if((e as Error).message==='Inicia sesión en esta caja.')setState(null);throw e;} }
+  useEffect(()=>{if(ready&&!state)window.dispatchEvent(new Event('nativos-login-ready'));},[ready,Boolean(state)]);
   useEffect(() => { const expired = () => setState(null); window.addEventListener('session-expired', expired); void refresh().catch(async () => {try{const r=await call<{needsEnrollment:boolean;devices:typeof devices;needsPassword?:boolean;legacy?:boolean}>('/session',{});if(r.needsEnrollment){setDevices(r.devices);setNeedsPassword(Boolean(r.needsPassword));setLegacy(Boolean(r.legacy));}else await refresh();}catch{ /* Existing browser credentials remain available offline. */ }}).finally(() => setReady(true)); return () => window.removeEventListener('session-expired', expired); }, []);
   useEffect(()=>{if(state?.online)void call<typeof terminals>('/terminals').then(setTerminals).catch(()=>setTerminals(null));},[state?.online]);
   useEffect(()=>{if(state)void call('/sync',{}).then(()=>refresh()).catch(e=>setError(e.message));},[Boolean(state)]);

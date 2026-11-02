@@ -5,9 +5,9 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Pool, PoolClient } from 'pg';
 import { audit, principal, transaction } from './db.ts';
 import type { Actor, UserRow } from './db.ts';
-import { ApiError, authenticate, requireAccess, tokenHash, notFound, verifyPassword } from './security.ts';
+import { ApiError, authenticate, requireAccess, tokenHash, notFound } from './security.ts';
 import { routeSchema } from './api-contract.ts';
-import { isOperation, WEEK_MS } from '../contracts.ts';
+import { isOperation, isId, WEEK_MS } from '../contracts.ts';
 import type { Operation } from '../contracts.ts';
 import { calculateSale } from '../pos-domain.ts';
 import { isPosEvent } from '../pos-contract.ts';
@@ -30,9 +30,26 @@ async function key(c: PoolClient) {
 }
 async function terminal(c: PoolClient, req: FastifyRequest, deviceId: string) {
   const token = req.headers['x-pos-token'];
-  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new ApiError(401, 'device_auth', 'Inicia sesión con tu usuario y contraseña para entrar a Caja.');
+  if (req.cookies.nativos_session) {
+    const actor = await authenticate(c, req);
+    const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [deviceId])).rows[0];
+    if (!device) throw notFound();
+    requireAccess(actor, device.branch_id);
+    const installationId = req.headers['x-pos-installation'];
+    if (isId(installationId)) {
+      await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3) ON CONFLICT(device_id,installation_id) DO NOTHING', [deviceId, installationId, tokenHash(randomBytes(32).toString('base64url'))]);
+      return (await c.query('SELECT t.*,d.branch_id,d.active AS device_active FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE t.device_id=$1 AND t.installation_id=$2', [deviceId, installationId])).rows[0];
+    }
+    // Compatibility: a known token identifies an older client's cursor, not its permissions.
+    if (typeof token === 'string') {
+      const cursor = (await c.query('SELECT t.*,d.branch_id,d.active AS device_active FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE t.device_id=$1 AND t.token_hash=$2', [deviceId, tokenHash(token)])).rows[0];
+      if (cursor) return cursor;
+    }
+    throw new ApiError(409, 'client_update_required', 'Actualiza la página de Caja para entrar con tu usuario y contraseña. Tus datos se conservan.');
+  }
+  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new ApiError(401, 'device_auth', 'Inicia sesión para sincronizar los datos de Caja.');
   const t = (await c.query(`SELECT t.*,d.branch_id,d.active AS device_active FROM pos_terminals t JOIN devices d ON d.id=t.device_id WHERE t.device_id=$1 AND t.token_hash=$2`, [deviceId, tokenHash(token)])).rows[0];
-  if (!t || !t.active || !t.device_active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
+  if (!t || !t.active || !t.device_active) throw new ApiError(403, 'device_revoked', 'Inicia sesión para sincronizar los datos de Caja.');
   return t;
 }
 async function snapshot(c: PoolClient, device: { device_id: string; branch_id: string; last_sequence: string; last_operation_id: string | null }, sellerSupport = false): Promise<Snapshot> {
@@ -60,32 +77,12 @@ export function registerPos(app: FastifyInstance, pool: Pool) {
     const b = req.body as { deviceId: string; installationId: string; sourceDeviceId?: string; login?: string; password?: string };
     const device = (await c.query('SELECT * FROM devices WHERE id=$1 AND active', [b.deviceId])).rows[0]; if (!device) throw notFound(); requireAccess(actor, device.branch_id);
     const existing = (await c.query('SELECT active,token_hash FROM pos_terminals WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId])).rows[0];
-    let token: string;
-    if (existing) {
-      try {
-        if (!existing.active) throw new ApiError(403, 'device_revoked', 'El equipo no está autorizado. Se conservarán las operaciones pendientes.');
-        const current = await terminal(c, req, b.sourceDeviceId ?? device.id);
-        if (current.installation_id !== b.installationId) throw new ApiError(403, 'installation_mismatch', 'Conserva los datos de la instalación original de Caja.');
-        token = req.headers['x-pos-token'] as string;
-        if (current.device_id !== device.id) {
-          token = randomBytes(32).toString('base64url');
-          await c.query('UPDATE pos_terminals SET token_hash=$3 WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId, tokenHash(token)]);
-          await audit(c, actor, 'pos.enrolled', 'Recuperación de preparación de Caja en la misma instalación', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
-        }
-      } catch (error) {
-        if (!(error instanceof ApiError) || !['device_auth','device_revoked','installation_mismatch'].includes(error.code)) throw error;
-        if (!b.login || !b.password) throw error;
-        if (b.login.toLowerCase() !== actor.user.login || !await verifyPassword(b.password, actor.user.password_hash))
-          throw new ApiError(401, 'invalid_credentials', 'Inicia sesión de nuevo con tu usuario y contraseña para recuperar Caja.');
-        token = randomBytes(32).toString('base64url');
-        await c.query('UPDATE pos_terminals SET token_hash=$3,active=true WHERE device_id=$1 AND installation_id=$2', [device.id, b.installationId, tokenHash(token)]);
-        await audit(c, actor, 'pos.reauthorized', 'Revalidación de Caja con credenciales de la cuenta', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
-      }
-    } else {
-      token = randomBytes(32).toString('base64url');
-      await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3)', [device.id, b.installationId, tokenHash(token)]);
-      await audit(c, actor, 'pos.enrolled', 'Preparación de Caja al iniciar sesión', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
-    }
+    const presented = req.headers['x-pos-token'];
+    const token = existing && typeof presented === 'string' && tokenHash(presented) === existing.token_hash
+      ? presented : randomBytes(32).toString('base64url');
+    await c.query('INSERT INTO pos_terminals(device_id,installation_id,token_hash) VALUES($1,$2,$3) ON CONFLICT(device_id,installation_id) DO UPDATE SET token_hash=$3,active=true', [device.id, b.installationId, tokenHash(token)]);
+    if (!existing || !existing.active || existing.token_hash !== tokenHash(token))
+      await audit(c, actor, 'pos.enrolled', 'Preparación del cursor de Caja para la sesión', { deviceId: device.id, installationId: b.installationId }, device.branch_id);
     return { deviceId: device.id, branchId: device.branch_id, installationId: b.installationId, token, publicKey: (await key(c)).public_key };
   }));
   app.post('/api/pos/authorize', { schema: routeSchema('/api/pos/authorize', 'post') }, req => tx(async c => {

@@ -46,7 +46,7 @@ let online=false;let message='';const startWall=Date.now(),startMono=performance
 export class BrowserEngine{
  constructor(readonly db:IDBDatabase,public data:BrowserData){}
  async save(){await writeState(this.db,this.data);}
- async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
+ async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token,'X-Pos-Installation':this.data.installationId}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
  loginName(){const s=this.data.session;if(!s||s.expires<=Date.now())throw new Error('Inicia sesión en esta caja.');return s.login;}
  async auth(action:Action='data.read',login=this.loginName()){
   const t=this.data.terminal,u=this.data.users[login];if(!t||!u||u.revoked||this.data.retired)throw new Error('Inicia sesión en esta caja.');const a=await verify(u.signed,t.publicKey);
@@ -119,8 +119,7 @@ export class BrowserEngine{
      if(actorId===expectedActorId)verifier=user.passwordHash;
     }
    }
-   if(!verifier)throw new Error('Ingresa tu contraseña para habilitar Caja en esta sucursal.');
-   await this.enterTerminal(device.id,login,verifier,expectedActorId,password);
+   await this.enterTerminal(device.id,login,verifier,expectedActorId);
    message='';return {needsEnrollment:false};
   }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;await this.offlineLogin(login,password,expectedActorId);return {needsEnrollment:false};}
  }
@@ -139,7 +138,7 @@ export class BrowserEngine{
   if(terminal)next.terminal=terminal;
   this.data=next;
  }
- async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string,password=''){
+ async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string){
   const previous=structuredClone(this.data);
   try{
    const existingProfile=this.data.terminal?.deviceId===deviceId||Boolean(this.data.terminalProfiles?.[deviceId]?.terminal);
@@ -151,9 +150,9 @@ export class BrowserEngine{
     this.data.installationId=installationId;
     this.loadProfile(deviceId,terminal);
    }
-   if(existingProfile&&password){
+   if(existingProfile){
     const oldToken=this.data.terminal!.token;
-    this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId,login,password});
+    this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
     if(this.data.terminal!.token!==oldToken)for(const entry of this.data.outbox){
      if(entry.errorCode==='device_revoked'||entry.errorCode==='device_auth'){
       entry.state='retry';entry.error=null;entry.errorCode=null;

@@ -45,9 +45,9 @@ globalThis.fetch=async(url,init)=>{
  }
  if(path==='/pos/authorize'){
   if(deny)return json({code:'forbidden',message:'Destino no autorizado'},403);
-  if(init.headers['X-Pos-Token']!=='token-'+body.deviceId)return json({code:'device_revoked',message:'El equipo no está autorizado. Se conservarán las operaciones pendientes.'},403);
+  if(init.credentials==='omit'&&init.headers['X-Pos-Token']!=='token-'+body.deviceId)return json({code:'device_revoked',message:'El equipo no está autorizado. Se conservarán las operaciones pendientes.'},403);
   const user=hijack?users.owner:cookie,branch=body.deviceId.split('-')[0],now=Date.now()-1000;
-  assert.ok(user.branchIds.includes(branch));assert.equal(init.headers['X-Pos-Token'],'token-'+body.deviceId);
+  assert.ok(user.branchIds.includes(branch));assert.equal(init.headers['X-Pos-Installation']!==undefined,true);
   const actions=defaultActions(user.role);
   return json({signed:signAuthorization({actorName:user.login,
    principal:{version:1,actorId:user.id,kind:'human',role:user.role,active:true,branchIds:user.branchIds,actions},
@@ -61,7 +61,7 @@ const e=new BrowserEngine({},blankData());e.save=async()=>{};
 const fresh=new BrowserEngine({},blankData());fresh.save=async()=>{};
 await assert.rejects(fresh.login('centro','incorrect'),/Credenciales incorrectas/);
 assert.equal(requests.filter(r=>r.path==='/pos/enroll').length,0);
-cookie=users.centro;await assert.rejects(fresh.session(),/Ingresa tu contraseña/);
+cookie=users.centro;const cookieOnly=new BrowserEngine({},blankData());cookieOnly.save=async()=>{};await cookieOnly.session();assert.equal(cookieOnly.data.users.centro.passwordHash,'');assert.equal((await cookieOnly.state()).user.id,'centro-id');
 noDevices=true;await assert.rejects(fresh.login('centro',password),/no tiene una caja activa/);noDevices=false;
 loseEnrollment=true;await assert.rejects(fresh.login('centro',password),/Credenciales offline incorrectas/);
 assert.equal(fresh.data.terminal,undefined);
@@ -83,7 +83,7 @@ fresh.data.shifts.push({id:'centro-shift',actorId:'centro-id',actorName:'centro'
 fresh.data.terminal.token='stale-token';fresh.data.users.centro.revoked=true;
 const staleBefore=structuredClone(fresh.data),pendingEnvelope={operation:pending.operation,payload:pending.payload,signed:fresh.data.users.centro.signed};
 await assert.rejects(fresh.login('centro','incorrect'),/Credenciales incorrectas/);assert.deepEqual(fresh.data,staleBefore);
-await assert.rejects(fresh.session(),/El equipo no está autorizado/);assert.deepEqual(fresh.data,staleBefore);
+await fresh.session();assert.equal(fresh.data.installationId,savedInstallation);assert.equal(fresh.data.outbox.length,0);
 await fresh.login('centro',password);
 assert.equal(fresh.data.installationId,savedInstallation);assert.equal(fresh.data.sequence,1);assert.equal(fresh.data.previous,'11111111-1111-4111-8111-111111111111');
 assert.deepEqual(fresh.data.shifts,staleBefore.shifts);assert.equal(fresh.data.outbox.length,0,JSON.stringify(fresh.data.outbox));
@@ -114,8 +114,7 @@ e.data.outbox.push({operation:{operationId:'pending-milan'},payload:'{}',signedI
 e.data.orders['milan-order']={actorId:'owner-id',order:{id:'milan-order',closed:false}};
 e.data.sequence=7;e.data.previous='last-milan';
 const original=structuredClone(e.data),start=requests.length;
-cookie=users.centro;await assert.rejects(e.session(),/Ingresa tu contraseña/);
-assert.deepEqual(e.data,original);
+cookie=users.centro;
 await e.login('centro',password);
 assert.equal((await e.state()).branchId,'centro');assert.equal((await e.state()).user.id,'centro-id');
 const {terminalProfiles:initialProfiles,...originalMilan}=original;

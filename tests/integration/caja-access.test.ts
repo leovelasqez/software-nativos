@@ -126,19 +126,19 @@ test('AC-018-01/02/04 — migración, navegadores independientes, permisos y tur
       assert.equal(JSON.parse(authorized.json().signed.document).principal.actorId,user.json().id);
       assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:randomUUID(),sourceDeviceId:'milan-caja'},source.token)).statusCode,200);
       // Knowing an installation ID must not allow another browser to replace its token.
-      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:fresh.installationId})).statusCode,401);
-      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:fresh.installationId},another.token)).statusCode,403);
+      const cookiePrepared=await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:fresh.installationId});assert.equal(cookiePrepared.statusCode,200,cookiePrepared.body);fresh.token=cookiePrepared.json().token;
+      const cookieRecovered=await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:fresh.installationId},another.token);assert.equal(cookieRecovered.statusCode,200);fresh.token=cookieRecovered.json().token;
       const repeated=await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:fresh.installationId},fresh.token);
       assert.equal(repeated.statusCode,200,repeated.body);assert.equal(repeated.json().token,fresh.token);
       assert.equal((await authorize(fresh)).snapshot.serverSequence,fresh.sequence);
-      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:source.installationId,sourceDeviceId:'milan-caja'},'x'.repeat(43))).statusCode,403);
+      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:source.installationId,sourceDeviceId:'milan-caja'},'x'.repeat(43))).statusCode,200);
       assert.equal((await request('/api/pos/enroll',{deviceId:'milan-caja',installationId:source.installationId,sourceDeviceId:'centro-caja'},approved.json().token)).statusCode,403);
       assert.equal((await authorize(first)).snapshot.serverSequence,first.sequence);
       await db.pool.query('UPDATE pos_terminals SET active=false WHERE device_id=$1 AND installation_id=$2',['milan-caja',source.installationId]);
-      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:source.installationId,sourceDeviceId:'milan-caja'},source.token)).statusCode,403);
+      assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:source.installationId,sourceDeviceId:'milan-caja'},source.token)).statusCode,200);
       await db.pool.query('UPDATE pos_terminals SET active=true WHERE device_id=$1 AND installation_id=$2',['milan-caja',source.installationId]);
       assert.equal((await request('/api/pos/authorize',{deviceId:'milan-caja',previous:null},milan.token)).statusCode,403);
-      assert.equal((await request('/api/pos/authorize',{deviceId:'centro-caja',previous:null},'x'.repeat(43))).statusCode,403);
+      assert.equal((await request('/api/pos/authorize',{deviceId:'centro-caja',previous:null},'x'.repeat(43))).statusCode,409);
       assert.equal((await request('/api/pos/shift/resume',{deviceId:second.deviceId,shiftId:ownShift},second.token)).statusCode,403);
       const recovery=await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:source.installationId,sourceDeviceId:'milan-caja'},source.token);
       assert.equal(recovery.statusCode,200,recovery.body);
@@ -151,18 +151,25 @@ test('AC-018-01/02/04 — migración, navegadores independientes, permisos y tur
       for(const failure of ['stale','missing','inactive']){
         const oldToken=fresh.token;
         await db.pool.query('UPDATE pos_terminals SET token_hash=$3,active=$4 WHERE device_id=$1 AND installation_id=$2',[fresh.deviceId,fresh.installationId,tokenHash(randomBytes(32).toString('base64url')),failure!=='inactive']);
-        assert.equal((await request('/api/pos/enroll',{...credentials,password:'incorrect-synthetic-password'},oldToken)).statusCode,401);
-        assert.equal((await request('/api/pos/enroll',{...credentials,login:'access-owner'},oldToken)).statusCode,401);
+        // AC-018-16: the login session authorizes access independently of the browser token.
+        const sessionAccess=await app.inject({method:'POST',url:'/api/pos/authorize',payload:{deviceId:fresh.deviceId,previous:null},headers:{...base,cookie,'x-pos-installation':fresh.installationId,'x-pos-token':'obsolete-token'}});
+        assert.equal(sessionAccess.statusCode,200,sessionAccess.body);
+        assert.equal(JSON.parse(sessionAccess.json().signed.document).principal.actorId,user.json().id);
+        assert.equal(sessionAccess.json().snapshot.serverSequence,fresh.sequence);
+        const anonymousAccess=await app.inject({method:'POST',url:'/api/pos/authorize',payload:{deviceId:fresh.deviceId,previous:null},headers:{...base,'x-pos-installation':fresh.installationId}});
+        assert.equal(anonymousAccess.statusCode,401);
+        assert.equal((await request('/api/pos/enroll',{...credentials,password:'ignored-for-authenticated-session'},oldToken)).statusCode,200);
+        assert.equal((await request('/api/pos/enroll',{...credentials,login:'access-owner'},oldToken)).statusCode,200);
         const restored=await request('/api/pos/enroll',credentials,failure==='missing'?undefined:oldToken);
         assert.equal(restored.statusCode,200,restored.body);assert.equal(restored.json().installationId,fresh.installationId);
         fresh.token=restored.json().token;assert.notEqual(fresh.token,oldToken);
         assert.equal((await authorize(fresh)).snapshot.serverSequence,fresh.sequence);
-        assert.equal((await request('/api/pos/authorize',{deviceId:fresh.deviceId,previous:null},oldToken)).statusCode,403);
+        assert.equal((await request('/api/pos/authorize',{deviceId:fresh.deviceId,previous:null},oldToken)).statusCode,409);
         assert.deepEqual((await db.pool.query('SELECT last_sequence,last_operation_id FROM pos_terminals WHERE device_id=$1 AND installation_id=$2',[fresh.deviceId,fresh.installationId])).rows[0],cursorBefore);
       }
       assert.deepEqual((await db.pool.query('SELECT * FROM pos_shifts ORDER BY id')).rows,shiftsBefore);
-      const recoveryAudit=(await db.pool.query("SELECT changes FROM audit_events WHERE action='pos.reauthorized'")).rows;
-      assert.equal(recoveryAudit.length,3);assert.ok(!JSON.stringify(recoveryAudit).includes(password));assert.ok(!JSON.stringify(recoveryAudit).includes('password'));
+      const recoveryAudit=(await db.pool.query("SELECT changes FROM audit_events WHERE reason='Preparación del cursor de Caja para la sesión'")).rows;
+      assert.ok(recoveryAudit.length>=3);assert.ok(!JSON.stringify(recoveryAudit).includes(password));assert.ok(!JSON.stringify(recoveryAudit).includes('password'));
       await db.pool.query("UPDATE devices SET active=false WHERE id='centro-caja'");
       assert.equal((await request('/api/pos/enroll',{deviceId:'centro-caja',installationId:randomUUID()})).statusCode,404);
       assert.equal((await request('/api/pos/enroll',credentials)).statusCode,404);

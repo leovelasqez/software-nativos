@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Acceso online sin autorización del navegador — AC-018-16
+
+La sesión validada con usuario y contraseña autoriza Caja; la instalación solo identifica sincronización. Incluye actualización segura del login y compatibilidad con perfiles guardados. [Especificación](018-caja-access/spec.md), [plan](018-caja-access/plan.md) y [evidencia](../docs/evidence/caja-session-access-2026-11-01.md). Continúa la publicación autorizada en el mismo servicio.
+
 ## Revalidación de accesos guardados de Centro — 01-11-2026
 
 AC-018-15 corrige el rechazo de una autorización antigua al entrar con credenciales válidas. Conserva instalación, pendientes, turnos y cursores. [Especificación](018-caja-access/spec.md) y [evidencia](../docs/evidence/caja-centro-revalidation-2026-11-01.md). Continúa el despliegue autorizado del acceso con usuario y contraseña.

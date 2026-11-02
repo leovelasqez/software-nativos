@@ -36,6 +36,8 @@ En la continuación de esa corrección del sistema publicado, el usuario reporta
 
 ## Contexto del negocio
 
+La aclaración posterior «La única restricción para acceder debe ser usuario y contraseña» elimina la autorización independiente del navegador para sesiones online (AC-018-16). Usar la instalación solo como cursor; la sesión validada autoriza el acceso según la cuenta. La continuación incluye actualizar con seguridad la pantalla de login y publicar en el mismo servicio autorizado. Conservar todos los datos y las comprobaciones de operaciones offline.
+
 El 01-11-2026 el usuario solicita quitar la activación de Caja por navegador: solo usuario y contraseña. Aplicar AC-018-12/13/14 por encima del requisito histórico de dueño de AC-018-09. Preparar la caja automáticamente al validar credenciales online, conservando permisos por sucursal, datos locales y continuidad de turnos. No exigir activación manual en navegadores nuevos ni privados. Offline sigue necesitando una validación previa en ese perfil.
 
 El mismo día autoriza «Haz el despliegue en Railway». La continuación corrige el rechazo de una autorización antigua en el equipo de Centro (AC-018-15), verifica con datos sintéticos y publica en el mismo servicio `nativos-web/production`. No requiere volver a pedir autorización para completar esta corrección. Conservar datos del navegador y cursores; no operar turnos comerciales para probarla.
