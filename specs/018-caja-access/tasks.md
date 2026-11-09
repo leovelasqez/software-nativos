@@ -2,6 +2,7 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| Recuperar pendientes con token conservado o antiguo y preparar contraseña offline desde Caja | AC-018-14/16 | Verificado en el motor y en Edge con sesión recuperada, preparación de contraseña y reingreso sin internet |
 | TASK-018-16: acceso online por sesión, identificación de cursor sin aprobación del navegador y actualización segura del login | AC-018-16 | Verificado: TypeScript/build, 75 unitarias, 5 casos de integración, E2E focalizado y regresión completa; publicación autorizada |
 | TASK-018-15: revalidar autorizaciones antiguas con las credenciales de la cuenta y conservar pendientes/turno | AC-018-15 | Verificado: TypeScript/build, 75 unitarias, 5 de integración y recorrido E2E completo; publicación autorizada |
 | TASK-018-12: acceso automático en servidor, motor e interfaz | AC-018-12/13 | Verificado localmente el 01-11-2026 |

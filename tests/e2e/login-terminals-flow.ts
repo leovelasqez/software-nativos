@@ -81,11 +81,28 @@ export async function exerciseLoginTerminals(parent: Page, password: string) {
     // A separate private context enters with the same credentials and no owner's session.
     const other = await parent.context().browser()!.newContext({ baseURL: 'http://127.0.0.1:4320' });
     try {
-      const otherPage = await other.newPage();await otherPage.goto('/caja');
+      const otherPage = await other.newPage();
+      // Admin login succeeds even when its first attempt to prepare this browser fails.
+      await otherPage.route('**/api/pos/enroll', route => route.fulfill({
+        status:503, contentType:'application/json',
+        body:JSON.stringify({code:'unavailable',message:'Preparación temporalmente no disponible.'})
+      }), { times:1 });
+      await otherPage.goto('/');
+      await otherPage.getByLabel('Usuario', { exact: true }).fill('e2e-cashier');
+      await otherPage.getByLabel('Contraseña', { exact: true }).fill(password);
+      await otherPage.getByRole('button', { name: 'Entrar a Nativos', exact: true }).click();
+      await otherPage.getByRole('link', { name: 'Caja y ventas', exact: true }).click();
+      await expect(otherPage.getByLabel('Sucursal', { exact: true })).toHaveValue('centro-caja');
+      await otherPage.getByText('Habilitar el ingreso a Caja sin internet', { exact: true }).click();
+      await otherPage.getByLabel('Contraseña de tu cuenta').fill(password);
+      await otherPage.getByRole('button', { name: 'Habilitar ingreso sin internet' }).click();
+      await expect(otherPage.getByLabel('Contraseña de tu cuenta')).toHaveCount(0);
+      await otherPage.getByRole('button', { name: 'Salir', exact: true }).click();
+      await expect(otherPage.getByLabel('Usuario', { exact: true })).toBeVisible();
+      await other.setOffline(true);
       await otherPage.getByLabel('Usuario', { exact: true }).fill('e2e-cashier');
       await otherPage.getByLabel('Contraseña', { exact: true }).fill(password);
       await otherPage.getByRole('button', { name: 'Entrar a caja', exact: true }).click();
-      await expect(otherPage.getByLabel('Sucursal', { exact: true })).toHaveValue('centro-caja');
       await expect(otherPage.locator('.sidebar-account strong')).toHaveText('Cajero verificado');
     } finally { await other.close(); }
     await page.screenshot({ path: 'test-results/login-terminals/cashier-centro.png', fullPage: true });

@@ -40,7 +40,7 @@ globalThis.fetch=async(url,init)=>{
   return json({deviceId:body.deviceId,branchId:body.deviceId.split('-')[0],installationId:body.installationId,token:'token-'+body.deviceId,publicKey});
  }
  if(path==='/pos/sync'){
-  assert.equal(init.headers['X-Pos-Token'],'token-'+body.operation.deviceId);
+  if(init.headers['X-Pos-Token']!=='token-'+body.operation.deviceId)return json({code:'device_revoked',message:'Equipo no autorizado'},403);
   return json({kind:'accepted',receipt:body.operation});
  }
  if(path==='/pos/authorize'){
@@ -62,6 +62,12 @@ const fresh=new BrowserEngine({},blankData());fresh.save=async()=>{};
 await assert.rejects(fresh.login('centro','incorrect'),/Credenciales incorrectas/);
 assert.equal(requests.filter(r=>r.path==='/pos/enroll').length,0);
 cookie=users.centro;const cookieOnly=new BrowserEngine({},blankData());cookieOnly.save=async()=>{};await cookieOnly.session();assert.equal(cookieOnly.data.users.centro.passwordHash,'');assert.equal((await cookieOnly.state()).user.id,'centro-id');
+assert.equal((await cookieOnly.state()).offlinePasswordReady,false);
+await assert.rejects(cookieOnly.preparePassword('incorrect'),/Credenciales incorrectas/);
+await cookieOnly.preparePassword(password);
+assert.equal((await cookieOnly.state()).offlinePasswordReady,true);
+offline=true;cookieOnly.data.session=null;await cookieOnly.login('centro',password);
+assert.equal((await cookieOnly.state()).user.id,'centro-id');offline=false;
 noDevices=true;await assert.rejects(fresh.login('centro',password),/no tiene una caja activa/);noDevices=false;
 loseEnrollment=true;await assert.rejects(fresh.login('centro',password),/Credenciales offline incorrectas/);
 assert.equal(fresh.data.terminal,undefined);
@@ -80,7 +86,7 @@ const pending={operation:{version:1,operationId:'11111111-1111-4111-8111-1111111
 fresh.data.grants[pending.signedId]=fresh.data.users.centro.signed;
 fresh.data.outbox.push(pending);fresh.data.sequence=1;fresh.data.previous='11111111-1111-4111-8111-111111111111';
 fresh.data.shifts.push({id:'centro-shift',actorId:'centro-id',actorName:'centro',openingCash:'100',expected:'100',openedAtMs:Date.now(),closedAtMs:null,counted:null,difference:null});
-fresh.data.terminal.token='stale-token';fresh.data.users.centro.revoked=true;
+fresh.data.users.centro.revoked=true; // Reactivating an installation can preserve its token.
 const staleBefore=structuredClone(fresh.data),pendingEnvelope={operation:pending.operation,payload:pending.payload,signed:fresh.data.users.centro.signed};
 await assert.rejects(fresh.login('centro','incorrect'),/Credenciales incorrectas/);assert.deepEqual(fresh.data,staleBefore);
 await fresh.session();assert.equal(fresh.data.installationId,savedInstallation);assert.equal(fresh.data.outbox.length,0);
@@ -88,6 +94,15 @@ await fresh.login('centro',password);
 assert.equal(fresh.data.installationId,savedInstallation);assert.equal(fresh.data.sequence,1);assert.equal(fresh.data.previous,'11111111-1111-4111-8111-111111111111');
 assert.deepEqual(fresh.data.shifts,staleBefore.shifts);assert.equal(fresh.data.outbox.length,0,JSON.stringify(fresh.data.outbox));
 assert.deepEqual(requests.findLast(r=>r.path==='/pos/sync').body,pendingEnvelope);
+// A stale token mid-session must recover both a signed refresh and a queued request.
+fresh.data.terminal.token='stale-token';await fresh.sync();
+assert.equal((await fresh.auth()).grant.actorId,'centro-id');
+const retryEntry=structuredClone(pending);retryEntry.state='retry';retryEntry.error=null;retryEntry.errorCode=null;
+fresh.data.outbox.push(retryEntry);fresh.data.terminal.token='stale-again';
+const beforeRetry=requests.length;await fresh.sync();
+assert.equal(fresh.data.outbox.length,0);
+const attempts=requests.slice(beforeRetry).filter(r=>r.path==='/pos/sync');
+assert.equal(attempts.length,2);assert.deepEqual(attempts[0].body,attempts[1].body);
 assert.equal(fresh.data.users.centro.revoked,false);assert.ok(!JSON.stringify(fresh.data).includes(password));
 assert.equal((await e.login('owner',password)).needsEnrollment,false);
 await e.switchTerminal('milan-caja');
