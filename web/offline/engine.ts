@@ -46,7 +46,14 @@ let online=false;let message='';const startWall=Date.now(),startMono=performance
 export class BrowserEngine{
  constructor(readonly db:IDBDatabase,public data:BrowserData){}
  async save(){await writeState(this.db,this.data);}
- async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token,'X-Pos-Installation':this.data.installationId}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
+ async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token,'X-Pos-Installation':this.data.installationId}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;
+  if(!r.ok){
+   const detail=await r.json().catch(()=>null);
+   throw new RemoteError(r.status,detail?.code??'http_error',detail?.message??('El servidor respondió con error '+r.status+'.'));
+  }
+  try { return await r.json(); }
+  catch { throw new RemoteError(502,'invalid_response','Respuesta incompleta del servidor. Vuelve a intentarlo.'); }
+ }
  async recoverTerminalCredential() {
   const deviceId=this.data.terminal!.deviceId;
   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
@@ -63,7 +70,8 @@ export class BrowserEngine{
     if (recoveryError instanceof RemoteError && [401,403,404].includes(recoveryError.status)) throw error;
     throw recoveryError;
    }
-   await this.save();
+   try { await this.save(); }
+   catch { throw new RemoteError(503,'credential_save_failed','No se pudo guardar la credencial de Caja. Se volverá a intentar.'); }
    return this.remote<T>(path,body,true);
   }
  }
@@ -212,7 +220,16 @@ export class BrowserEngine{
   const session=await this.remote<{actorId:string}>('/login',{login,password});
   const boundActorId=await this.cachedActorId(login);
   if(boundActorId!==undefined&&boundActorId!==session.actorId)throw new Error('La cuenta cambió. Inicia sesión de nuevo para activar Caja.');
-  user.passwordHash=await passwordHash(password);user.actorId=session.actorId;await this.save();
+  const verifier=await passwordHash(password);
+  if(this.data.terminal){
+   const authorization=await this.remote<Parameters<BrowserEngine['accept']>[2]>('/pos/authorize',{
+    deviceId:this.data.terminal.deviceId, sellerSupport:true, previous:null
+   });
+   await this.accept(login,verifier,authorization,session.actorId);
+   return;
+  }
+  // Legacy import prepares the verifier before an installation is available.
+  user.passwordHash=verifier;user.actorId=session.actorId;await this.save();
  }
  async enroll(deviceId:string){
   const login=this.loginName(),previous=structuredClone(this.data);

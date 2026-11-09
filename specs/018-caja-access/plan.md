@@ -4,6 +4,8 @@
 
 AC-018-14/16: al recuperar la instalación, reintentar los pendientes rechazados por credencial de equipo incluso si se conserva el token. Durante sincronización, una denegación específica del token permite recuperar la misma instalación mediante sesión y repetir una sola vez la solicitud firmada original. Conservar el actor histórico y los demás rechazos. Desde una sesión de Administración sin verificador, ofrecer en Caja la preparación opcional del ingreso offline mediante la contraseña de la cuenta.
 
+Si la recuperación recibe un error temporal del servidor sin JSON o falla la escritura local de la credencial, la cola conserva la operación para reintentarla. Antes de habilitar el primer reingreso sin internet en una caja preparada, validar con el servidor los permisos vigentes del mismo actor y equipo. Guardar el verificador junto con la nueva autorización firmada.
+
 ## Acceso automático — 01-11-2026
 
 AC-018-16 sustituye las barreras online de AC-018-15: `/pos/enroll` usa únicamente la sesión y prepara la pareja caja/instalación sin comprobación de autorización del navegador. Reutiliza el token presentado si sigue vigente o entrega otro conservando el cursor. `terminal()` usa la sesión y `X-Pos-Installation` para localizar/preparar el cursor; el estado del token de instalación no bloquea a un usuario conectado. Sin cookie, la sincronización conserva token y concesión firmada. Sin cabecera, un cliente antiguo puede identificar su cursor por token conocido, incluso desactivado; si no es identificable, responder `client_update_required` sin asociarlo a otro cursor. Las comprobaciones de actor/sucursal y de las operaciones continúan en sus límites actuales. No se cambia el esquema SQL ni IndexedDB.

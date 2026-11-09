@@ -2,6 +2,7 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| Reintentar ante fallos temporales de respuesta o escritura y comprobar el permiso vigente antes de habilitar el reingreso offline | AC-018-11/13/14/16 | Verificado en el motor: la operación conserva su identidad y una denegación deja vacío el verificador. En Edge: rechazo, autorización posterior y reingreso sin internet. |
 | Recuperar pendientes con token conservado o antiguo y preparar contraseña offline desde Caja | AC-018-14/16 | Verificado en el motor y en Edge con sesión recuperada, preparación de contraseña y reingreso sin internet |
 | TASK-018-16: acceso online por sesión, identificación de cursor sin aprobación del navegador y actualización segura del login | AC-018-16 | Verificado: TypeScript/build, 75 unitarias, 5 casos de integración, E2E focalizado y regresión completa; publicación autorizada |
 | TASK-018-15: revalidar autorizaciones antiguas con las credenciales de la cuenta y conservar pendientes/turno | AC-018-15 | Verificado: TypeScript/build, 75 unitarias, 5 de integración y recorrido E2E completo; publicación autorizada |

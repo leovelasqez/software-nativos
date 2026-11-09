@@ -22,6 +22,7 @@ const users={
  milan:{id:'milan-id',login:'milan',role:'cashier',branchIds:['milan']},
 };
 const password='synthetic-password-only';
+let proxyFailure=false;
 let cookie=users.owner,offline=false,deny=false,hijack=false,legacySource=null,loseEnrollment=false,noDevices=false;
 const requests=[];
 globalThis.fetch=async(url,init)=>{
@@ -34,6 +35,7 @@ globalThis.fetch=async(url,init)=>{
  if(path==='/local-transition')return json(body?legacySource:{available:!!legacySource});
  if(path.startsWith('/branches/')){const branch=path.split('/').at(-1);assert.ok(cookie.branchIds.includes(branch));return json({devices:[{id:branch+'-caja',name:'Caja',active:!noDevices}]});}
  if(path==='/pos/enroll'){
+  if(proxyFailure){proxyFailure=false;return new Response('<html>Unavailable</html>',{status:503});}
   assert.ok(cookie.branchIds.includes(body.deviceId.split('-')[0]));
   if(body.password){assert.equal(body.login,cookie.login);assert.equal(body.password,password);}
   if(loseEnrollment){loseEnrollment=false;throw new Error('Synthetic lost enrollment response');}
@@ -64,7 +66,13 @@ assert.equal(requests.filter(r=>r.path==='/pos/enroll').length,0);
 cookie=users.centro;const cookieOnly=new BrowserEngine({},blankData());cookieOnly.save=async()=>{};await cookieOnly.session();assert.equal(cookieOnly.data.users.centro.passwordHash,'');assert.equal((await cookieOnly.state()).user.id,'centro-id');
 assert.equal((await cookieOnly.state()).offlinePasswordReady,false);
 await assert.rejects(cookieOnly.preparePassword('incorrect'),/Credenciales incorrectas/);
-await cookieOnly.preparePassword(password);
+deny=true;
+await assert.rejects(cookieOnly.preparePassword(password),/Destino no autorizado/);
+assert.equal(cookieOnly.data.users.centro.passwordHash,'');
+deny=false;hijack=true;
+await assert.rejects(cookieOnly.preparePassword(password),/otro usuario/);
+assert.equal(cookieOnly.data.users.centro.passwordHash,'');
+hijack=false;await cookieOnly.preparePassword(password);
 assert.equal((await cookieOnly.state()).offlinePasswordReady,true);
 offline=true;cookieOnly.data.session=null;await cookieOnly.login('centro',password);
 assert.equal((await cookieOnly.state()).user.id,'centro-id');offline=false;
@@ -99,6 +107,14 @@ fresh.data.terminal.token='stale-token';await fresh.sync();
 assert.equal((await fresh.auth()).grant.actorId,'centro-id');
 const retryEntry=structuredClone(pending);retryEntry.state='retry';retryEntry.error=null;retryEntry.errorCode=null;
 fresh.data.outbox.push(retryEntry);fresh.data.terminal.token='stale-again';
+proxyFailure=true;await fresh.sync();
+assert.equal(fresh.data.outbox[0].state,'retry');
+assert.deepEqual(fresh.data.outbox[0].operation,pending.operation);
+let firstWrite=true;
+fresh.save=async()=>{if(firstWrite){firstWrite=false;throw new Error('Temporary storage failure');}};
+await fresh.sync();assert.equal(fresh.data.outbox[0].state,'retry');
+assert.deepEqual(fresh.data.outbox[0].operation,pending.operation);
+fresh.data.terminal.token='stale-again';
 const beforeRetry=requests.length;await fresh.sync();
 assert.equal(fresh.data.outbox.length,0);
 const attempts=requests.slice(beforeRetry).filter(r=>r.path==='/pos/sync');
