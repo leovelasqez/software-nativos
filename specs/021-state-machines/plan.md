@@ -6,6 +6,8 @@ Estado: verificado localmente. Referencia: [spec.md](spec.md) y [evidencia](../.
 
 REQ-021-01 a 05 / AC-021-01 a 05, autorizado por la solicitud actual del usuario. Trabajar en `software-nativos`; los otros worktrees conservan sus ramas y cambios.
 
+Durante la publicación se añade REQ/AC-021-06: generación determinista del manifiesto offline, al detectar en staging la diferencia de orden de archivos entre Windows y Linux. La única modificación funcional adicional es ordenar la lista de recursos antes de generar `sw.js`; se prueba el script real y no se cambia su conjunto de rutas ni la política de actualización.
+
 ## Diseño
 
 1. Inventario JSON en `docs/state-machines.json`, informe con alcance y prioridades en `docs/state-machines.md`, comando `scripts/audit-state-machines.ts`. Las referencias apuntan a código y pruebas; las proyecciones derivadas no se presentan como nuevos estados persistidos.

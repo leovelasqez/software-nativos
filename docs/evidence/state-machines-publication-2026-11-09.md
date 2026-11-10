@@ -6,6 +6,10 @@ Autorización del usuario, después de la verificación local de spec 021: «Haz
 
 La rama `release/state-machines-2026-11-09` reúne el incremento verificado de estados (`7af634e`) y las correcciones de acceso a Caja publicadas hasta `db5a7b8`. La integración funcional es `5b63957`. El único conflicto de merge estaba en el índice documental y se conservaron ambas secciones. No se sustituyó código de Caja por su versión anterior.
 
+La versión combinada pasó 84 pruebas unitarias, 92 de integración, TypeScript/build y los cuatro recorridos Edge (4/4, 4,5 minutos). El primer despliegue de staging `da31eda0-9310-466e-be93-fec511fa1044`, del commit `5ee7be3`, estaba saludable y coincidía en 12 de 13 archivos; sólo difería el orden de dos rutas en `PATHS` de `sw.js` por la enumeración distinta de Windows/Linux. Se añade ordenación canónica y una prueba del script real (AC-021-06) antes de promover. No cambia el conjunto de recursos ni la política de cache/activación. La versión definitiva es el commit que contiene este ajuste y este documento.
+
+Después de la corrección de orden, TypeScript, las 85 pruebas unitarias y build pasaron. El cambio es exclusivo de generación del archivo: el contenido del service worker y su conjunto de recursos conservan los que ya aprobaron los cuatro recorridos Edge. Las 92 pruebas de integración no tienen código de servidor nuevo que revalidar por este ajuste. La comprobación externa exige coincidencia completa de los 13 archivos, incluido `sw.js`.
+
 El escenario E2E nuevo usa ahora el acceso directo vigente, sin exigir activación del dueño. El mapa conserva 42 familias y actualiza la preparación automática y el consentimiento de todas las ventanas para anticipar la actualización del login vacío.
 
 El commit que contiene este documento identifica el paquete de entrega. Las comprobaciones externas y sus IDs se guardan fuera de Git en `.local/state-machines-publication.json`, junto a `.local/staging-verification.json` y `.local/production-verification.json`; esto permite que GitHub, producción y staging conserven exactamente el mismo commit, sin otro commit documental posterior al despliegue.

@@ -1737,7 +1737,7 @@
         ]
       ],
       "guards": [
-        "Activación normal al cerrar clientes; actualización de login anticipada sólo tras confirmación de todas las ventanas: login vacío, sin campos escritos ni formulario enviando. No cachear API/costos, limpiar sólo nativos-shell anteriores y no borrar IndexedDB."
+        "Lista de recursos en orden canónico para generar el mismo manifiesto en Windows/Linux. Activación normal al cerrar clientes; actualización de login anticipada sólo tras confirmación de todas las ventanas: login vacío, sin campos escritos ni formulario enviando. No cachear API/costos, limpiar sólo nativos-shell anteriores y no borrar IndexedDB."
       ],
       "persistence": "Cache Storage de interfaz y ciclo nativo del service worker.",
       "sources": [

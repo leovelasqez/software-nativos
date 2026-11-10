@@ -15,6 +15,7 @@ Inventariar las máquinas observables del árbol `software-nativos`, incluidas l
 - REQ-021-03: la importación Excel distingue edición, vista previa y confirmación persistida. Fallar la actualización de la lista después de confirmar conserva el éxito y permite reintentar solamente la consulta.
 - REQ-021-04: centralizar estados y transiciones de entrega de notificaciones en un dominio puro y tipado, compartido por servidor y etiquetas web. Diferenciar resultados de transporte de callbacks, preservar entrega/lectura y no reintentar estados inciertos.
 - REQ-021-05: el inventario es legible por personas y agentes y verificable contra los archivos del repositorio, sin nuevas dependencias, permisos ni endpoints.
+- REQ-021-06: el manifiesto offline se genera con un orden canónico de recursos para que Windows y Linux produzcan el mismo artefacto verificable; conservar las rutas y la política de activación/cache existentes.
 
 ## Flujos y datos
 
@@ -28,7 +29,8 @@ Notificaciones conservan los nueve estados SQL existentes. Los callbacks y respu
 - AC-021-02 → REQ-021-02: dos envíos concurrentes producen una sola llamada; error seguido de corrección permite otro intento; `disabled` impide enviar incluso por teclado/evento; `aria-busy` y el error reflejan el estado real. Prueba de dominio del controlador y navegador real.
 - AC-021-03 → REQ-021-03: una confirmación correcta seguida de fallo de consulta muestra el lote guardado y una recuperación que no repite `/confirm`; editar archivo/motivo invalida la vista previa. Pruebas de transición y navegador con API sintética.
 - AC-021-04 → REQ-021-04: callbacks repetidos/desordenados y respuesta posterior a fallo/entrega/lectura conservan el estado correcto; los estados aceptados por API y las etiquetas coinciden; integración con PostgreSQL y transporte sintético.
-- AC-021-05 → todos: tipos, pruebas de dominio/integración, build y recorridos E2E conservan las regresiones actuales. No se publican cambios ni se operan datos comerciales.
+- AC-021-05 → todos: tipos, pruebas de dominio/integración, build y recorridos E2E conservan las regresiones actuales con datos sintéticos. Las comprobaciones alojadas de la publicación son de solo lectura.
+- AC-021-06 → REQ-021-06: con nombres de recursos cuya enumeración difiere entre sistemas, el script real genera la lista en orden ordinal estable. La comparación de staging y producción exige la misma huella del service worker que el paquete local.
 
 ## Dependencias y decisiones
 
@@ -36,4 +38,4 @@ Reutilizar 009, 011, 012 y 019. La inspección no requiere cambiar decisiones de
 
 ## Evidencia
 
-AC-021-01 a 05 verificados con datos sintéticos: [evidencia y límites](../../docs/evidence/state-machines-2026-11-09.md). `check` final aprobado (84 pruebas unitarias, 92 de integración y build); cuatro recorridos Edge verificados, incluido el caso nuevo repetido después de corregir su selector de escritorio. Diseño en [plan.md](plan.md), seguimiento en [tasks.md](tasks.md). Sin publicación.
+AC-021-01 a 05 verificados con datos sintéticos: [evidencia y límites](../../docs/evidence/state-machines-2026-11-09.md). La [entrega combinada](../../docs/evidence/state-machines-publication-2026-11-09.md) conserva el acceso vigente de Caja: 92 pruebas de integración y cuatro recorridos Edge aprobados. AC-021-06 añade generación reproducible; tipos, las 85 pruebas unitarias y build pasan tras el ajuste. Los resultados alojados y el commit exacto se registran fuera de Git, como indica la evidencia de entrega. Diseño en [plan.md](plan.md), seguimiento en [tasks.md](tasks.md).

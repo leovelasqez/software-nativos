@@ -12,6 +12,7 @@ Hacer explícitos los estados donde hay beneficio simultáneo y comprobable para
 | Importación con resultado irreversible | Lote guardado sigue confirmado aunque falle actualizar la lista | Éxito central separado de consulta posterior | Se puede decidir reintentar la consulta conservando importId, sin otra escritura |
 | Entrega según origen de evidencia | Seguimiento fiel; fallo definitivo no vuelve a reintento por HTTP tardío | Enum, etiquetas y transición de dominio compartidos | Estados aceptados por API y reglas de recuperación consultables en una fuente |
 | Inventario y auditoría local | Menos regresiones al cambiar flujos | Mapa de límites y pruebas existentes | JSON con IDs estables, disparadores, guardas, persistencia y archivos reales |
+| Manifiesto offline reproducible | Mismos recursos y política offline en cada entorno | Orden canónico entre Windows y Linux | Comparación exacta de huellas del artefacto publicado |
 
 ## Inventario
 

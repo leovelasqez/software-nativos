@@ -1,7 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
+import { execFile } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { serviceWorkerSource } from '../src/service-worker.ts';
+
+test('AC-021-06: manifiesto offline reproducible entre Windows y Linux', async () => {
+  const temporaryRoot = resolve('.local'); await mkdir(temporaryRoot, { recursive: true });
+  const directory = await mkdtemp(join(temporaryRoot, 'sw-manifest-'));
+  try {
+    await mkdir(join(directory, 'dist/assets'), { recursive: true });
+    await writeFile(join(directory, 'dist/index.html'), '<html>Administración sintética</html>');
+    await writeFile(join(directory, 'dist/pos.html'), '<html>Caja sintética</html>');
+    // Case-insensitive Windows enumeration differs from Linux for these names.
+    for (const name of ['client-CtO.css', 'client-CUy.js']) await writeFile(join(directory, 'dist/assets', name), 'synthetic');
+    await promisify(execFile)(process.execPath, [fileURLToPath(new URL('../scripts/build-offline.ts', import.meta.url))], { cwd: directory, windowsHide: true });
+    const source = await readFile(join(directory, 'dist/sw.js'), 'utf8');
+    const paths = JSON.parse(source.match(/const PATHS=(\[[^\n]*\]);/)?.[1] ?? 'null');
+    assert.deepEqual(paths, ['/', '/caja', '/theme.js', '/manifest.webmanifest', '/nativos-icon.svg', '/assets/client-CUy.js', '/assets/client-CtO.css']);
+  } finally {
+    const target = await realpath(directory); const root = await realpath(temporaryRoot); const inside = relative(root, target);
+    assert.ok(inside && inside !== '..' && !inside.startsWith('..' + sep) && !isAbsolute(inside));
+    await rm(target, { recursive: true, force: true });
+  }
+});
 
 test('AC-019-06: activación retira solo caches anteriores de la interfaz y excluye API', async () => {
   const caches = new Set(['nativos-shell-old', 'nativos-shell-current', 'other-cache']);
