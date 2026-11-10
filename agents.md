@@ -24,6 +24,8 @@ La implementación local está autorizada por el usuario desde el 13-09-2026. Es
 
 Las instrucciones nuevas del usuario prevalecen. Si cambian el alcance, actualiza el plan y estas instrucciones cuando sea pertinente. No recuperes reglas descartadas de versiones anteriores.
 
+El 09-11-2026, después de la revisión y validación local de máquinas de estados (spec 021), el usuario solicita: «Haz el despliegue en railway». Preparar y publicar la versión verificada en el servicio existente, conservando las correcciones más recientes de acceso a Caja. La entrega pasa primero por staging y después por `nativos-web/production`; el envío real de WhatsApp continúa desactivado. La verificación alojada es de solo lectura y no opera turnos, ventas, inventario ni Alegra.
+
 El 25-09-2026 el usuario autoriza expresamente hacer commit, push y desplegar en Railway las correcciones verificadas de NAT-UAT-01/02/03. Esta autorización cubre publicar la versión en el servicio existente `nativos-web`, entorno `production`, y comprobar su salud. No implica modificar datos comerciales, configurar integraciones externas ni sustituir las comprobaciones físicas pendientes.
 
 El 07-10-2026, después de verificar el comprobante de cierre de caja (AC-006-07/08/09), el usuario autoriza publicarlo en Railway: «ok, publicala en railway». Registrar el cambio y publicarlo en el servicio existente `nativos-web`, entorno `production`; verificar salud y entrega del artefacto. No operar turnos ni modificar datos comerciales para comprobar la publicación.
@@ -113,6 +115,8 @@ Preservar identificadores externos y conciliar el historial desde el primer regi
 Conservar los archivos fuente. No modificar originales, inventar datos faltantes ni incluir credenciales en código, Markdown, ejemplos o logs.
 
 ## Validación y entrega
+
+Antes de cambiar un flujo con estados, consultar [el mapa](docs/state-machines.md) y su [inventario para agentes](docs/state-machines.json). El mapa incluye disparadores, guardas, persistencia y pruebas; no reemplaza las validaciones del dominio. Actualizar la familia afectada junto al cambio y ejecutar `npm run audit:states` (incluido en `check`). Las máquinas de UI no sustituyen el commit durable, los identificadores idempotentes ni el acuse central.
 
 Aplicar los casos de aceptación de la sección 16 del plan. Priorizar pruebas de recetas y sustituciones, descuentos/propina/puntos, división de cuenta, reinicios offline, idempotencia, permisos, exportación completa, notificaciones y restauración.
 

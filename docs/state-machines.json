@@ -1,0 +1,2280 @@
+{
+  "version": 1,
+  "scope": "software-nativos, revisión estática del 2026-11-09; familias de máquinas, no conteo de cada instancia ni prueba de ausencia matemática",
+  "baseCommit": "131a5b6",
+  "transitionFormat": [
+    "from",
+    "event (including guard)",
+    "to"
+  ],
+  "machines": [
+    {
+      "id": "bootstrap",
+      "title": "Configuración e inicio del sitio",
+      "kind": "implicit",
+      "states": [
+        "checking",
+        "setup_required",
+        "login_required",
+        "ready",
+        "error"
+      ],
+      "transitions": [
+        [
+          "checking",
+          "status vacío",
+          "setup_required"
+        ],
+        [
+          "checking",
+          "sin sesión",
+          "login_required"
+        ],
+        [
+          "checking",
+          "sesión válida",
+          "ready"
+        ],
+        [
+          "checking",
+          "fallo",
+          "error"
+        ],
+        [
+          "error",
+          "reconectar",
+          "checking"
+        ],
+        [
+          "setup_required",
+          "crear dueño",
+          "ready"
+        ],
+        [
+          "login_required",
+          "login",
+          "ready"
+        ]
+      ],
+      "guards": [
+        "Clave de instalación fuera de loopback; configuración única bajo lock."
+      ],
+      "persistence": "PostgreSQL (usuarios/sesiones) y memoria UI.",
+      "sources": [
+        "web/main.tsx",
+        "src/server/app.ts"
+      ],
+      "tests": [
+        "tests/integration/foundation.test.ts",
+        "tests/e2e/foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "sessions",
+      "title": "Sesiones, identidad y revocación humana",
+      "kind": "implicit",
+      "states": [
+        "signed_out",
+        "authenticated",
+        "expired",
+        "revoked"
+      ],
+      "transitions": [
+        [
+          "signed_out",
+          "credenciales válidas",
+          "authenticated"
+        ],
+        [
+          "authenticated",
+          "vencimiento",
+          "expired"
+        ],
+        [
+          "authenticated",
+          "logout o cambio de permisos",
+          "revoked"
+        ],
+        [
+          "expired",
+          "login explícito",
+          "authenticated"
+        ],
+        [
+          "revoked",
+          "login explícito autorizado",
+          "authenticated"
+        ]
+      ],
+      "guards": [
+        "Cookie/contraseña/grant deben corresponder al mismo actor; no heredar identidad de otra pestaña."
+      ],
+      "persistence": "Cookie HttpOnly, PostgreSQL, sesión local cifrada; aviso entre pestañas.",
+      "sources": [
+        "src/server/security.ts",
+        "src/server/app.ts",
+        "web/api.ts",
+        "web/offline/engine.ts",
+        "web/offline/register.ts"
+      ],
+      "tests": [
+        "tests/integration/foundation.test.ts",
+        "tests/browser-engine-audit.test.ts",
+        "tests/browser-login-terminals.test.ts"
+      ]
+    },
+    {
+      "id": "login-throttle",
+      "title": "Bloqueo temporal de acceso",
+      "kind": "implicit",
+      "states": [
+        "allowed",
+        "counting_failures",
+        "blocked"
+      ],
+      "transitions": [
+        [
+          "allowed",
+          "credencial incorrecta",
+          "counting_failures"
+        ],
+        [
+          "counting_failures",
+          "umbral de fallos",
+          "blocked"
+        ],
+        [
+          "counting_failures",
+          "credencial válida",
+          "allowed"
+        ],
+        [
+          "blocked",
+          "vence espera",
+          "allowed"
+        ]
+      ],
+      "guards": [
+        "Límites de servidor por cuenta/IP y límite offline en el perfil; error genérico."
+      ],
+      "persistence": "login_attempts central y failures local.",
+      "sources": [
+        "src/server/app.ts",
+        "web/offline/engine.ts"
+      ],
+      "tests": [
+        "tests/integration/foundation.test.ts",
+        "tests/browser-login-terminals.test.ts"
+      ]
+    },
+    {
+      "id": "offline-access",
+      "title": "Autorización offline y confianza del reloj",
+      "kind": "implicit",
+      "states": [
+        "valid",
+        "expired",
+        "clock_untrusted",
+        "revoked",
+        "online_required"
+      ],
+      "transitions": [
+        [
+          "valid",
+          "siete días",
+          "expired"
+        ],
+        [
+          "valid",
+          "reloj retrocede fuera de tolerancia",
+          "clock_untrusted"
+        ],
+        [
+          "valid",
+          "revocación conocida",
+          "revoked"
+        ],
+        [
+          "expired",
+          "revalidar mismo actor online",
+          "valid"
+        ],
+        [
+          "clock_untrusted",
+          "revalidar online",
+          "valid"
+        ]
+      ],
+      "guards": [
+        "Caducidad bloquea cobro/apertura, conserva consulta/pedidos/cierre autorizados; canje y administración requieren conexión. Permisos y sucursal se evalúan por acción."
+      ],
+      "persistence": "Concesión firmada, reloj máximo observado y usuario cifrados.",
+      "sources": [
+        "src/authorization.ts",
+        "src/authorization-clock.ts",
+        "web/offline/engine.ts"
+      ],
+      "tests": [
+        "tests/authorization.test.ts",
+        "tests/browser-engine-audit.test.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "browser-enrollment",
+      "title": "Activación de navegador y contraseña offline",
+      "kind": "implicit",
+      "states": [
+        "unlinked",
+        "needs_password",
+        "needs_enrollment",
+        "linked",
+        "retired"
+      ],
+      "transitions": [
+        [
+          "unlinked",
+          "login online sin verificador",
+          "needs_password"
+        ],
+        [
+          "needs_password",
+          "verificador ligado al actor",
+          "needs_enrollment"
+        ],
+        [
+          "unlinked",
+          "login con verificador",
+          "needs_enrollment"
+        ],
+        [
+          "needs_enrollment",
+          "dueño activa equipo",
+          "linked"
+        ],
+        [
+          "linked",
+          "instalación retirada",
+          "retired"
+        ]
+      ],
+      "guards": [
+        "Activar sólo con dueño, identidad y equipo autorizados; no reemplazar otra instalación ni eliminar pendientes."
+      ],
+      "persistence": "Instalación/token central y perfil IndexedDB cifrado.",
+      "sources": [
+        "web/Pos.tsx",
+        "web/offline/engine.ts",
+        "src/server/pos-api.ts"
+      ],
+      "tests": [
+        "tests/integration/caja-access.test.ts",
+        "tests/e2e/caja-access-flow.ts",
+        "tests/e2e/login-terminals-flow.ts"
+      ]
+    },
+    {
+      "id": "terminal-profiles",
+      "title": "Selección y cambio de caja por cuenta",
+      "kind": "implicit",
+      "states": [
+        "active_profile",
+        "sync_required",
+        "switching",
+        "restored_profile",
+        "switch_rejected"
+      ],
+      "transitions": [
+        [
+          "active_profile",
+          "solicitar otra caja",
+          "sync_required"
+        ],
+        [
+          "sync_required",
+          "cola vacía y online",
+          "switching"
+        ],
+        [
+          "switching",
+          "autorización válida",
+          "restored_profile"
+        ],
+        [
+          "switching",
+          "fallo o identidad ajena",
+          "switch_rejected"
+        ],
+        [
+          "switch_rejected",
+          "restaurar perfil previo",
+          "active_profile"
+        ],
+        [
+          "restored_profile",
+          "perfil seleccionado",
+          "active_profile"
+        ]
+      ],
+      "guards": [
+        "Preferencia por actor; offline sólo perfil validado; cambio restaura datos previos si falla."
+      ],
+      "persistence": "terminalProfiles/lastTerminals y activaciones centrales.",
+      "sources": [
+        "web/offline/engine.ts",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/browser-login-terminals.test.ts",
+        "tests/e2e/login-terminals-flow.ts",
+        "tests/e2e/caja-access-flow.ts"
+      ]
+    },
+    {
+      "id": "shifts",
+      "title": "Turno, continuación compartida y cierre remoto",
+      "kind": "implicit",
+      "states": [
+        "closed",
+        "open_local",
+        "open_remote",
+        "open_shared",
+        "closed_detail_pending"
+      ],
+      "transitions": [
+        [
+          "closed",
+          "abrir con base",
+          "open_local"
+        ],
+        [
+          "closed",
+          "descargar turno de otro navegador",
+          "open_remote"
+        ],
+        [
+          "open_remote",
+          "mismo responsable continúa online",
+          "open_shared"
+        ],
+        [
+          "open_local",
+          "continuación desde otro navegador",
+          "open_shared"
+        ],
+        [
+          "open_local",
+          "conteo y cierre local",
+          "closed"
+        ],
+        [
+          "open_shared",
+          "cierre online",
+          "closed"
+        ],
+        [
+          "open_local",
+          "acuse de cierre remoto sin libro",
+          "closed_detail_pending"
+        ],
+        [
+          "closed_detail_pending",
+          "descarga autorizada del cierre",
+          "closed"
+        ]
+      ],
+      "guards": [
+        "Un turno activo por caja; mismo responsable al continuar; libro compartido se incorpora sin pendientes; cierre compartido requiere conexión."
+      ],
+      "persistence": "Eventos locales/centrales, membresías pos_shifts, sharedShifts y marcas de cierre.",
+      "sources": [
+        "web/offline/engine.ts",
+        "src/shift-continuation.ts",
+        "src/server/shift-continuation.ts",
+        "src/shift-receipt.ts"
+      ],
+      "tests": [
+        "tests/integration/caja-access.test.ts",
+        "tests/shift-receipt.test.ts",
+        "tests/browser-engine-audit.test.ts",
+        "tests/e2e/caja-access-flow.ts"
+      ]
+    },
+    {
+      "id": "orders",
+      "title": "Ciclo del pedido y cobro dividido",
+      "kind": "implicit",
+      "states": [
+        "open_empty",
+        "open_with_lines",
+        "partially_paid",
+        "closed"
+      ],
+      "transitions": [
+        [
+          "open_empty",
+          "guardar productos",
+          "open_with_lines"
+        ],
+        [
+          "open_with_lines",
+          "cobrar selección parcial",
+          "partially_paid"
+        ],
+        [
+          "partially_paid",
+          "cobrar remanente",
+          "closed"
+        ],
+        [
+          "open_with_lines",
+          "cobro total",
+          "closed"
+        ],
+        [
+          "open_with_lines",
+          "cancelar todas las unidades",
+          "closed"
+        ],
+        [
+          "open_empty",
+          "cerrar pestaña",
+          "closed"
+        ]
+      ],
+      "guards": [
+        "ID/revisión coinciden, actor/sucursal autorizados, snapshots históricos. Un pedido cerrado no se reabre."
+      ],
+      "persistence": "orders, eventos inmutables, comandos y outbox en commit atómico.",
+      "sources": [
+        "src/orders-domain.ts",
+        "web/offline/engine.ts",
+        "src/server/orders-sync.ts"
+      ],
+      "tests": [
+        "tests/orders.test.ts",
+        "tests/integration/orders.test.ts",
+        "tests/e2e/pos-flow.ts"
+      ]
+    },
+    {
+      "id": "preparation",
+      "title": "Preparación y cancelación de líneas",
+      "kind": "implicit",
+      "states": [
+        "unsent",
+        "sent",
+        "partially_cancelled",
+        "paid_or_cancelled"
+      ],
+      "transitions": [
+        [
+          "unsent",
+          "comanda",
+          "sent"
+        ],
+        [
+          "sent",
+          "quitar parte y declarar preparadas",
+          "partially_cancelled"
+        ],
+        [
+          "sent",
+          "cobrar o cancelar todo",
+          "paid_or_cancelled"
+        ],
+        [
+          "unsent",
+          "retirar producto",
+          "paid_or_cancelled"
+        ],
+        [
+          "partially_cancelled",
+          "cobrar o cancelar remanente",
+          "paid_or_cancelled"
+        ]
+      ],
+      "guards": [
+        "Comanda no consume; sólo preparado cancelado genera desperdicio; no duplicar consumo al cobrar. sentQuantity/quantity son cantidades, no enums."
+      ],
+      "persistence": "Líneas versionadas y eventos de comanda/cancelación.",
+      "sources": [
+        "src/orders-domain.ts",
+        "web/OrderForms.tsx",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/orders.test.ts",
+        "tests/integration/orders.test.ts",
+        "tests/e2e/pos-flow.ts"
+      ]
+    },
+    {
+      "id": "order-tabs",
+      "title": "Selección, cierre y numeración de ventas abiertas",
+      "kind": "explicit",
+      "states": [
+        "none_selected",
+        "selected",
+        "confirm_close",
+        "rename"
+      ],
+      "transitions": [
+        [
+          "none_selected",
+          "crear pedido",
+          "selected"
+        ],
+        [
+          "selected",
+          "cerrar vacío y sin vecinos",
+          "none_selected"
+        ],
+        [
+          "selected",
+          "cerrar con productos",
+          "confirm_close"
+        ],
+        [
+          "confirm_close",
+          "cancelar selección",
+          "selected"
+        ],
+        [
+          "selected",
+          "renombrar",
+          "rename"
+        ],
+        [
+          "rename",
+          "guardar o cancelar",
+          "selected"
+        ]
+      ],
+      "guards": [
+        "Cerrar última pestaña no crea otro pedido; números históricos estables; pedir motivo/desperdicio si tiene líneas."
+      ],
+      "persistence": "Selección por actor y pedidos locales; edición de diálogo en memoria.",
+      "sources": [
+        "web/order-navigation.ts",
+        "web/OrderTabs.tsx",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/order-navigation.test.ts",
+        "tests/e2e/caja-ui-flow.ts",
+        "tests/e2e/pos-flow.ts"
+      ]
+    },
+    {
+      "id": "checkout",
+      "title": "Preparación y confirmación de cobro",
+      "kind": "implicit",
+      "states": [
+        "editing",
+        "invalid",
+        "ready",
+        "submitting",
+        "confirmed",
+        "redemption_uncertain"
+      ],
+      "transitions": [
+        [
+          "editing",
+          "recalcular selección/pagos",
+          "invalid"
+        ],
+        [
+          "editing",
+          "totales y vendedor válidos",
+          "ready"
+        ],
+        [
+          "invalid",
+          "corregir datos",
+          "ready"
+        ],
+        [
+          "ready",
+          "confirmar",
+          "submitting"
+        ],
+        [
+          "submitting",
+          "commit durable",
+          "confirmed"
+        ],
+        [
+          "submitting",
+          "respuesta de canje perdida",
+          "redemption_uncertain"
+        ],
+        [
+          "submitting",
+          "rechazo antes de commit",
+          "editing"
+        ]
+      ],
+      "guards": [
+        "Canje online; vendedor válido; cambio sólo efectivo; cobro muestra éxito tras commit; cliente y comprobante por selección."
+      ],
+      "persistence": "Formulario en memoria; venta/pagos/inventario/caja/cola atómicos.",
+      "sources": [
+        "web/OrderForms.tsx",
+        "src/orders-domain.ts",
+        "web/offline/engine.ts"
+      ],
+      "tests": [
+        "tests/orders.test.ts",
+        "tests/sellers.test.ts",
+        "tests/e2e/sellers-flow.ts",
+        "tests/e2e/loyalty-flow.ts"
+      ]
+    },
+    {
+      "id": "refunds",
+      "title": "Saldo y aplicación de devoluciones",
+      "kind": "implicit",
+      "states": [
+        "not_refunded",
+        "partially_refunded",
+        "fully_refunded"
+      ],
+      "transitions": [
+        [
+          "not_refunded",
+          "devolver parte",
+          "partially_refunded"
+        ],
+        [
+          "not_refunded",
+          "devolver saldo completo",
+          "fully_refunded"
+        ],
+        [
+          "partially_refunded",
+          "otra devolución parcial",
+          "partially_refunded"
+        ],
+        [
+          "partially_refunded",
+          "devolver remanente",
+          "fully_refunded"
+        ]
+      ],
+      "guards": [
+        "Saldos acumulados por producto/propina/domicilio, permiso vigente, motivo; puntos nunca se convierten en efectivo; vendedor/reglas originales."
+      ],
+      "persistence": "Devoluciones y libros inmutables, sin borrar venta original.",
+      "sources": [
+        "src/orders-domain.ts",
+        "src/loyalty.ts",
+        "src/seller-calculation.ts",
+        "src/server/orders-sync.ts"
+      ],
+      "tests": [
+        "tests/loyalty.test.ts",
+        "tests/sellers.test.ts",
+        "tests/integration/orders.test.ts",
+        "tests/integration/loyalty.test.ts"
+      ]
+    },
+    {
+      "id": "command-idempotency",
+      "title": "Comando idempotente y conflicto de revisión",
+      "kind": "implicit",
+      "states": [
+        "new",
+        "committed",
+        "replayed",
+        "conflict"
+      ],
+      "transitions": [
+        [
+          "new",
+          "validar y commit",
+          "committed"
+        ],
+        [
+          "committed",
+          "mismo ID/actor/contenido",
+          "replayed"
+        ],
+        [
+          "committed",
+          "mismo ID con otro contenido",
+          "conflict"
+        ],
+        [
+          "new",
+          "revisión ya cambió",
+          "conflict"
+        ]
+      ],
+      "guards": [
+        "Fingerprint ligado al actor y operación; ningún segundo efecto comercial; no avanzar secuencia ante rechazo."
+      ],
+      "persistence": "Comandos locales y operaciones centrales guardados en la transacción de negocio.",
+      "sources": [
+        "web/Catalog.tsx",
+        "web/Pos.tsx",
+        "web/offline/engine.ts",
+        "src/server/catalog-api.ts",
+        "src/server/orders-sync.ts"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/integration/orders.test.ts",
+        "tests/integration/pos.test.ts"
+      ]
+    },
+    {
+      "id": "outbox",
+      "title": "Sincronización, acuse y conciliación",
+      "kind": "explicit",
+      "states": [
+        "pending",
+        "retry",
+        "reconciliation_required",
+        "acknowledged"
+      ],
+      "transitions": [
+        [
+          "pending",
+          "fallo de transporte",
+          "retry"
+        ],
+        [
+          "retry",
+          "reintento de transporte",
+          "retry"
+        ],
+        [
+          "pending",
+          "rechazo de contrato/permisos/conflicto",
+          "reconciliation_required"
+        ],
+        [
+          "retry",
+          "rechazo definitivo",
+          "reconciliation_required"
+        ],
+        [
+          "pending",
+          "acuse exacto",
+          "acknowledged"
+        ],
+        [
+          "retry",
+          "acuse exacto",
+          "acknowledged"
+        ],
+        [
+          "reconciliation_required",
+          "recuperación causal específica",
+          "retry"
+        ],
+        [
+          "reconciliation_required",
+          "reencadenar secuencia con cursor central",
+          "pending"
+        ]
+      ],
+      "guards": [
+        "Acuse repite envoltura completa; conservar payload/grant; no limpiar cola por respuesta incorrecta. Recuperación requiere guardas específicas, no reintento ciego."
+      ],
+      "persistence": "Outbox cifrada y secuencia/operaciones centrales; acknowledged se retira del outbox.",
+      "sources": [
+        "src/sync.ts",
+        "web/offline/engine.ts",
+        "src/server/pos-api.ts"
+      ],
+      "tests": [
+        "tests/sync.test.ts",
+        "tests/integration/pos.test.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "redemption",
+      "title": "Intención durable y cancelación de canje",
+      "kind": "implicit",
+      "states": [
+        "none",
+        "staged",
+        "uncertain",
+        "committed",
+        "cancelled"
+      ],
+      "transitions": [
+        [
+          "none",
+          "guardar intención antes de red",
+          "staged"
+        ],
+        [
+          "staged",
+          "confirmación central y acuse",
+          "committed"
+        ],
+        [
+          "staged",
+          "respuesta perdida",
+          "uncertain"
+        ],
+        [
+          "uncertain",
+          "recuperar mismo comando",
+          "committed"
+        ],
+        [
+          "staged",
+          "cancelar antes de commit central",
+          "cancelled"
+        ],
+        [
+          "uncertain",
+          "cancelar antes de commit central",
+          "cancelled"
+        ],
+        [
+          "uncertain",
+          "cancelar después de commit",
+          "committed"
+        ]
+      ],
+      "guards": [
+        "Un intento bloquea nuevas escrituras; central serializa cancelación/confirmación; acuse exacto; conservar intención al cerrar navegador."
+      ],
+      "persistence": "staged local y operaciones/cancelaciones/puntos centrales.",
+      "sources": [
+        "web/offline/engine.ts",
+        "src/server/loyalty-api.ts",
+        "src/server/orders-sync.ts"
+      ],
+      "tests": [
+        "tests/integration/loyalty.test.ts",
+        "tests/e2e/loyalty-flow.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "catalog-lifecycle",
+      "title": "Catálogo operativo y archivo reversible",
+      "kind": "implicit",
+      "states": [
+        "active",
+        "archived"
+      ],
+      "transitions": [
+        [
+          "active",
+          "archivar versión esperada",
+          "archived"
+        ],
+        [
+          "archived",
+          "restaurar versión esperada",
+          "active"
+        ]
+      ],
+      "guards": [
+        "Archivar preserva versiones e historia; producto terminado y su artículo se archivan juntos; agentes excluyen archivados."
+      ],
+      "persistence": "archived_at central y proyección de snapshot.",
+      "sources": [
+        "src/server/catalog-api.ts",
+        "src/server/agent-api.ts",
+        "web/Catalog.tsx"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/integration/code-audit.test.ts"
+      ]
+    },
+    {
+      "id": "recipe-versions",
+      "title": "Borrador, receta vigente y habilitación de preparados",
+      "kind": "explicit",
+      "states": [
+        "draft",
+        "active_current",
+        "active_historical"
+      ],
+      "transitions": [
+        [
+          "draft",
+          "nueva versión completa activa",
+          "active_current"
+        ],
+        [
+          "active_current",
+          "activar otra versión",
+          "active_historical"
+        ],
+        [
+          "active_current",
+          "guardar nuevo borrador",
+          "active_current"
+        ]
+      ],
+      "guards": [
+        "Activar requiere cantidades/conversiones/opciones completas; versión inmutable; borrador no reemplaza receta vigente."
+      ],
+      "persistence": "recipe_versions y puntero active_recipe_version; draft/active en contrato.",
+      "sources": [
+        "src/catalog.ts",
+        "src/server/catalog-api.ts",
+        "web/Catalog.tsx"
+      ],
+      "tests": [
+        "tests/catalog.test.ts",
+        "tests/integration/catalog.test.ts",
+        "tests/e2e/catalog-flow.ts"
+      ]
+    },
+    {
+      "id": "initial-inventory",
+      "title": "Inventario inicial y reversión causal",
+      "kind": "implicit",
+      "states": [
+        "no_current_initial",
+        "current_initial",
+        "reversed"
+      ],
+      "transitions": [
+        [
+          "no_current_initial",
+          "registrar inicial/import_initial",
+          "current_initial"
+        ],
+        [
+          "current_initial",
+          "contrapartida única",
+          "reversed"
+        ],
+        [
+          "reversed",
+          "registrar nuevo inicial",
+          "current_initial"
+        ]
+      ],
+      "guards": [
+        "Motivo/permisos; una sola reversión por movimiento; no cambiar registro original ni confundir costo pendiente con cero."
+      ],
+      "persistence": "inventory_movements inmutable y reverses_id único.",
+      "sources": [
+        "src/server/catalog-api.ts",
+        "src/server/agent-api.ts"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/integration/code-audit.test.ts",
+        "tests/e2e/catalog-flow.ts"
+      ]
+    },
+    {
+      "id": "cost-knowledge",
+      "title": "Costo conocido, pendiente y conciliación",
+      "kind": "implicit",
+      "states": [
+        "unknown",
+        "known",
+        "reconciled"
+      ],
+      "transitions": [
+        [
+          "unknown",
+          "entrada con costo fiable para operación futura",
+          "known"
+        ],
+        [
+          "unknown",
+          "dueño concilia causalmente",
+          "reconciled"
+        ],
+        [
+          "known",
+          "nueva entrada ponderada",
+          "known"
+        ]
+      ],
+      "guards": [
+        "Sólo dueño; cero es conocido; entrada tardía no reescribe historia. Estados describen conocimiento de costo, no un enum comercial."
+      ],
+      "persistence": "Movimientos e inventory_cost_reconciliations.",
+      "sources": [
+        "src/server/catalog-api.ts",
+        "src/server/reports-api.ts",
+        "web/Catalog.tsx"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/report-format.test.ts"
+      ]
+    },
+    {
+      "id": "transfers",
+      "title": "Despacho y recepción parcial de traslado",
+      "kind": "implicit",
+      "states": [
+        "draft",
+        "dispatched",
+        "partially_received",
+        "received"
+      ],
+      "transitions": [
+        [
+          "draft",
+          "despachar una sola vez",
+          "dispatched"
+        ],
+        [
+          "dispatched",
+          "recibir parte",
+          "partially_received"
+        ],
+        [
+          "dispatched",
+          "recibir todo",
+          "received"
+        ],
+        [
+          "partially_received",
+          "recibir parte del saldo",
+          "partially_received"
+        ],
+        [
+          "partially_received",
+          "recibir saldo completo",
+          "received"
+        ]
+      ],
+      "guards": [
+        "Bodegas distintas y autorizadas; recepción nunca excede despacho; despachar una vez; operación idempotente."
+      ],
+      "persistence": "Transferencia, líneas y eventos dispatch/receipt inmutables.",
+      "sources": [
+        "src/server/catalog-api.ts",
+        "web/InventoryOperations.tsx",
+        "migrations/007-transfers.sql"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/e2e/inventory-operations-flow.ts"
+      ]
+    },
+    {
+      "id": "inventory-commits",
+      "title": "Compras pagadas, conteos y consumo interno",
+      "kind": "implicit",
+      "states": [
+        "editing",
+        "invalid",
+        "ready",
+        "committed"
+      ],
+      "transitions": [
+        [
+          "editing",
+          "validar cantidades/unidades/permisos",
+          "invalid"
+        ],
+        [
+          "editing",
+          "datos completos",
+          "ready"
+        ],
+        [
+          "invalid",
+          "corregir",
+          "ready"
+        ],
+        [
+          "ready",
+          "commit central atómico",
+          "committed"
+        ]
+      ],
+      "guards": [
+        "Online; importes de compra accesibles al encargado de su local; conteo guarda esperado/contado/diferencia; consumo no es venta ni desperdicio."
+      ],
+      "persistence": "Compras/conteos/consumos y movimientos confirmados; no hay cuentas por pagar ni borrador persistente de compra.",
+      "sources": [
+        "web/Purchases.tsx",
+        "web/InventoryOperations.tsx",
+        "src/server/catalog-api.ts"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/e2e/purchases-flow.ts",
+        "tests/e2e/inventory-operations-flow.ts"
+      ]
+    },
+    {
+      "id": "loyalty-membership",
+      "title": "Inscripción, saldo de puntos y reglas versionadas",
+      "kind": "implicit",
+      "states": [
+        "not_enrolled",
+        "enrolled_nonnegative",
+        "enrolled_negative"
+      ],
+      "transitions": [
+        [
+          "not_enrolled",
+          "inscripción online única",
+          "enrolled_nonnegative"
+        ],
+        [
+          "enrolled_nonnegative",
+          "ajuste/reversión deja saldo negativo",
+          "enrolled_negative"
+        ],
+        [
+          "enrolled_negative",
+          "acumulación/ajuste restituye saldo",
+          "enrolled_nonnegative"
+        ]
+      ],
+      "guards": [
+        "Saldo central autoriza canje; puntos de compra offline quedan pendientes hasta acuse; saldo negativo bloquea canjes, no compras. Reglas nuevas no recalculan historia."
+      ],
+      "persistence": "loyalty_members, versiones y libro inmutable; caché local identifica pendientes.",
+      "sources": [
+        "src/loyalty.ts",
+        "src/server/loyalty-api.ts",
+        "web/Loyalty.tsx",
+        "web/OrderForms.tsx"
+      ],
+      "tests": [
+        "tests/loyalty.test.ts",
+        "tests/integration/loyalty.test.ts",
+        "tests/e2e/loyalty-flow.ts"
+      ]
+    },
+    {
+      "id": "sellers-commissions",
+      "title": "Vendedor, comisión y atribución histórica",
+      "kind": "implicit",
+      "states": [
+        "seller_active",
+        "seller_inactive",
+        "commission_pending",
+        "commission_zero",
+        "commission_configured"
+      ],
+      "transitions": [
+        [
+          "seller_active",
+          "desactivar con versión esperada",
+          "seller_inactive"
+        ],
+        [
+          "seller_inactive",
+          "reactivar con versión esperada",
+          "seller_active"
+        ],
+        [
+          "commission_pending",
+          "guardar cero explícito",
+          "commission_zero"
+        ],
+        [
+          "commission_pending",
+          "guardar importe positivo",
+          "commission_configured"
+        ],
+        [
+          "commission_configured",
+          "dejar pendiente nueva versión",
+          "commission_pending"
+        ]
+      ],
+      "guards": [
+        "Vendedor independiente de usuario/responsable; sucursal autorizada; comisión cero distinta de pendiente; venta guarda identidad/regla. Son dos regiones independientes."
+      ],
+      "persistence": "sellers, product_commissions, versiones y atribuciones en comprobantes.",
+      "sources": [
+        "src/sellers.ts",
+        "src/seller-calculation.ts",
+        "src/server/sellers-api.ts",
+        "web/Sellers.tsx"
+      ],
+      "tests": [
+        "tests/sellers.test.ts",
+        "tests/integration/sellers.test.ts",
+        "tests/e2e/sellers-flow.ts"
+      ]
+    },
+    {
+      "id": "agent-credentials",
+      "title": "Credenciales de agente y revelación única",
+      "kind": "implicit",
+      "states": [
+        "active",
+        "rotated",
+        "revoked",
+        "secret_visible",
+        "secret_closed"
+      ],
+      "transitions": [
+        [
+          "active",
+          "rotar con motivo",
+          "rotated"
+        ],
+        [
+          "rotated",
+          "nueva credencial vigente",
+          "active"
+        ],
+        [
+          "active",
+          "revocar",
+          "revoked"
+        ],
+        [
+          "secret_visible",
+          "cerrar diálogo",
+          "secret_closed"
+        ]
+      ],
+      "guards": [
+        "Sólo dueño administra; credencial anterior se invalida; secreto no se persiste en UI ni se vuelve a consultar; alcance por sucursal. Regiones central y revelación UI."
+      ],
+      "persistence": "Hash/token activo central; secreto efímero en memoria.",
+      "sources": [
+        "src/server/agent-api.ts",
+        "src/server/security.ts",
+        "web/Agents.tsx"
+      ],
+      "tests": [
+        "tests/integration/agent-api.test.ts",
+        "tests/integration/agent-mcp.test.ts",
+        "tests/e2e/agents.spec.ts"
+      ]
+    },
+    {
+      "id": "agent-imports",
+      "title": "Vista previa y confirmación de lotes de agente",
+      "kind": "implicit",
+      "states": [
+        "unvalidated",
+        "invalid",
+        "previewed",
+        "committed",
+        "conflict"
+      ],
+      "transitions": [
+        [
+          "unvalidated",
+          "errores de filas/permisos",
+          "invalid"
+        ],
+        [
+          "unvalidated",
+          "validación válida",
+          "previewed"
+        ],
+        [
+          "previewed",
+          "fingerprint y revalidación bajo lock",
+          "committed"
+        ],
+        [
+          "previewed",
+          "contenido/contexto cambió",
+          "conflict"
+        ]
+      ],
+      "guards": [
+        "MCP/API reutilizan dominio; confirmación revalida y guarda respuesta por operationId/actor; vista previa de agente no persiste un draft."
+      ],
+      "persistence": "Importaciones/operaciones centrales al confirmar; fingerprint de contenido en cliente.",
+      "sources": [
+        "src/server/agent-api.ts",
+        "src/server/agent-mcp.ts",
+        "src/server/catalog-import-store.ts"
+      ],
+      "tests": [
+        "tests/integration/agent-api.test.ts",
+        "tests/integration/agent-mcp.test.ts"
+      ]
+    },
+    {
+      "id": "excel-server",
+      "title": "Vista previa Excel con caducidad e idempotencia",
+      "kind": "implicit",
+      "states": [
+        "invalid",
+        "preview_valid",
+        "expired",
+        "context_changed",
+        "confirmed"
+      ],
+      "transitions": [
+        [
+          "preview_valid",
+          "vence TTL",
+          "expired"
+        ],
+        [
+          "preview_valid",
+          "referencias o inventario cambian",
+          "context_changed"
+        ],
+        [
+          "preview_valid",
+          "confirmar mismo actor/branch",
+          "confirmed"
+        ],
+        [
+          "confirmed",
+          "repetir previewId",
+          "confirmed"
+        ]
+      ],
+      "guards": [
+        "Transacción atómica; fingerprint vigente; confirmar primero recupera respuesta previa; no duplicar registros ni sobreescribir referencias existentes."
+      ],
+      "persistence": "excel_catalog_imports con expires_at/response/confirmed_at.",
+      "sources": [
+        "src/server/excel-import-api.ts",
+        "src/server/excel-catalog.ts",
+        "migrations/020-excel-catalog-import.sql"
+      ],
+      "tests": [
+        "tests/excel-catalog.test.ts",
+        "tests/integration/excel-import.test.ts"
+      ]
+    },
+    {
+      "id": "excel-ui",
+      "title": "Importación Excel y refresco posterior al commit",
+      "kind": "explicit",
+      "states": [
+        "editing",
+        "preview",
+        "completed_refresh_pending",
+        "completed_refresh_failed",
+        "completed_refresh_succeeded"
+      ],
+      "transitions": [
+        [
+          "editing",
+          "validación recibida",
+          "preview"
+        ],
+        [
+          "preview",
+          "cambiar archivo o motivo",
+          "editing"
+        ],
+        [
+          "preview",
+          "confirmación central válida",
+          "completed_refresh_pending"
+        ],
+        [
+          "completed_refresh_pending",
+          "fallo de consulta",
+          "completed_refresh_failed"
+        ],
+        [
+          "completed_refresh_pending",
+          "consulta correcta",
+          "completed_refresh_succeeded"
+        ],
+        [
+          "completed_refresh_failed",
+          "reintentar sólo consulta",
+          "completed_refresh_pending"
+        ]
+      ],
+      "guards": [
+        "Una acción asíncrona en curso; preview válido con ID; completado es irreversible, conserva importId; error de refresco no repite importación."
+      ],
+      "persistence": "Sólo memoria UI; resultado y vista previa central mantienen la idempotencia durable.",
+      "sources": [
+        "web/CatalogImport.tsx",
+        "web/catalog-import-state.ts",
+        "web/Catalog.tsx"
+      ],
+      "tests": [
+        "tests/state-machines.test.ts",
+        "tests/e2e/state-machines.spec.ts"
+      ]
+    },
+    {
+      "id": "notification-mode",
+      "title": "Elegibilidad de reporte para envío",
+      "kind": "explicit",
+      "states": [
+        "preview",
+        "live",
+        "legacy"
+      ],
+      "transitions": [],
+      "guards": [
+        "Modo inmutable del reporte; activar configuración no convierte preview/legacy en live. Destinatario dueño, emisor negocio, configuración y alcance revalidados."
+      ],
+      "persistence": "notification_intents.mode y hash de configuración; no existen transiciones entre modos.",
+      "sources": [
+        "src/server/notifications-api.ts",
+        "src/server/notification-delivery.ts",
+        "migrations/024-whatsapp-owner-reports.sql"
+      ],
+      "tests": [
+        "tests/integration/notifications.test.ts",
+        "tests/e2e/whatsapp.spec.ts"
+      ]
+    },
+    {
+      "id": "notification-delivery",
+      "title": "Cola y evidencia de entrega WhatsApp",
+      "kind": "explicit",
+      "states": [
+        "pending",
+        "sending",
+        "accepted",
+        "sent",
+        "delivered",
+        "read",
+        "failed_retryable",
+        "failed_terminal",
+        "uncertain"
+      ],
+      "transitions": [
+        [
+          "pending",
+          "claim autorizado",
+          "sending"
+        ],
+        [
+          "failed_retryable",
+          "backoff cumplido y claim",
+          "sending"
+        ],
+        [
+          "sending",
+          "HTTP acepta",
+          "accepted"
+        ],
+        [
+          "sending",
+          "error transitorio y quedan intentos",
+          "failed_retryable"
+        ],
+        [
+          "sending",
+          "error definitivo o tres intentos",
+          "failed_terminal"
+        ],
+        [
+          "sending",
+          "timeout/proceso interrumpido",
+          "uncertain"
+        ],
+        [
+          "accepted",
+          "callback sent",
+          "sent"
+        ],
+        [
+          "uncertain",
+          "callback delivered",
+          "delivered"
+        ],
+        [
+          "sent",
+          "callback delivered",
+          "delivered"
+        ],
+        [
+          "delivered",
+          "callback read",
+          "read"
+        ],
+        [
+          "sent",
+          "callback failed",
+          "failed_terminal"
+        ]
+      ],
+      "guards": [
+        "Mismo delivery_id bajo lock; callback puede preceder HTTP; delivered/read no retroceden; respuesta HTTP no reemplaza evidencia del callback; uncertain no se reenvía automáticamente."
+      ],
+      "persistence": "Intención/intententos/eventos durables; labels/enum/transición en dominio compartido.",
+      "sources": [
+        "src/notification-state.ts",
+        "src/server/notification-delivery.ts",
+        "src/server/notifications-api.ts",
+        "web/Notifications.tsx"
+      ],
+      "tests": [
+        "tests/state-machines.test.ts",
+        "tests/whatsapp.test.ts",
+        "tests/integration/notifications.test.ts"
+      ]
+    },
+    {
+      "id": "notification-scheduler",
+      "title": "Evaluación diaria y apagado del despachador",
+      "kind": "implicit",
+      "states": [
+        "idle",
+        "running",
+        "failed",
+        "closing",
+        "daily_done"
+      ],
+      "transitions": [
+        [
+          "idle",
+          "tick/onReady/cierre sincronizado",
+          "running"
+        ],
+        [
+          "running",
+          "evaluación y despachos completos",
+          "idle"
+        ],
+        [
+          "running",
+          "fallo",
+          "failed"
+        ],
+        [
+          "failed",
+          "tick siguiente",
+          "running"
+        ],
+        [
+          "idle",
+          "onClose",
+          "closing"
+        ],
+        [
+          "running",
+          "corte diario evaluado",
+          "daily_done"
+        ],
+        [
+          "daily_done",
+          "día siguiente después de 08:00 Bogotá",
+          "running"
+        ]
+      ],
+      "guards": [
+        "Máximo una evaluación en proceso; lock central y corte por fecha; reanudar tras interrupción; esperar ejecución activa al cerrar. Regiones proceso y corte diario."
+      ],
+      "persistence": "running/closing en memoria, notification_daily_runs central.",
+      "sources": [
+        "src/server/notifications-api.ts"
+      ],
+      "tests": [
+        "tests/integration/notifications.test.ts",
+        "tests/e2e/whatsapp.spec.ts"
+      ]
+    },
+    {
+      "id": "backups",
+      "title": "Creación, integridad y ensayo aislado de respaldo",
+      "kind": "implicit",
+      "states": [
+        "created_unverified",
+        "verified",
+        "invalid",
+        "restore_requested",
+        "restored_reconciled",
+        "restore_failed"
+      ],
+      "transitions": [
+        [
+          "created_unverified",
+          "SHA-256 coincide",
+          "verified"
+        ],
+        [
+          "created_unverified",
+          "archivo alterado",
+          "invalid"
+        ],
+        [
+          "verified",
+          "destino aislado confirmado",
+          "restore_requested"
+        ],
+        [
+          "restore_requested",
+          "carga y conciliación correctas",
+          "restored_reconciled"
+        ],
+        [
+          "restore_requested",
+          "destino/conflicto/integridad",
+          "restore_failed"
+        ]
+      ],
+      "guards": [
+        "Dueño; destino diferente e inexistente; cobertura sólo servidor; no reemplazar base activa. Manifest y ensayo son regiones separadas."
+      ],
+      "persistence": "Manifiesto/archivo local y base aislada de ensayo; no cubre IndexedDB.",
+      "sources": [
+        "src/server/backup-api.ts",
+        "web/Backups.tsx"
+      ],
+      "tests": [
+        "tests/integration/backup.test.ts",
+        "tests/e2e/foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "browser-storage",
+      "title": "Agregado cifrado, exclusión entre pestañas y commit",
+      "kind": "implicit",
+      "states": [
+        "uninitialized",
+        "ready",
+        "locked",
+        "committing",
+        "committed",
+        "failed"
+      ],
+      "transitions": [
+        [
+          "uninitialized",
+          "abrir IDB y clave",
+          "ready"
+        ],
+        [
+          "ready",
+          "Web Lock exclusivo",
+          "locked"
+        ],
+        [
+          "locked",
+          "escribir agregado",
+          "committing"
+        ],
+        [
+          "committing",
+          "transaction complete",
+          "committed"
+        ],
+        [
+          "committing",
+          "abort/error",
+          "failed"
+        ],
+        [
+          "committed",
+          "liberar lock",
+          "ready"
+        ],
+        [
+          "failed",
+          "conservar estado durable previo",
+          "ready"
+        ]
+      ],
+      "guards": [
+        "No confirmar UI antes de IDB complete; clave no exportable; no borrar datos para resolver fallos. Persistencia del sitio no equivale a backup."
+      ],
+      "persistence": "IndexedDB cifrada y Web Locks; caché SW sólo interfaz pública.",
+      "sources": [
+        "web/offline/storage.ts",
+        "web/offline/crypto.ts",
+        "web/offline/engine.ts"
+      ],
+      "tests": [
+        "tests/browser-engine-audit.test.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "service-worker",
+      "title": "Instalación, espera, activación y precarga offline",
+      "kind": "implicit",
+      "states": [
+        "installing",
+        "waiting",
+        "active",
+        "offline_shell",
+        "install_failed"
+      ],
+      "transitions": [
+        [
+          "installing",
+          "precarga completa con cliente anterior",
+          "waiting"
+        ],
+        [
+          "installing",
+          "fallo de precarga",
+          "install_failed"
+        ],
+        [
+          "waiting",
+          "clientes anteriores cierran",
+          "active"
+        ],
+        [
+          "active",
+          "navegación falla por red",
+          "offline_shell"
+        ],
+        [
+          "offline_shell",
+          "red vuelve",
+          "active"
+        ]
+      ],
+      "guards": [
+        "No skipWaiting forzado; no cachear API/costos; limpiar sólo versiones nativos-shell anteriores; no borrar IDB. Estados waiting/active son del navegador."
+      ],
+      "persistence": "Cache Storage de interfaz y ciclo nativo del service worker.",
+      "sources": [
+        "src/service-worker.ts",
+        "web/offline/register.ts",
+        "scripts/build-offline.ts"
+      ],
+      "tests": [
+        "tests/service-worker.test.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "legacy-transfer",
+      "title": "Traslado único de caja histórica a navegador",
+      "kind": "historical",
+      "states": [
+        "legacy_writable",
+        "target_fixed",
+        "browser_imported",
+        "legacy_retired"
+      ],
+      "transitions": [
+        [
+          "legacy_writable",
+          "fijar targetId con servicio anterior detenido",
+          "target_fixed"
+        ],
+        [
+          "target_fixed",
+          "mismo destino reintenta/recibe agregado",
+          "browser_imported"
+        ],
+        [
+          "browser_imported",
+          "motor anterior detecta traslado",
+          "legacy_retired"
+        ]
+      ],
+      "guards": [
+        "Sólo puente de desarrollo/dueño; destino único; conservar fuente, instalación, secuencia, outbox y canje; impedir escrituras del motor anterior."
+      ],
+      "persistence": "SQLite/DPAPI previos, meta browserTransferTarget y agregado IDB.",
+      "sources": [
+        "src/server/local-transition.ts",
+        "src/pos/engine.ts",
+        "src/pos/store.ts",
+        "web/offline/engine.ts"
+      ],
+      "tests": [
+        "tests/integration/loyalty.test.ts",
+        "tests/e2e/browser-flow.ts"
+      ]
+    },
+    {
+      "id": "ui-operation",
+      "title": "Operación compartida de formulario",
+      "kind": "explicit",
+      "states": [
+        "idle",
+        "running",
+        "succeeded",
+        "failed"
+      ],
+      "transitions": [
+        [
+          "idle",
+          "submit habilitado",
+          "running"
+        ],
+        [
+          "running",
+          "resuelve",
+          "succeeded"
+        ],
+        [
+          "running",
+          "rechaza o lanza",
+          "failed"
+        ],
+        [
+          "failed",
+          "corregir y reintentar",
+          "running"
+        ],
+        [
+          "succeeded",
+          "nueva acción",
+          "running"
+        ],
+        [
+          "failed",
+          "reset fuera de ejecución",
+          "idle"
+        ]
+      ],
+      "guards": [
+        "Adquirir exclusión antes de yield; un segundo evento no ejecuta otro callback; disabled bloquea handler; conservar campos/error y aria-busy. No sustituye idempotencia durable."
+      ],
+      "persistence": "Sólo memoria por instancia; usado por SaveForm y acciones de CatalogImport.",
+      "sources": [
+        "src/async-operation.ts",
+        "web/useAsyncOperation.ts",
+        "web/components.tsx"
+      ],
+      "tests": [
+        "tests/state-machines.test.ts",
+        "tests/e2e/state-machines.spec.ts",
+        "tests/e2e/foundation.spec.ts"
+      ]
+    },
+    {
+      "id": "remote-queries",
+      "title": "Consultas, paginación y descarte de respuestas obsoletas",
+      "kind": "implicit",
+      "states": [
+        "loading",
+        "loaded",
+        "empty",
+        "failed",
+        "loading_more",
+        "stale_discarded"
+      ],
+      "transitions": [
+        [
+          "loading",
+          "respuesta con filas",
+          "loaded"
+        ],
+        [
+          "loading",
+          "respuesta vacía",
+          "empty"
+        ],
+        [
+          "loading",
+          "error",
+          "failed"
+        ],
+        [
+          "loaded",
+          "cursor siguiente",
+          "loading_more"
+        ],
+        [
+          "loading_more",
+          "respuesta vigente",
+          "loaded"
+        ],
+        [
+          "loading",
+          "filtro/sucursal cambia antes de respuesta",
+          "stale_discarded"
+        ],
+        [
+          "failed",
+          "actualizar",
+          "loading"
+        ]
+      ],
+      "guards": [
+        "Generación/cancelación en Informes, WhatsApp, Resumen y selecciones específicas; guardas no uniformes en todas las listas; exportación usa todos los resultados autorizados."
+      ],
+      "persistence": "Estado transitorio UI; cursores/contexto de última sincronización central.",
+      "sources": [
+        "web/Reports.tsx",
+        "web/Notifications.tsx",
+        "web/Dashboard.tsx",
+        "web/Audit.tsx",
+        "web/Customers.tsx",
+        "web/Catalog.tsx",
+        "web/Sellers.tsx",
+        "web/Branches.tsx",
+        "web/Purchases.tsx",
+        "web/InventoryOperations.tsx",
+        "web/Agents.tsx",
+        "web/Backups.tsx",
+        "web/Loyalty.tsx",
+        "web/Users.tsx"
+      ],
+      "tests": [
+        "tests/e2e/foundation.spec.ts",
+        "tests/e2e/whatsapp.spec.ts",
+        "tests/e2e/sellers-flow.ts",
+        "tests/integration/reports.test.ts"
+      ]
+    },
+    {
+      "id": "ui-dialogs",
+      "title": "Diálogos y contexto de edición",
+      "kind": "implicit",
+      "states": [
+        "closed",
+        "editing",
+        "confirming",
+        "submitting",
+        "error",
+        "result"
+      ],
+      "transitions": [
+        [
+          "closed",
+          "crear/editar/seleccionar",
+          "editing"
+        ],
+        [
+          "editing",
+          "acción requiere confirmación",
+          "confirming"
+        ],
+        [
+          "confirming",
+          "confirmar",
+          "submitting"
+        ],
+        [
+          "editing",
+          "guardar",
+          "submitting"
+        ],
+        [
+          "submitting",
+          "rechazo",
+          "error"
+        ],
+        [
+          "error",
+          "corregir",
+          "editing"
+        ],
+        [
+          "submitting",
+          "éxito con comprobante/credencial",
+          "result"
+        ],
+        [
+          "editing",
+          "Escape/cerrar",
+          "closed"
+        ],
+        [
+          "result",
+          "cerrar y devolver foco",
+          "closed"
+        ]
+      ],
+      "guards": [
+        "Tipos de diálogo y datos auxiliares deben corresponder; canClose explícito en importación. Otros formularios aún pueden cerrarse mientras su solicitud continúa. Ver pendiente documentado."
+      ],
+      "persistence": "Memoria: múltiples instancias por módulo y modal/cancelId/line/receipt en Caja.",
+      "sources": [
+        "web/components.tsx",
+        "web/Pos.tsx",
+        "web/OrderForms.tsx",
+        "web/Agents.tsx",
+        "web/Backups.tsx",
+        "web/Catalog.tsx",
+        "web/InventoryOperations.tsx",
+        "web/Users.tsx",
+        "web/Sellers.tsx",
+        "web/Branches.tsx",
+        "web/Purchases.tsx"
+      ],
+      "tests": [
+        "tests/e2e/foundation.spec.ts",
+        "tests/e2e/agents.spec.ts",
+        "tests/e2e/caja-ui-flow.ts"
+      ]
+    },
+    {
+      "id": "ui-navigation",
+      "title": "Navegación, panel móvil y preferencias",
+      "kind": "implicit",
+      "states": [
+        "page_selected",
+        "menu_open",
+        "menu_closed",
+        "light",
+        "dark",
+        "mobile_products",
+        "mobile_order"
+      ],
+      "transitions": [
+        [
+          "menu_closed",
+          "abrir menú",
+          "menu_open"
+        ],
+        [
+          "menu_open",
+          "navegar o cerrar",
+          "menu_closed"
+        ],
+        [
+          "page_selected",
+          "navegar a módulo permitido",
+          "page_selected"
+        ],
+        [
+          "light",
+          "toggle",
+          "dark"
+        ],
+        [
+          "dark",
+          "toggle",
+          "light"
+        ],
+        [
+          "mobile_products",
+          "ver pedido",
+          "mobile_order"
+        ],
+        [
+          "mobile_order",
+          "ver productos",
+          "mobile_products"
+        ]
+      ],
+      "guards": [
+        "Regiones independientes; tema persiste entre Administración/Caja; enlaces de notificación requieren dueño; navegación conserva datos durables de Caja."
+      ],
+      "persistence": "Página/menú en memoria, tema en localStorage, enlace en URL.",
+      "sources": [
+        "web/main.tsx",
+        "web/Pos.tsx",
+        "web/components.tsx",
+        "web/theme.css"
+      ],
+      "tests": [
+        "tests/e2e/foundation.spec.ts",
+        "tests/e2e/caja-ui-flow.ts",
+        "tests/e2e/whatsapp.spec.ts"
+      ]
+    },
+    {
+      "id": "runtime-migrations",
+      "title": "Arranque, migraciones y cierre de servidor",
+      "kind": "implicit",
+      "states": [
+        "starting",
+        "migrating",
+        "listening",
+        "closing",
+        "stopped",
+        "failed"
+      ],
+      "transitions": [
+        [
+          "starting",
+          "configuración válida y DB disponible",
+          "migrating"
+        ],
+        [
+          "migrating",
+          "checksum/lock y migraciones completas",
+          "listening"
+        ],
+        [
+          "migrating",
+          "checksum o SQL inválido",
+          "failed"
+        ],
+        [
+          "listening",
+          "señal de cierre",
+          "closing"
+        ],
+        [
+          "closing",
+          "cerrar servidor/pool",
+          "stopped"
+        ]
+      ],
+      "guards": [
+        "No reescribir migraciones; lock y checksum; configuración alojada separada de desarrollo; salud consulta DB."
+      ],
+      "persistence": "schema_migrations central y proceso Node; ayudantes locales sólo desarrollo/pruebas.",
+      "sources": [
+        "src/server/db.ts",
+        "src/server/production-config.ts",
+        "scripts/production.ts",
+        "scripts/dev.ts",
+        "scripts/local-postgres.ts"
+      ],
+      "tests": [
+        "tests/integration/foundation.test.ts",
+        "tests/production-config.test.ts"
+      ]
+    },
+    {
+      "id": "connectivity",
+      "title": "Conectividad observada y recuperación de red",
+      "kind": "implicit",
+      "states": [
+        "unreachable",
+        "reachable"
+      ],
+      "transitions": [
+        [
+          "unreachable",
+          "HTTP responde, incluso rechazo de permisos",
+          "reachable"
+        ],
+        [
+          "reachable",
+          "fallo de transporte o timeout",
+          "unreachable"
+        ],
+        [
+          "unreachable",
+          "siguiente intento responde",
+          "reachable"
+        ]
+      ],
+      "guards": [
+        "La marca online describe transporte, no autenticación ni autorización; depende del último intento, no sólo navigator.onLine. Un fallo conserva operaciones locales."
+      ],
+      "persistence": "Marca online/message en memoria; último acuse central durable separado.",
+      "sources": [
+        "web/offline/engine.ts",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/e2e/browser-flow.ts",
+        "tests/e2e/loyalty-flow.ts"
+      ]
+    },
+    {
+      "id": "stock-thresholds",
+      "title": "Existencias negativas y umbrales de mínimos",
+      "kind": "implicit",
+      "states": [
+        "quantity_nonnegative",
+        "quantity_negative",
+        "minimum_missing",
+        "above_minimum",
+        "at_or_below_minimum"
+      ],
+      "transitions": [
+        [
+          "quantity_nonnegative",
+          "movimiento deja saldo negativo",
+          "quantity_negative"
+        ],
+        [
+          "quantity_negative",
+          "entrada recupera saldo no negativo",
+          "quantity_nonnegative"
+        ],
+        [
+          "minimum_missing",
+          "configurar mínimo y evaluar",
+          "at_or_below_minimum"
+        ],
+        [
+          "above_minimum",
+          "salida o cambio de mínimo alcanza umbral",
+          "at_or_below_minimum"
+        ],
+        [
+          "at_or_below_minimum",
+          "entrada o cambio de mínimo supera umbral",
+          "above_minimum"
+        ]
+      ],
+      "guards": [
+        "Dos proyecciones independientes sobre saldo y configuración; vender con negativos está permitido. El corte de mínimos incluye igualdad, se agrupa y sólo conoce movimientos sincronizados."
+      ],
+      "persistence": "Proyecciones del libro por bodega; inventory_minimums y snapshots/reportes.",
+      "sources": [
+        "src/server/notification-reports.ts",
+        "src/server/dashboard-api.ts",
+        "src/server/catalog-api.ts",
+        "web/Catalog.tsx",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/integration/catalog.test.ts",
+        "tests/integration/dashboard.test.ts",
+        "tests/integration/notifications.test.ts"
+      ]
+    },
+    {
+      "id": "exports-printing",
+      "title": "Exportación y solicitud de impresión",
+      "kind": "implicit",
+      "states": [
+        "requested",
+        "generating",
+        "available",
+        "failed",
+        "released",
+        "print_requested"
+      ],
+      "transitions": [
+        [
+          "requested",
+          "consulta/exportación autorizada",
+          "generating"
+        ],
+        [
+          "generating",
+          "blob completo",
+          "available"
+        ],
+        [
+          "generating",
+          "error de consulta o generación",
+          "failed"
+        ],
+        [
+          "available",
+          "revokeObjectURL",
+          "released"
+        ],
+        [
+          "available",
+          "usuario solicita imprimir comprobante",
+          "print_requested"
+        ]
+      ],
+      "guards": [
+        "Excel incluye todos los resultados autorizados; un click de descarga o window.print no demuestra guardado/impresión física. Impresión y exportación son instancias separadas; no existe confirmación de impresora ni cajón."
+      ],
+      "persistence": "Blob/URL efímeros en navegador; comprobantes durables se consultan sin otro cobro.",
+      "sources": [
+        "src/server/xlsx.ts",
+        "src/server/reports-api.ts",
+        "web/Reports.tsx",
+        "web/Notifications.tsx",
+        "web/CatalogImport.tsx",
+        "web/ShiftReceipt.tsx",
+        "web/Pos.tsx"
+      ],
+      "tests": [
+        "tests/xlsx.test.ts",
+        "tests/integration/reports.test.ts",
+        "tests/e2e/foundation.spec.ts",
+        "tests/e2e/pos-flow.ts",
+        "tests/e2e/whatsapp.spec.ts"
+      ]
+    }
+  ]
+}

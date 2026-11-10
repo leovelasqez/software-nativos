@@ -69,6 +69,8 @@ npm.cmd run test:e2e
 
 Check valida TypeScript, reglas de dominio, PostgreSQL real y regresiones de adaptadores históricos; compila el sitio y los esquemas precompilados. E2E usa Edge e IndexedDB reales, misma dirección para Administración/Caja, cierre/reapertura del navegador offline, pestañas concurrentes, canje con respuesta perdida y accesibilidad. No ejecutar dos suites E2E a la vez: comparten el puerto sintético 4320. Las pruebas anteriores de SQLite/Electron no acreditan por sí solas el nuevo adaptador.
 
+El [mapa de máquinas de estados](docs/state-machines.md) documenta 42 familias y sus guardas, persistencia y pruebas. `npm.cmd run audit:states` verifica su estructura y referencias; `node scripts/audit-state-machines.ts --json` entrega el inventario para agentes. `check` incluye esta auditoría. Actualizar el mapa al cambiar un flujo; las transiciones del JSON describen el código y no sustituyen las validaciones del dominio.
+
 ## Guía de trabajo
 
 1. [Plan funcional vigente](software-nativos.md) e [instrucciones](agents.md).

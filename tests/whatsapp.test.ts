@@ -4,7 +4,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { colombiaDate, money, sumSales, templateSummary } from '../src/notification-report.ts';
 import type { NotificationReport } from '../src/notification-report.ts';
 import { sendWhatsApp, validWebhookSignature, whatsappConfig } from '../src/server/whatsapp.ts';
-import { deliveryState } from '../src/server/notification-delivery.ts';
+import { transitionDelivery } from '../src/notification-state.ts';
 
 test('AC-009-05/07 — fecha Colombia, acumulación precisa y resumen sin saltos',()=>{
   assert.equal(colombiaDate(new Date('2026-10-15T04:59:59Z')),'2026-10-14');assert.equal(colombiaDate(new Date('2026-10-15T05:00:00Z')),'2026-10-15');
@@ -22,7 +22,7 @@ test('AC-009-09 — configuración incompleta impide red; HMAC requiere cuerpo e
   assert.equal(validWebhookSignature(raw,signature,secret),true);assert.equal(validWebhookSignature(Buffer.from('{}'),signature,secret),false);assert.equal(validWebhookSignature(raw,'sha256=bad',secret),false);
 });
 test('AC-009-10 — estados de entrega no retroceden por callbacks repetidos',()=>{
-  assert.equal(deliveryState('delivered','sent'),'delivered');assert.equal(deliveryState('read','failed_terminal'),'read');assert.equal(deliveryState('sent','delivered'),'delivered');assert.equal(deliveryState('uncertain','delivered'),'delivered');
+  assert.equal(transitionDelivery('delivered',{kind:'webhook',state:'sent'}),'delivered');assert.equal(transitionDelivery('read',{kind:'webhook',state:'failed_terminal'}),'read');assert.equal(transitionDelivery('sent',{kind:'webhook',state:'delivered'}),'delivered');assert.equal(transitionDelivery('uncertain',{kind:'webhook',state:'delivered'}),'delivered');
 });
 test('AC-009-09 — adaptador transmite plantilla/callback y distingue aceptación de entrega',async t=>{
   const config=whatsappConfig({NATIVOS_WHATSAPP_ENABLED:'true',NATIVOS_WHATSAPP_GRAPH_VERSION:'v26.0',NATIVOS_WHATSAPP_PHONE_NUMBER_ID:'12345678',NATIVOS_WHATSAPP_OWNER_PHONE:'573001234567',NATIVOS_WHATSAPP_OWNER_USER_ID:'owner-test',NATIVOS_WHATSAPP_ACCESS_TOKEN:randomBytes(32).toString('hex'),NATIVOS_WHATSAPP_APP_SECRET:randomBytes(32).toString('hex'),NATIVOS_WHATSAPP_VERIFY_TOKEN:randomBytes(32).toString('hex'),NATIVOS_WHATSAPP_CLOSE_TEMPLATE:'nativos_close',NATIVOS_WHATSAPP_STOCK_TEMPLATE:'nativos_stock',NATIVOS_WHATSAPP_LANGUAGE:'es_CO'});

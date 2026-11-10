@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useReducer, useState } from 'react';
 import { api } from './api.ts';
 import { Dialog, Notice } from './components.tsx';
 import { MAX_EXCEL_BYTES } from '../src/catalog-import.ts';
 import type { ExcelPreview, ExcelImportResult } from '../src/catalog-import.ts';
+import { initialCatalogImport, transitionCatalogImport } from './catalog-import-state.ts';
+import { useAsyncOperation } from './useAsyncOperation.ts';
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.click();
@@ -15,29 +17,39 @@ async function base64(file: File) {
 }
 export function CatalogImport({ branchId, close, saved }: { branchId: string; close: () => void; saved: () => Promise<void> }) {
   const [file, setFile] = useState<File | null>(null); const [reason, setReason] = useState('');
-  const [preview, setPreview] = useState<ExcelPreview | null>(null); const [result, setResult] = useState<ExcelImportResult | null>(null);
-  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const [stage, dispatch] = useReducer(transitionCatalogImport, initialCatalogImport);
+  const preview = stage.status === 'preview' ? stage.preview : null;
+  const result = stage.status === 'completed' ? stage.result : null;
+  const { busy, error, run, reset } = useAsyncOperation();
   const [recipeIndex, setRecipeIndex] = useState(0);
   const recipe = preview?.recipes[recipeIndex];
   async function template() {
-    setError(''); setBusy(true);
-    try {
+    await run(async () => {
       const response = await fetch(`/api/catalog/imports/template?branchId=${encodeURIComponent(branchId)}`, { credentials: 'same-origin', cache: 'no-store' });
       if (!response.ok) throw new Error((await response.json()).message ?? 'No se pudo descargar la plantilla.');
       download(await response.blob(), 'Plantilla_Nativos.xlsx');
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    });
   }
   async function validate() {
-    if (!file) return; setError(''); setPreview(null); setBusy(true);
-    try {
+    if (!file) return;
+    await run(async () => {
+      dispatch({ kind: 'edit' });
       if (!/\.xlsx$/i.test(file.name) || file.size > MAX_EXCEL_BYTES) throw new Error('Selecciona un archivo .xlsx de hasta 5 MB.');
-      setRecipeIndex(0); setPreview(await api<ExcelPreview>('/catalog/imports/preview', 'POST', { branchId, reason: reason.trim(), fileName: file.name, content: await base64(file) }));
-    } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+      setRecipeIndex(0); dispatch({ kind: 'preview', preview: await api<ExcelPreview>('/catalog/imports/preview', 'POST', { branchId, reason: reason.trim(), fileName: file.name, content: await base64(file) }) });
+    });
+  }
+  async function refreshCatalog() {
+    dispatch({ kind: 'refresh_started' });
+    try { await saved(); dispatch({ kind: 'refresh_succeeded' }); }
+    catch (e) { dispatch({ kind: 'refresh_failed', message: e instanceof Error ? e.message : 'No se pudo actualizar el catálogo.' }); }
   }
   async function confirm() {
-    if (!preview?.valid || !preview.previewId) return; setError(''); setBusy(true);
-    try { const imported = await api<ExcelImportResult>('/catalog/imports/confirm', 'POST', { previewId: preview.previewId }); setResult(imported); await saved(); }
-    catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    if (!preview?.valid || !preview.previewId) return;
+    await run(async () => {
+      const imported = await api<ExcelImportResult>('/catalog/imports/confirm', 'POST', { previewId: preview.previewId });
+      dispatch({ kind: 'confirmed', result: imported });
+      await refreshCatalog();
+    });
   }
   function errors() {
     const cell = (value: string | number) => '"' + String(value).replace(/^[=+@\-\t\r]/, "'$&").replaceAll('"', '""') + '"';
@@ -47,11 +59,14 @@ export function CatalogImport({ branchId, close, saved }: { branchId: string; cl
   return <Dialog title="Importar Excel" canClose={!busy} onClose={() => { if (!busy) close(); }}>
     <div className="form catalog-import">
       <p>Insumos nuevos, productos y recetas del catálogo compartido. Las cantidades de receta corresponden a una unidad vendida.</p>
-      {result ? <section aria-live="polite"><Notice>Importación completada: {result.summary.products} productos, {result.summary.recipes} recetas y {result.summary.items} insumos.</Notice><p>Operación: {result.importId}</p><button type="button" className="primary" onClick={close}>Cerrar</button></section> : <>
+      {result ? <section aria-live="polite"><Notice>Importación completada: {result.summary.products} productos, {result.summary.recipes} recetas y {result.summary.items} insumos.</Notice><p>Operación: {result.importId}</p>
+        {stage.status === 'completed' && stage.refresh.status === 'failed' && <Notice error>El lote ya quedó guardado. No se pudo actualizar la lista: {stage.refresh.message}</Notice>}
+        <div className="row-actions">{stage.status === 'completed' && stage.refresh.status === 'failed' && <button type="button" className="secondary" disabled={busy} onClick={() => void run(refreshCatalog)}>Actualizar catálogo</button>}
+        <button type="button" className="primary" disabled={busy} onClick={close}>Cerrar</button></div></section> : <>
         <fieldset disabled={busy}>
           <button type="button" className="secondary" onClick={() => void template()}>Descargar plantilla</button>
-          <label>Archivo Excel (.xlsx, máximo 5 MB)<input type="file" accept=".xlsx" onChange={e => { setFile(e.target.files?.[0] ?? null); setPreview(null); setError(''); }} /></label>
-          <label>Motivo de la importación<textarea minLength={3} maxLength={500} value={reason} onChange={e => { setReason(e.target.value); setPreview(null); }} rows={2} /></label>
+          <label>Archivo Excel (.xlsx, máximo 5 MB)<input type="file" accept=".xlsx" onChange={e => { setFile(e.target.files?.[0] ?? null); dispatch({ kind: 'edit' }); reset(); }} /></label>
+          <label>Motivo de la importación<textarea minLength={3} maxLength={500} value={reason} onChange={e => { setReason(e.target.value); dispatch({ kind: 'edit' }); reset(); }} rows={2} /></label>
           <button type="button" className="secondary" disabled={!file || reason.trim().length < 3} onClick={() => void validate()}>Validar archivo</button>
         </fieldset>
         <p>Validar no cambia el catálogo. Solo se crean registros nuevos; las referencias existentes se reportan como errores.</p>

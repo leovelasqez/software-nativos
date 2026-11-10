@@ -6,14 +6,8 @@ import { transaction } from './db.ts';
 import { ApiError, matchesSetupToken } from './security.ts';
 import { deliveryConfigHash, sendWhatsApp, validWebhookSignature } from './whatsapp.ts';
 import type { SendTransport, WhatsAppConfig } from './whatsapp.ts';
-
-const rank:Record<string,number>={accepted:1,sent:2,delivered:3,read:4};
-export function deliveryState(current:string,incoming:string) {
-  if((rank[current]??0)>=3 && (rank[incoming]??0)<rank[current]!)return current;
-  if(rank[incoming])return (rank[current]??0)>rank[incoming]!?current:incoming;
-  if(current==='failed_terminal'&&incoming==='accepted')return current;
-  return incoming;
-}
+import { transitionDelivery } from '../notification-state.ts';
+import type { DeliveryEvent, NotificationState } from '../notification-state.ts';
 async function event(c:PoolClient,intentId:string,deliveryId:string,status:string,messageId:string|null,code:string|null,id:string=randomUUID()) {
   await c.query(`INSERT INTO notification_delivery_events(id,intent_id,delivery_id,provider_message_id,status,safe_code) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING`,[id,intentId,deliveryId,messageId,status,code]);
 }
@@ -39,14 +33,12 @@ export async function dispatchNotification(pool:Pool,config:WhatsAppConfig,trans
   let result;
   try{result=await transport(config,claimed.report,claimed.id,claimed.deliveryId);}catch{result={outcome:'uncertain' as const,messageId:null,safeCode:'transport_uncertain'};}
   await transaction(pool,async c=>{
-    const row=(await c.query('SELECT state,provider_message_id FROM notification_intents WHERE id=$1 AND delivery_id=$2 FOR UPDATE',[claimed.id,claimed.deliveryId])).rows[0];
+    const row=(await c.query<{state:NotificationState;provider_message_id:string|null}>('SELECT state,provider_message_id FROM notification_intents WHERE id=$1 AND delivery_id=$2 FOR UPDATE',[claimed.id,claimed.deliveryId])).rows[0];
     if(!row)return;
     const outcome=result.outcome==='retryable'&&claimed.attempt>=3?'terminal':result.outcome;
     await c.query(`INSERT INTO notification_attempts(id,intent_id,outcome,provider_message_id,safe_error,started_at,finished_at) VALUES($1,$2,$3,$4,$5,$6,now()) ON CONFLICT(id) DO NOTHING`,[claimed.deliveryId,claimed.id,outcome,result.messageId,result.safeCode,claimed.startedAt]);
-    let state=outcome==='accepted'?'accepted':outcome==='retryable'?'failed_retryable':outcome==='terminal'?'failed_terminal':'uncertain';
-    state=deliveryState(row.state,state);
-    if(rank[row.state]&&!rank[state])state=row.state;
-    if(row.state==='failed_terminal'&&state==='accepted')state=row.state;
+    const incoming=outcome==='accepted'?'accepted':outcome==='retryable'?'failed_retryable':outcome==='terminal'?'failed_terminal':'uncertain';
+    const state=transitionDelivery(row.state,{kind:'transport',state:incoming});
     await c.query(`UPDATE notification_intents SET state=$2,provider_message_id=coalesce(provider_message_id,$3),next_attempt_at=CASE WHEN $2='failed_retryable' THEN now()+($4::integer*interval '1 minute') ELSE NULL END WHERE id=$1`,[claimed.id,state,result.messageId,claimed.attempt*2]);
     await event(c,claimed.id,claimed.deliveryId,state,result.messageId,result.safeCode);
   });
@@ -74,13 +66,14 @@ export function registerWhatsAppWebhook(app:FastifyInstance,pool:Pool,config:Wha
           for(const status of value.statuses) {
             if(!['sent','delivered','read','failed'].includes(status?.status)||typeof status.id!=='string'||status.id.length>256||typeof status.timestamp!=='string'||!/^\d{1,16}$/.test(status.timestamp))continue;
             const callback=typeof status.biz_opaque_callback_data==='string'&&/^[0-9a-f-]{36}$/.test(status.biz_opaque_callback_data)?status.biz_opaque_callback_data:null;
-            const row=(await c.query(`SELECT id,delivery_id,state,provider_message_id FROM notification_intents WHERE mode='live' AND (provider_message_id=$1 OR ($2::text IS NOT NULL AND delivery_id=$2)) LIMIT 1 FOR UPDATE`,[status.id,callback])).rows[0];
+            const row=(await c.query<{id:string;delivery_id:string|null;state:NotificationState;provider_message_id:string|null}>(`SELECT id,delivery_id,state,provider_message_id FROM notification_intents WHERE mode='live' AND (provider_message_id=$1 OR ($2::text IS NOT NULL AND delivery_id=$2)) LIMIT 1 FOR UPDATE`,[status.id,callback])).rows[0];
             if(!row||!row.delivery_id||row.provider_message_id&&row.provider_message_id!==status.id)continue;
             const id=createHash('sha256').update(JSON.stringify([status.id,status.status,status.timestamp])).digest('hex');
             const exists=await c.query('SELECT 1 FROM notification_delivery_events WHERE id=$1',[id]); if(exists.rowCount)continue;
             const code=Number.isSafeInteger(status.errors?.[0]?.code)?`provider_${status.errors[0].code}`:null;
             await event(c,row.id,row.delivery_id,status.status,status.id,code,id);
-            const state=deliveryState(row.state,status.status==='failed'?'failed_terminal':status.status);
+            const incoming:Extract<DeliveryEvent,{kind:'webhook'}>['state']=status.status==='failed'?'failed_terminal':status.status;
+            const state=transitionDelivery(row.state,{kind:'webhook',state:incoming});
             await c.query('UPDATE notification_intents SET state=$2,provider_message_id=$3,next_attempt_at=NULL WHERE id=$1',[row.id,state,status.id]);
           }
         }

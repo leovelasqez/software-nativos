@@ -101,6 +101,14 @@ test('REQ-009-05 a 08 — consolidado del dueño, permisos y entrega durable', {
       const abandoned=await makeLive();await db.pool.query("UPDATE notification_intents SET state='sending',delivery_id=$2,claimed_at=now()-interval '3 minutes' WHERE id=$1",[abandoned,randomUUID()]);
       await dispatchNotification(db.pool,live,async()=>{throw new Error('must not retry');});assert.equal((await db.pool.query('SELECT state FROM notification_intents WHERE id=$1',[abandoned])).rows[0].state,'uncertain');
     });
+    await t.test('AC-021-04 — fallo definitivo por callback impide reintento por respuesta HTTP tardía',async()=>{
+      const id=await makeLive();let calls=0;
+      await dispatchNotification(db.pool,live,async()=>{calls++;await webhook(id,'failed');return {outcome:'retryable',messageId:null,safeCode:'provider_130429'};});
+      const row=(await db.pool.query('SELECT state,next_attempt_at FROM notification_intents WHERE id=$1',[id])).rows[0];
+      assert.equal(row.state,'failed_terminal');assert.equal(row.next_attempt_at,null);
+      assert.equal(await dispatchNotification(db.pool,live,async()=>{calls++;throw new Error('must not retry');}),false);
+      assert.equal(calls,1);
+    });
     await t.test('AC-009-09/10 — backoff acotado y revocación antes de envío',async()=>{
       const id=await makeLive();let calls=0;
       for(let n=0;n<3;n++){await db.pool.query('UPDATE notification_intents SET next_attempt_at=NULL WHERE id=$1',[id]);await dispatchNotification(db.pool,live,async()=>{calls++;return {outcome:'retryable',messageId:null,safeCode:'provider_130429'};});}

@@ -3,11 +3,12 @@ import { api, date } from './api.ts';
 import { Heading, Notice } from './components.tsx';
 import { branchStatus, money, paymentLabels, templateSummary } from '../src/notification-report.ts';
 import type { NotificationReport } from '../src/notification-report.ts';
+import { isNotificationState, notificationLabels as labels } from '../src/notification-state.ts';
+import type { NotificationState } from '../src/notification-state.ts';
 
-type Intent={id:string;type:string;recipientRole:string;state:string;mode:string;data:NotificationReport;createdAt:string;reportPath:string};
+type Intent={id:string;type:string;recipientRole:string;state:NotificationState;mode:string;data:NotificationReport;createdAt:string;reportPath:string};
 type Detail=Intent&{text:string;events:{status:string;safeCode:string|null;receivedAt:string}[]};
 type Config={enabled:boolean;ready:boolean;recipient:string|null;schedulerError:boolean;lastEvaluationAt:string|null};
-const labels:Record<string,string>={pending:'Pendiente',sending:'Enviando',accepted:'Aceptado por WhatsApp',sent:'Enviado',delivered:'Entregado',read:'Leído',failed_retryable:'Reintento pendiente',failed_terminal:'Error definitivo',uncertain:'Entrega incierta'};
 const modeLabel=(mode:string)=>mode==='preview'?'Prueba · sin envío':mode==='live'?'Real':'Histórico · sin envío';
 const initialId=()=>{const value=new URLSearchParams(location.search).get('notification');return value&&/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value)?value:'';};
 export function Notifications({branchId}:{branchId:string}) {
@@ -55,7 +56,7 @@ export function Notifications({branchId}:{branchId:string}) {
         {detail.data.close&&<><h3>Medios del turno</h3><div className="table-wrap" role="region" aria-label="Medios del turno" tabIndex={0}><table><thead><tr><th>Medio</th><th>Ventas</th><th>Devoluciones</th><th>Ingresos</th><th>Gastos</th><th>Retiros</th><th>Correcciones</th><th>Neto</th></tr></thead><tbody>{detail.data.close.payments.map(p=><tr key={p.method}><td>{paymentLabels[p.method]}</td>{[p.sales,p.refunds,p.income,p.expense,p.withdrawal,p.correction,p.net].map((v,i)=><td key={i}>{money(v)}</td>)}</tr>)}</tbody></table></div><details><summary>Movimientos del turno ({detail.data.close.movements.length})</summary>{detail.data.close.movements.map(m=><p key={m.id}>{date(new Date(m.occurredAtMs).toISOString())} · {m.reference} · {m.reason||m.kind} · {money(m.amount)}</p>)}</details></>}
         <div className="row-actions"><button className="secondary" disabled={busy} onClick={()=>void simulate('delivered')}>Probar entrega sin enviar</button><button className="secondary" disabled={busy} onClick={()=>void simulate('uncertain')}>Probar incertidumbre sin enviar</button></div></>}
       {detail.data.version!==2&&<p>{detail.text}</p>}
-      {detail.events.length>0&&<details><summary>Seguimiento de entrega</summary>{detail.events.map((e,i)=><p key={i}>{date(e.receivedAt)} · {labels[e.status]??e.status}{e.safeCode?` · ${e.safeCode}`:''}</p>)}</details>}
+      {detail.events.length>0&&<details><summary>Seguimiento de entrega</summary>{detail.events.map((e,i)=><p key={i}>{date(e.receivedAt)} · {isNotificationState(e.status)?labels[e.status]:e.status}{e.safeCode?` · ${e.safeCode}`:''}</p>)}</details>}
     </section>}
   </>;
 }

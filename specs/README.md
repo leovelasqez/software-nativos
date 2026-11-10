@@ -1,5 +1,9 @@
 # Índice de especificaciones y trazabilidad
 
+## Máquinas de estados — verificadas localmente (09-11-2026)
+
+[Spec 021](021-state-machines/spec.md), [plan](021-state-machines/plan.md) y [tareas](021-state-machines/tasks.md): REQ/AC-021-01 a 05. Inventario de 42 familias, operación única de formularios, resultado de importación irreversible y dominio de entrega compartido por API/UI. [Mapa](../docs/state-machines.md), [JSON](../docs/state-machines.json) y auditoría local integrada en `check`. [Evidencia](../docs/evidence/state-machines-2026-11-09.md): 84 pruebas unitarias, 92 de integración, tipos/build y cuatro recorridos Edge verificados; no publicado.
+
 ## Sucursal por cuenta — verificada para apertura (15-10-2026)
 
 REQ/AC-018-08 a 11: selección y recuerdo de caja por actor, activación del destino autorizado dentro del navegador, perfiles preservados y recuperación offline. El traslado antiguo conserva su caja y dispone de un plazo específico para DPAPI. TypeScript, dominio, PostgreSQL y recorrido de navegador aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia de entrega](../docs/evidence/opening-release-2026-10-15.md). La limpieza de datos está pendiente de la confirmación del dueño del corte de ambas cajas.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, FormEvent } from 'react';
 import { Icon } from './Icon.tsx';
+import { useAsyncOperation } from './useAsyncOperation.ts';
 
 export function Logo() { return <div className="brand"><span>nativos<span className="brand-dot">.</span></span><small>VIDA Y BIENESTAR</small></div>; }
 export function ThemeToggle() {
@@ -27,14 +28,14 @@ export function Dialog({ title, onClose, children, eyebrow = 'ADMINISTRACIÓN', 
     <header className="dialog-header"><div><span className="eyebrow">{eyebrow}</span><h2 id="dialog-title">{title}</h2></div><button type="button" className="icon-button" aria-label="Cerrar formulario" disabled={!canClose} onClick={onClose}><Icon name="close"/></button></header>{children}</dialog>;
 }
 export function SaveForm({ children, onSave, label = 'Guardar cambios', footer, disabled = false }: { children: ReactNode; onSave: (data: FormData) => Promise<void>; label?: string; footer?: ReactNode; disabled?: boolean }) {
-  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(''); setBusy(true);
-    try { await onSave(new FormData(event.currentTarget)); }
-    catch (e) { setError(e instanceof Error ? e.message : 'No se pudo guardar.'); }
-    finally { setBusy(false); }
+  const { busy, error, run } = useAsyncOperation('No se pudo guardar.');
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (disabled || busy) return;
+    const data = new FormData(event.currentTarget);
+    void run(() => onSave(data));
   }
-  return <form onSubmit={submit} className="form"><fieldset disabled={busy}>{children}</fieldset>
+  return <form onSubmit={submit} className="form" aria-busy={busy}><fieldset disabled={busy}>{children}</fieldset>
     {error && <Notice error>{error}</Notice>}<div className="form-footer">{footer}<span>Los cambios quedan registrados.</span><button className="primary" disabled={busy || disabled}>{busy ? 'Guardando…' : label}</button></div></form>;
 }
 export function Reason() { return <label>Motivo del cambio<textarea name="reason" minLength={3} maxLength={500} required placeholder="Describe por qué realizas este cambio" rows={2} /></label>; }

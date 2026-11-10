@@ -16,6 +16,8 @@ SQLite/DPAPI/Electron permanecen como adaptadores históricos, sin dependencia E
 
 ## Responsabilidades
 
+Los ciclos de estado se documentan en [state-machines.md](state-machines.md) y su JSON verificable (spec 021). Los dominios conservan sus límites transaccionales: una venta confirmada localmente puede seguir pendiente de acuse central. La UI compone operaciones pequeñas; `src/async-operation.ts` controla una ejecución en memoria y no sustituye idempotencia durable. La importación distingue confirmación de refresco, y `src/notification-state.ts` combina evidencia de transporte/webhook para el mismo intento sin cambiar el protocolo ni las tablas.
+
 | Área | Es responsable de | No debe hacer |
 | --- | --- | --- |
 | Identidad y sucursales | Usuarios, permisos, equipos y acceso offline | Confiar solo en controles visuales |

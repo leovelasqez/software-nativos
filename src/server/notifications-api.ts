@@ -11,11 +11,12 @@ import { deliveryConfigHash, whatsappConfig } from './whatsapp.ts';
 import type { SendTransport, WhatsAppConfig } from './whatsapp.ts';
 import { dispatchNotification, registerWhatsAppWebhook } from './notification-delivery.ts';
 import { xlsx } from './xlsx.ts';
+import { isNotificationState } from '../notification-state.ts';
+import type { NotificationState } from '../notification-state.ts';
 
-const states=new Set(['pending','sending','accepted','sent','delivered','read','failed_retryable','failed_terminal','uncertain']);
 const outcomes=new Set(['delivered','retryable','terminal','uncertain']);
 const id=(value:unknown):value is string=>typeof value==='string'&&/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value);
-type IntentRow={id:string;type:string;branch_id:string;causal_id:string;recipient_role:string;state:string;mode:string;data:NotificationReport;created_at:Date};
+type IntentRow={id:string;type:string;branch_id:string;causal_id:string;recipient_role:string;state:NotificationState;mode:string;data:NotificationReport;created_at:Date};
 async function add(c:PoolClient,report:NotificationReport,branchId:string,causalId:string,dedupeKey:string,config:WhatsAppConfig) {
   await c.query(`INSERT INTO notification_intents(id,dedupe_key,type,branch_id,causal_id,recipient_role,state,data,mode,delivery_config_hash) VALUES($1,$2,$3,$4,$5,'owner','pending',$6,$7,$8) ON CONFLICT(dedupe_key) DO NOTHING`,[randomUUID(),dedupeKey,report.kind,branchId,causalId,JSON.stringify(report),config.enabled&&config.ready?'live':'preview',deliveryConfigHash(config)]);
 }
@@ -71,7 +72,7 @@ export function registerNotifications(app:FastifyInstance,pool:Pool,config=whats
   app.get('/api/notifications',async req=>{
     const actor=await authenticate(pool,req);requireAdmin(actor);const q=req.query as {branchId?:string;state?:string;after?:string;limit?:string};
     const limit=Number(q.limit??50);
-    if(!id(q.branchId)||q.state&&!states.has(q.state)||q.after!==undefined&&!id(q.after)||q.limit!==undefined&&typeof q.limit!=='string'||!Number.isInteger(limit)||limit<1||limit>100)throw new ApiError(400,'invalid_query','Revisa sucursal, estado y paginación.');
+    if(!id(q.branchId)||q.state&&!isNotificationState(q.state)||q.after!==undefined&&!id(q.after)||q.limit!==undefined&&typeof q.limit!=='string'||!Number.isInteger(limit)||limit<1||limit>100)throw new ApiError(400,'invalid_query','Revisa sucursal, estado y paginación.');
     if(!actor.user.branch_ids.includes(q.branchId))throw new ApiError(403,'forbidden','No tienes permiso para esta sucursal.');
     requireAccess(actor,q.branchId);
     const rows=(await pool.query<IntentRow>(`SELECT * FROM notification_intents WHERE (branch_id=$1 OR data->'branchIds' ? $1) AND ($2::text IS NULL OR state=$2) AND id>$3 AND (coalesce(data->>'version','')<>'2' OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(data->'branchIds') AS b(id) WHERE NOT (b.id=ANY($5::text[])))) ORDER BY id LIMIT $4`,[q.branchId,q.state??null,q.after??'',limit+1,actor.user.branch_ids])).rows;
