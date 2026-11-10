@@ -23,9 +23,9 @@ Desde la revisión del 09-10-2026, la configuración inicial está cerrada por d
 
 ## Caja en el navegador
 
-El dueño vincula una vez el navegador a Milán o Centro. Usa siempre el mismo origen y perfil de Edge/Chrome para esa caja. Las pestañas comparten instalación y datos; un bloqueo de escritura evita cobrar simultáneamente la misma revisión. Cada usuario conserva sus permisos y turno propio.
+Entra con tu usuario y contraseña desde cualquier navegador. Caja prepara automáticamente la sucursal autorizada sin activación del dueño; el primer acceso requiere internet. Las pestañas del mismo perfil comparten instalación y datos; un bloqueo de escritura evita cobrar simultáneamente la misma revisión. Cada usuario conserva sus permisos y turno propio.
 
-Al entrar, Caja recupera la última sucursal autorizada usada por esa cuenta. Si todavía no tiene una preferencia válida, abre su primera caja autorizada; por ejemplo, una cuenta exclusiva de Centro entra directamente a Centro aunque el usuario anterior haya usado Milán. El navegador ya activado puede preparar esa caja sin otro acceso del dueño. Los perfiles conservan sus pedidos, turnos y pendientes por separado. Offline, solo se puede recuperar una caja ya validada para esa cuenta.
+Al entrar, Caja recupera la última sucursal autorizada usada por esa cuenta en ese navegador. Si todavía no tiene una preferencia válida, abre su primera caja autorizada; por ejemplo, una cuenta exclusiva de Centro entra directamente a Centro aunque el usuario anterior haya usado Milán. Los perfiles conservan sus pedidos, turnos y pendientes por separado. Offline, solo se puede recuperar una caja ya validada para esa cuenta. En modo privado también se puede entrar online, pero el navegador descarta su almacenamiento al finalizar la sesión privada: sincroniza antes de cerrarla.
 
 Caja guarda pedidos, turno, ventas, pagos, consumo, comprobantes, devoluciones y pendientes en IndexedDB. Una venta solo se muestra confirmada después del commit local. Los canjes necesitan confirmación central. El catálogo descargado conserva versiones y excluye costos incluso si antes entró un dueño.
 
@@ -84,4 +84,4 @@ Impresión física de 80 mm y cajones USB siguen pendientes. Deben ensayarse des
 
 ## Actualización de acceso a Caja — 24-09-2026
 
-El dueño puede activar Centro y Milán desde varios navegadores sin reemplazar las activaciones anteriores. Cada navegador conserva sus pedidos y pendientes; las operaciones sincronizan con secuencias independientes. El selector permite cambiar de sucursal con el turno abierto, después de sincronizar, y recuperarlo al volver. Un turno ya abierto en otro navegador debe cerrarse allí antes de abrir otro en esa misma caja. Los datos sin sincronizar siguen en el navegador de origen. Ver `specs/018-caja-access/`.
+La cuenta autorizada puede entrar a Centro o Milán desde varios navegadores con usuario y contraseña, sin reemplazar las instalaciones anteriores (actualización de AC-018-12, 01-11-2026). Cada navegador conserva sus pedidos y pendientes; las operaciones sincronizan con secuencias independientes. El selector permite cambiar de sucursal con el turno abierto, después de sincronizar, y recuperarlo al volver. Un turno ya abierto en otro navegador debe cerrarse allí antes de abrir otro en esa misma caja. Los datos sin sincronizar siguen en el navegador de origen. Ver `specs/018-caja-access/`.

@@ -4,6 +4,18 @@
 
 [Spec 021](021-state-machines/spec.md), [plan](021-state-machines/plan.md) y [tareas](021-state-machines/tasks.md): REQ/AC-021-01 a 05. Inventario de 42 familias, operación única de formularios, resultado de importación irreversible y dominio de entrega compartido por API/UI. [Mapa](../docs/state-machines.md), [JSON](../docs/state-machines.json) y auditoría local integrada en `check`. [Evidencia](../docs/evidence/state-machines-2026-11-09.md): 84 pruebas unitarias, 92 de integración, tipos/build y cuatro recorridos Edge verificados; no publicado.
 
+## Acceso online sin autorización del navegador — AC-018-16
+
+La sesión validada con usuario y contraseña autoriza Caja; la instalación solo identifica sincronización. Incluye actualización segura del login y compatibilidad con perfiles guardados. [Especificación](018-caja-access/spec.md), [plan](018-caja-access/plan.md) y [evidencia](../docs/evidence/caja-session-access-2026-11-01.md). Continúa la publicación autorizada en el mismo servicio.
+
+## Revalidación de accesos guardados de Centro — 01-11-2026
+
+AC-018-15 corrige el rechazo de una autorización antigua al entrar con credenciales válidas. Conserva instalación, pendientes, turnos y cursores. [Especificación](018-caja-access/spec.md) y [evidencia](../docs/evidence/caja-centro-revalidation-2026-11-01.md). Continúa el despliegue autorizado del acceso con usuario y contraseña.
+
+## Acceso solo con usuario y contraseña — verificado localmente (01-11-2026)
+
+REQ/AC-018-12 a 14 sustituyen la primera activación por el dueño por preparación automática online en cualquier navegador. Conservan sucursales, permisos, datos locales y validación previa para offline. TypeScript, 75 pruebas unitarias, 84 de integración, 2 recorridos E2E y revisión visual aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia](../docs/evidence/caja-password-access-2026-11-01/README.md). Publicado como `278a5f4`.
+
 ## Sucursal por cuenta — verificada para apertura (15-10-2026)
 
 REQ/AC-018-08 a 11: selección y recuerdo de caja por actor, activación del destino autorizado dentro del navegador, perfiles preservados y recuperación offline. El traslado antiguo conserva su caja y dispone de un plazo específico para DPAPI. TypeScript, dominio, PostgreSQL y recorrido de navegador aprobados. [Spec 018](018-caja-access/spec.md), [plan](018-caja-access/plan.md), [tareas](018-caja-access/tasks.md) y [evidencia de entrega](../docs/evidence/opening-release-2026-10-15.md). La limpieza de datos está pendiente de la confirmación del dueño del corte de ambas cajas.

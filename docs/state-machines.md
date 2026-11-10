@@ -23,7 +23,7 @@ El detalle está en [state-machines.json](state-machines.json). Cada familia inc
 | `sessions` | Sesiones, identidad y revocación humana | Implícita | [src/server/security.ts](../src/server/security.ts) |
 | `login-throttle` | Bloqueo temporal de acceso | Implícita | [src/server/app.ts](../src/server/app.ts) |
 | `offline-access` | Autorización offline y confianza del reloj | Implícita | [src/authorization.ts](../src/authorization.ts) |
-| `browser-enrollment` | Activación de navegador y contraseña offline | Implícita | [web/Pos.tsx](../web/Pos.tsx) |
+| `browser-enrollment` | Preparación automática de Caja y contraseña offline | Implícita | [web/Pos.tsx](../web/Pos.tsx) |
 | `terminal-profiles` | Selección y cambio de caja por cuenta | Implícita | [web/offline/engine.ts](../web/offline/engine.ts) |
 | `shifts` | Turno, continuación compartida y cierre remoto | Implícita | [web/offline/engine.ts](../web/offline/engine.ts) |
 | `orders` | Ciclo del pedido y cobro dividido | Implícita | [src/orders-domain.ts](../src/orders-domain.ts) |
@@ -65,6 +65,7 @@ El detalle está en [state-machines.json](state-machines.json). Cada familia inc
 ## Lectura de las regiones
 
 - **Identidad:** sesión central, verificador local, concesión offline, reloj, permisos y activación son regiones separadas. Estar online no implica estar autorizado; una cookie nueva no puede cambiar el actor de la contraseña local.
+- **Acceso vigente:** la entrega incorpora AC-018-12 a 16 ya publicados en producción: una sesión válida prepara automáticamente Caja en un navegador nuevo. La elección manual permanece para el traslado histórico local; el acceso offline requiere un perfil y verificador válidos, ligados al mismo actor.
 - **Caja:** pedido, preparación, cobro, turno y sincronización no forman un único estado lineal. Una venta puede estar confirmada localmente y pendiente en central. Un turno compartido tiene membresías, y un cierre remoto puede conocerse antes de recibir su detalle autorizado.
 - **Dinero y puntos:** importe disponible para devolver y saldo de puntos son estados derivados del libro inmutable. Nunca se sustituyen por un booleano `paid`/`refunded` ni se recalculan con reglas nuevas.
 - **Importación:** la vista previa del agente es un fingerprint sin borrador persistido; Excel tiene una vista previa central con TTL. En ambos casos la confirmación revalida y es idempotente. Actualizar una lista es otra operación.

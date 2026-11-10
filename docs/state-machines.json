@@ -222,35 +222,35 @@
     },
     {
       "id": "browser-enrollment",
-      "title": "Activación de navegador y contraseña offline",
+      "title": "Preparación automática de Caja y contraseña offline",
       "kind": "implicit",
       "states": [
         "unlinked",
-        "needs_password",
-        "needs_enrollment",
+        "preparing",
+        "legacy_choice",
         "linked",
         "retired"
       ],
       "transitions": [
         [
           "unlinked",
-          "login online sin verificador",
-          "needs_password"
+          "sesión validada y equipo autorizado",
+          "preparing"
         ],
         [
-          "needs_password",
-          "verificador ligado al actor",
-          "needs_enrollment"
+          "preparing",
+          "preparación online e identidad válidas",
+          "linked"
         ],
         [
           "unlinked",
-          "login con verificador",
-          "needs_enrollment"
+          "fuente histórica local detectada para el dueño",
+          "legacy_choice"
         ],
         [
-          "needs_enrollment",
-          "dueño activa equipo",
-          "linked"
+          "legacy_choice",
+          "elegir traslado o caja nueva",
+          "preparing"
         ],
         [
           "linked",
@@ -259,7 +259,7 @@
         ]
       ],
       "guards": [
-        "Activar sólo con dueño, identidad y equipo autorizados; no reemplazar otra instalación ni eliminar pendientes."
+        "Preparación automática con sesión válida, cuenta y equipo autorizados; no requiere autorización previa del dueño. La elección manual se conserva sólo para traslado histórico local. No sustituir instalación, pendientes ni actor. Offline requiere un verificador válido de acceso previo."
       ],
       "persistence": "Instalación/token central y perfil IndexedDB cifrado.",
       "sources": [
@@ -1729,10 +1729,15 @@
           "offline_shell",
           "red vuelve",
           "active"
+        ],
+        [
+          "waiting",
+          "todos los clientes confirman login vacío y sin envío",
+          "active"
         ]
       ],
       "guards": [
-        "No skipWaiting forzado; no cachear API/costos; limpiar sólo versiones nativos-shell anteriores; no borrar IDB. Estados waiting/active son del navegador."
+        "Activación normal al cerrar clientes; actualización de login anticipada sólo tras confirmación de todas las ventanas: login vacío, sin campos escritos ni formulario enviando. No cachear API/costos, limpiar sólo nativos-shell anteriores y no borrar IndexedDB."
       ],
       "persistence": "Cache Storage de interfaz y ciclo nativo del service worker.",
       "sources": [

@@ -2,6 +2,13 @@
 
 | Tarea | Aceptación | Estado |
 | --- | --- | --- |
+| Reintentar ante fallos temporales de respuesta o escritura y comprobar el permiso vigente antes de habilitar el reingreso offline | AC-018-11/13/14/16 | Verificado en el motor: la operación conserva su identidad y una denegación deja vacío el verificador. En Edge: rechazo, autorización posterior y reingreso sin internet. |
+| Recuperar pendientes con token conservado o antiguo y preparar contraseña offline desde Caja | AC-018-14/16 | Verificado en el motor y en Edge con sesión recuperada, preparación de contraseña y reingreso sin internet |
+| TASK-018-16: acceso online por sesión, identificación de cursor sin aprobación del navegador y actualización segura del login | AC-018-16 | Verificado: TypeScript/build, 75 unitarias, 5 casos de integración, E2E focalizado y regresión completa; publicación autorizada |
+| TASK-018-15: revalidar autorizaciones antiguas con las credenciales de la cuenta y conservar pendientes/turno | AC-018-15 | Verificado: TypeScript/build, 75 unitarias, 5 de integración y recorrido E2E completo; publicación autorizada |
+| TASK-018-12: acceso automático en servidor, motor e interfaz | AC-018-12/13 | Verificado localmente el 01-11-2026 |
+| TASK-018-13: regresión de permisos, instalaciones, perfiles y offline | AC-018-12/13/14 | 75 unitarias y 84 de integración aprobadas; 3 de motor repetidas tras ajuste final |
+| TASK-018-14: recorrido de navegador y evidencia de entrega | AC-018-12/13/14 | 2 E2E aprobados y revisión visual; [evidencia](../../docs/evidence/caja-password-access-2026-11-01/README.md). Publicación pendiente |
 | Selección online y recuerdo de caja por actor | AC-018-08 | Verificado localmente el 15-10-2026 |
 | Vincular destino autorizado desde navegador ya activado | AC-018-09 | Verificado localmente el 15-10-2026 |
 | Preservar perfiles ajenos, recuperación y acceso offline | AC-018-10/11 | Verificado localmente el 15-10-2026 |

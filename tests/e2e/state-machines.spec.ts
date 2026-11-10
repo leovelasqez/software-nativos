@@ -100,9 +100,8 @@ test('AC-021-02/03 — formulario único, importación confirmada y recuperació
 
     // A checkout without a seller disables SaveForm, including its submit handler.
     await page.goto(origin + '/caja');
-    await expect(page.getByRole('heading', { name: 'Activa esta caja' })).toBeVisible();
-    const device = await page.getByLabel('Equipo', { exact: true }).locator('option').evaluateAll(options => options.find(o => o.textContent?.startsWith('Centro'))?.getAttribute('value'));
-    await page.getByLabel('Equipo', { exact: true }).selectOption(device!); await page.getByRole('button', { name: 'Activar caja', exact: true }).click();
+    await expect(page.getByLabel('Sucursal', { exact: true })).toHaveValue('centro-caja');
+    await expect(page.getByRole('heading', { name: 'Nueva venta', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Abrir turno', exact: true }).click();
     await dialog.getByLabel('Base de efectivo (COP)').fill('10000'); await dialog.getByRole('button', { name: 'Confirmar apertura', exact: true }).click();
     await expect(dialog).not.toBeVisible();

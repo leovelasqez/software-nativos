@@ -19,9 +19,7 @@ export async function exercisePos(page: Page) {
   const root = 'test-results/unified-web/regression'; await mkdir(root, { recursive: true });
   await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto('http://127.0.0.1:4320/caja');
   
-  await expect(page.getByRole('heading', { name: 'Activa esta caja' })).toBeVisible();
-  const device = await page.getByLabel('Equipo', { exact: true }).locator('option').evaluateAll(options => options.find(o => o.textContent?.startsWith('Centro'))?.getAttribute('value'));
-  expect(device).toBeTruthy(); await page.getByLabel('Equipo', { exact: true }).selectOption(device!); await page.getByRole('button', { name: 'Activar caja' }).click();
+  await expect(page.getByLabel('Sucursal', { exact: true })).toHaveValue('centro-caja');
   await expect(page.getByRole('heading', { name: 'Nueva venta' })).toBeVisible(); await page.getByRole('button', { name: 'Abrir turno', exact: true }).click();
   const dialog = page.getByRole('dialog'); await expect(dialog.getByLabel('Base de efectivo (COP)')).toBeFocused(); await dialog.getByLabel('Base de efectivo (COP)').fill('50000'); await dialog.getByRole('button', { name: 'Confirmar apertura' }).click(); await expect(dialog).not.toBeVisible();
   await nav('Turno'); await page.getByRole('button', { name: 'Registrar ingreso o salida', exact: true }).click(); await dialog.getByLabel('Clase').selectOption('expense'); await dialog.getByLabel('Importe (COP)').fill('1000'); await dialog.getByLabel('Motivo').fill('Gasto sintético E2E'); await dialog.getByRole('button', { name: 'Registrar movimiento' }).click(); await expect(dialog).not.toBeVisible(); await expect(page.locator('.pos-shift')).toContainText('Gasto sintético E2E'); await expect(page.locator('.pos-shift')).toContainText('49.000'); await nav('Venta');

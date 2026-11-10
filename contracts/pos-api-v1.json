@@ -8,6 +8,7 @@
     "/api/pos/enroll": {
       "post": {
         "operationId": "post__api_pos_enroll",
+        "description": "AC-018-16: prepara el cursor de Caja con la sesión autenticada. No requiere aprobación del navegador, token anterior ni repetir la contraseña. Conserva instalación y secuencia. Los campos login/password/sourceDeviceId se admiten por compatibilidad y no cambian la identidad de sesión.",
         "parameters": [],
         "responses": {
           "200": {
@@ -271,6 +272,16 @@
                   "installationId": {
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$"
+                  },
+                  "login": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
                   },
                   "sourceDeviceId": {
                     "type": "string",

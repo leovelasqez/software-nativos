@@ -25,7 +25,7 @@ Operación inicial:
 
 ## 2. Diseño visual
 
-Corrección de acceso del 14-10-2026: la caja elegida pertenece a la preferencia de cada cuenta, no a la última persona que usó el navegador. Al entrar, seleccionar una caja autorizada para ese usuario y conservar los datos de las demás sucursales. El primer acceso del navegador requiere dueño; la instalación ya activada puede preparar la caja asignada a otra cuenta. Offline requiere perfil previamente validado. Ver AC-018-08 a 11.
+Acceso actualizado el 01-11-2026: el usuario solicita entrar a Caja solo con usuario y contraseña desde cualquier navegador, sin activación por el dueño. Preparar automáticamente la caja autorizada, conservando la preferencia por cuenta, los permisos y los datos de otras sucursales. El primer acceso requiere conexión; offline requiere perfil previamente validado. Los pendientes sin sincronizar permanecen en su navegador de origen. Ver AC-018-08 a 14; AC-018-12/13 sustituyen la restricción histórica de AC-018-09.
 
 - Aplicar la propuesta visual aprobada el 19-09-2026: fondo gris muy claro, tarjetas blancas, Inter e iconos lineales, conservando `#00bf63`. Oscuro gris carbón con superficies más claras y acentos verdes. Sustituye la referencia anterior a Alegra; ver `specs/017-visual-redesign/`.
 - Mantener la identidad de Nativos y la navegación lateral por módulos.

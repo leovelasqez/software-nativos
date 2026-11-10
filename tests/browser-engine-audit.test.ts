@@ -40,6 +40,7 @@ async function createEngine(installation){
     const actor=engine.cookieActor;
     if(path==='/me')return {user:{id:actor,login:actor,role:'cashier'},branches:[{id:'centro',name:'Centro'}]};
     if(path==='/branches/centro')return {devices:[{id:'centro-caja',name:'Caja',active:true}]};
+    if(path==='/pos/enroll')return structuredClone(engine.data.terminal);
     if(path==='/pos/authorize')return responseFor(engine,actor);
     if(path==='/pos/shift/resume'){assert.equal(actor,central.shift.actorId);central.resumed.push(installation);return {id:central.shift.id};}
     if(path==='/pos/sync'){
@@ -127,6 +128,7 @@ globalThis.fetch=async(url,init)=>{
  }
  if(path==='/me')return json({user:{id:cookieUser.id,login:cookieUser.login,role:cookieUser.role},branches:[{id:'centro',name:'Centro'},{id:'milan',name:'Milán'}]});
  if(path.startsWith('/branches/')){const branch=path.split('/').at(-1);return json({devices:[{id:branch+'-caja',name:'Caja',active:true}]});}
+ if(path==='/local-transition')return json({available:true});
  if(path==='/pos/enroll')return json({deviceId:body.deviceId,branchId:devices[body.deviceId],installationId:body.installationId,token:'synthetic',publicKey});
  if(path==='/pos/authorize'){
   const actorId=init.credentials==='omit'?JSON.parse(body.previous.document).grant.actorId:cookieUser.id;
@@ -168,7 +170,7 @@ await assert.rejects(fresh.login('cashier','cashier-password'),/otro usuario/);
 assert.equal(fresh.data.session,null);assert.equal(JSON.stringify(fresh.data.users.cashier),cachedBefore);
 await assert.rejects(fresh.login('cashier','',true),/otro usuario/);
 
-// Enrollment has no old signed grant yet, so retain the authenticated actor ID.
+// The legacy migration prompt has no signed grant yet; retain the authenticated actor ID.
 const unbound=engine(false);await unbound.login('owner','owner-password');
 assert.equal(unbound.data.users.owner.actorId,'owner-id');
 const enrollmentBefore=JSON.stringify(unbound.data);cookieUser=users.other;

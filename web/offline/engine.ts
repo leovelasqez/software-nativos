@@ -46,7 +46,35 @@ let online=false;let message='';const startWall=Date.now(),startMono=performance
 export class BrowserEngine{
  constructor(readonly db:IDBDatabase,public data:BrowserData){}
  async save(){await writeState(this.db,this.data);}
- async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;const value=await r.json();if(!r.ok)throw new RemoteError(r.status,value.code,value.message??'Solicitud rechazada.');return value;}
+ async remote<T>(path:string,body?:unknown,anonymous=false,timeoutMs=5000):Promise<T>{let r:Response;try{r=await fetch('/api'+path,{method:body===undefined?'GET':'POST',credentials:anonymous?'omit':'same-origin',cache:'no-store',signal:AbortSignal.timeout(timeoutMs),headers:{'Content-Type':'application/json','X-Nativos-Request':'1',...(this.data.terminal?{'X-Pos-Token':this.data.terminal.token,'X-Pos-Installation':this.data.installationId}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});}catch{online=false;throw new RemoteError(0,'network','Sin conexión. Las operaciones permanecen en este navegador.');}online=true;
+  if(!r.ok){
+   const detail=await r.json().catch(()=>null);
+   throw new RemoteError(r.status,detail?.code??'http_error',detail?.message??('El servidor respondió con error '+r.status+'.'));
+  }
+  try { return await r.json(); }
+  catch { throw new RemoteError(502,'invalid_response','Respuesta incompleta del servidor. Vuelve a intentarlo.'); }
+ }
+ async recoverTerminalCredential() {
+  const deviceId=this.data.terminal!.deviceId;
+  this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
+ }
+ async signedRequest<T>(path:string, body:unknown):Promise<T> {
+  try {
+   return await this.remote<T>(path,body,true);
+  } catch (error) {
+   if (!(error instanceof RemoteError) || !['device_auth','device_revoked'].includes(error.code)) throw error;
+   // The session can restore this installation. The original grant still identifies the actor.
+   try {
+    await this.recoverTerminalCredential();
+   } catch (recoveryError) {
+    if (recoveryError instanceof RemoteError && [401,403,404].includes(recoveryError.status)) throw error;
+    throw recoveryError;
+   }
+   try { await this.save(); }
+   catch { throw new RemoteError(503,'credential_save_failed','No se pudo guardar la credencial de Caja. Se volverá a intentar.'); }
+   return this.remote<T>(path,body,true);
+  }
+ }
  loginName(){const s=this.data.session;if(!s||s.expires<=Date.now())throw new Error('Inicia sesión en esta caja.');return s.login;}
  async auth(action:Action='data.read',login=this.loginName()){
   const t=this.data.terminal,u=this.data.users[login];if(!t||!u||u.revoked||this.data.retired)throw new Error('Inicia sesión en esta caja.');const a=await verify(u.signed,t.publicKey);
@@ -98,11 +126,15 @@ export class BrowserEngine{
     const boundActorId=await this.cachedActorId(login);
     if((boundActorId!==undefined&&boundActorId!==expectedActorId)||(boundActorId===undefined&&Boolean(verifier)))throw new Error('La cuenta cambió. Ingresa tu contraseña para habilitar Caja de nuevo.');
    }
-   if(!this.data.terminal){
-    if(me.user.role!=='owner')throw new Error('El dueño debe activar Caja en este navegador.');
+   let legacyAvailable=false;
+   if(!this.data.terminal&&me.user.role==='owner'){
+    try{legacyAvailable=Boolean((await this.remote<{available:boolean}>('/local-transition')).available);}
+    catch(e){if(!(e instanceof RemoteError)||![403,404].includes(e.status))throw e;}
+   }
+   if(legacyAvailable){
     const devices=await this.devicesFor(me.branches);
     this.data.users[login]={signed:{document:'',signature:''},passwordHash:verifier,revoked:false,actorId:expectedActorId};
-    this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier};
+    this.data.session={login,expires:Date.now()+12*3600_000};await this.save();return {needsEnrollment:true,devices,needsPassword:!verifier,legacy:true};
    }
    const devices=await this.devicesFor(me.branches),preferred=this.data.lastTerminals?.[expectedActorId];
    const device=devices.find(d=>d.id===preferred)??devices[0];
@@ -115,7 +147,6 @@ export class BrowserEngine{
      if(actorId===expectedActorId)verifier=user.passwordHash;
     }
    }
-   if(!verifier)throw new Error('Ingresa tu contraseña para habilitar Caja en esta sucursal.');
    await this.enterTerminal(device.id,login,verifier,expectedActorId);
    message='';return {needsEnrollment:false};
   }catch(e){if(!(e instanceof RemoteError)||e.status!==0)throw e;await this.offlineLogin(login,password,expectedActorId);return {needsEnrollment:false};}
@@ -138,15 +169,28 @@ export class BrowserEngine{
  async enterTerminal(deviceId:string,login:string,verifier:string,actorId:string){
   const previous=structuredClone(this.data);
   try{
+   const existingProfile=this.data.terminal?.deviceId===deviceId||Boolean(this.data.terminalProfiles?.[deviceId]?.terminal);
    if(this.data.terminal?.deviceId!==deviceId){
     const saved=this.data.terminalProfiles?.[deviceId];
-    const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId:this.data.installationId,sourceDeviceId:this.data.terminal?.deviceId});
+    // A failed first preparation can retry without replacing an unseen server token.
+    const installationId=this.data.terminal?this.data.installationId:crypto.randomUUID();
+    const terminal=saved?.terminal??await this.remote<NonNullable<BrowserData['terminal']>>('/pos/enroll',{deviceId,installationId,sourceDeviceId:this.data.terminal?.deviceId});
+    this.data.installationId=installationId;
     this.loadProfile(deviceId,terminal);
+   }
+   if(existingProfile){
+    await this.recoverTerminalCredential();
+    for(const entry of this.data.outbox){
+     if(entry.errorCode==='device_revoked'||entry.errorCode==='device_auth'){
+      entry.state='retry';entry.error=null;entry.errorCode=null;
+     }
+    }
    }
    await this.sync(false);
    await this.accept(login,verifier,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}),actorId);
    this.data.session={login,expires:Date.now()+12*3600_000};
    await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[actorId]=deviceId;await this.save();
+   if(!previous.terminal)await navigator.storage?.persist?.().catch(()=>false);
   }catch(error){this.data=previous;await this.save();throw error;}
  }
  async offlineLogin(login:string,password:string,expectedActorId?:string){
@@ -176,12 +220,22 @@ export class BrowserEngine{
   const session=await this.remote<{actorId:string}>('/login',{login,password});
   const boundActorId=await this.cachedActorId(login);
   if(boundActorId!==undefined&&boundActorId!==session.actorId)throw new Error('La cuenta cambió. Inicia sesión de nuevo para activar Caja.');
-  user.passwordHash=await passwordHash(password);user.actorId=session.actorId;await this.save();
+  const verifier=await passwordHash(password);
+  if(this.data.terminal){
+   const authorization=await this.remote<Parameters<BrowserEngine['accept']>[2]>('/pos/authorize',{
+    deviceId:this.data.terminal.deviceId, sellerSupport:true, previous:null
+   });
+   await this.accept(login,verifier,authorization,session.actorId);
+   return;
+  }
+  // Legacy import prepares the verifier before an installation is available.
+  user.passwordHash=verifier;user.actorId=session.actorId;await this.save();
  }
  async enroll(deviceId:string){
   const login=this.loginName(),previous=structuredClone(this.data);
   try{
-   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId:this.data.installationId});
+   const installationId=this.data.terminal?this.data.installationId:crypto.randomUUID();
+   this.data.terminal=await this.remote('/pos/enroll',{deviceId,installationId});this.data.installationId=installationId;
    await this.accept(login,this.data.users[login]!.passwordHash,await this.remote('/pos/authorize',{sellerSupport:true,deviceId,previous:null}));
    const a=await this.auth();this.data.lastTerminals??={};this.data.lastTerminals[a.grant.actorId]=deviceId;await this.save();
    await navigator.storage?.persist?.();return {ok:true};
@@ -251,7 +305,7 @@ export class BrowserEngine{
   let tip=ledger?signedDecimal(ledger.tip):0n,shipping=ledger?signedDecimal(ledger.shipping):0n;for(const e of localEvents){if(e.result.sale){tip+=signedDecimal(e.result.sale.tipPaid);shipping+=signedDecimal(e.result.sale.shippingPaid);}if(e.result.refund){tip-=signedDecimal(e.result.refund.tip);shipping-=signedDecimal(e.result.refund.shipping);}}
   const loyaltyPending=d.outbox.flatMap(o=>{const s=d.sales.find(s=>s.id===o.operation.operationId);if(s?.loyalty)return[{id:s.id,customerId:s.customer!.id,earned:s.loyalty.earnedPoints,reversed:'0',restored:'0'}];const r=d.refunds.find(r=>r.id===o.operation.operationId);return r?.loyalty?[{id:r.id,customerId:r.loyalty.customerId,earned:'0',reversed:r.loyalty.earnedReversed,restored:r.loyalty.redeemedRestored}]:[];});
   const reconciliation=d.outbox.find(o=>o.state==='reconciliation_required');const syncBlocked=Boolean(reconciliation);if(syncBlocked){canCharge=false;restriction='Concilia las operaciones pendientes antes de continuar.';canRefund=false;}
-  return {lastSellerId:d.lastSellers?.[a.grant.actorId]??null,sharedShift:Boolean(ledger),canResumeShift:d.centralOpenShift?.actorId===a.grant.actorId,otherBrowserShift:d.centralOpenShift&&!d.shifts.some(s=>s.id===d.centralOpenShift!.id)?d.centralOpenShift:null,noOpenSale:d.selected[a.grant.actorId]===''&&!Object.values(d.orders).some(o=>o.actorId===a.grant.actorId&&!o.order.closed),user:{id:a.grant.actorId,name:a.actorName},branchId:a.grant.branchId,deviceId:a.grant.deviceId,expiresAtMs:a.grant.expiresAtMs,online,message,canCharge:canCharge&&!d.staged,canCashMovement:a.principal.actions.includes('cash.movement')&&!d.staged&&!syncBlocked,restriction,canReauthorize,canRefund,snapshot,orderSnapshots:d.snapshots,snapshots:d.snapshots,order,orderNumbers:orderNumbers(Object.values(d.orders).filter(o=>o.actorId===a.grant.actorId).map(o=>o.order),order),orders:Object.values(d.orders).filter(o=>o.actorId===a.grant.actorId&&!o.order.closed).map(o=>o.order),customers:d.customers,shift,lastClosedShift,currentShiftPreview:shift?buildShiftPreview(shift,a.grant.branchId,a.grant.deviceId,this.ledgerFor(shift),Date.now()):null,pendingShiftIds:d.outbox.flatMap(o=>{const event=JSON.parse(o.payload) as PosEvent;return event.kind==='shift.close'?[event.shiftId]:[];}),shiftReceipts:d.shifts.filter(s=>s.closedAtMs!==null).sort((a,b)=>b.closedAtMs!-a.closedAtMs!).map(s=>d.shiftReceipts?.[s.id]??this.receiptFor(s)),shiftSummary:{tip:formatted(tip),shipping:formatted(shipping)},preview:order.lines.length?{lines:order.lines.map(l=>describeLine(l,d.snapshots)),total:formatted(order.lines.reduce((n,l)=>n+decimal(describeLine(l,d.snapshots).amount),0n))}:null,sales:d.sales.slice(-50).reverse(),refunds:d.refunds,cashMovements:[...(ledger?.cashMovements??[]),...localEvents.flatMap(e=>e.result.cashMovement?[e.result.cashMovement]:[])].reverse(),events:d.events.filter(e=>e.actorId===a.grant.actorId).slice(-50).reverse(),stock:[...stock].map(([itemId,q])=>({itemId,quantity:formatted(q),negative:q<0n})),pending:d.outbox.map(o=>({id:o.operation.operationId,sequence:o.operation.sequence,state:o.state,error:o.error,errorCode:o.errorCode??null})),reconciliationRequired:syncBlocked,canReconcileSequence:Boolean(reconciliation&&isSequenceConflict(reconciliation)),canRetryInventoryRejection:Boolean(reconciliation&&isRetryableInventoryRejection(reconciliation)),canRetryAuthorizationRejection:Boolean(reconciliation&&isRetryableClockAuthorizationRejection(reconciliation)),reconciliationMessage:reconciliation?.error??null,lastSyncAtMs:d.lastSyncAtMs,loyalty:d.loyalty,loyaltyPending,redemptionPending:d.staged?{id:d.staged.entry.operation.operationId,actorId:d.staged.actorId,total:d.staged.result.sale?.total}:null};
+  return {offlinePasswordReady:Boolean(d.users[this.loginName()]?.passwordHash),lastSellerId:d.lastSellers?.[a.grant.actorId]??null,sharedShift:Boolean(ledger),canResumeShift:d.centralOpenShift?.actorId===a.grant.actorId,otherBrowserShift:d.centralOpenShift&&!d.shifts.some(s=>s.id===d.centralOpenShift!.id)?d.centralOpenShift:null,noOpenSale:d.selected[a.grant.actorId]===''&&!Object.values(d.orders).some(o=>o.actorId===a.grant.actorId&&!o.order.closed),user:{id:a.grant.actorId,name:a.actorName},branchId:a.grant.branchId,deviceId:a.grant.deviceId,expiresAtMs:a.grant.expiresAtMs,online,message,canCharge:canCharge&&!d.staged,canCashMovement:a.principal.actions.includes('cash.movement')&&!d.staged&&!syncBlocked,restriction,canReauthorize,canRefund,snapshot,orderSnapshots:d.snapshots,snapshots:d.snapshots,order,orderNumbers:orderNumbers(Object.values(d.orders).filter(o=>o.actorId===a.grant.actorId).map(o=>o.order),order),orders:Object.values(d.orders).filter(o=>o.actorId===a.grant.actorId&&!o.order.closed).map(o=>o.order),customers:d.customers,shift,lastClosedShift,currentShiftPreview:shift?buildShiftPreview(shift,a.grant.branchId,a.grant.deviceId,this.ledgerFor(shift),Date.now()):null,pendingShiftIds:d.outbox.flatMap(o=>{const event=JSON.parse(o.payload) as PosEvent;return event.kind==='shift.close'?[event.shiftId]:[];}),shiftReceipts:d.shifts.filter(s=>s.closedAtMs!==null).sort((a,b)=>b.closedAtMs!-a.closedAtMs!).map(s=>d.shiftReceipts?.[s.id]??this.receiptFor(s)),shiftSummary:{tip:formatted(tip),shipping:formatted(shipping)},preview:order.lines.length?{lines:order.lines.map(l=>describeLine(l,d.snapshots)),total:formatted(order.lines.reduce((n,l)=>n+decimal(describeLine(l,d.snapshots).amount),0n))}:null,sales:d.sales.slice(-50).reverse(),refunds:d.refunds,cashMovements:[...(ledger?.cashMovements??[]),...localEvents.flatMap(e=>e.result.cashMovement?[e.result.cashMovement]:[])].reverse(),events:d.events.filter(e=>e.actorId===a.grant.actorId).slice(-50).reverse(),stock:[...stock].map(([itemId,q])=>({itemId,quantity:formatted(q),negative:q<0n})),pending:d.outbox.map(o=>({id:o.operation.operationId,sequence:o.operation.sequence,state:o.state,error:o.error,errorCode:o.errorCode??null})),reconciliationRequired:syncBlocked,canReconcileSequence:Boolean(reconciliation&&isSequenceConflict(reconciliation)),canRetryInventoryRejection:Boolean(reconciliation&&isRetryableInventoryRejection(reconciliation)),canRetryAuthorizationRejection:Boolean(reconciliation&&isRetryableClockAuthorizationRejection(reconciliation)),reconciliationMessage:reconciliation?.error??null,lastSyncAtMs:d.lastSyncAtMs,loyalty:d.loyalty,loyaltyPending,redemptionPending:d.staged?{id:d.staged.entry.operation.operationId,actorId:d.staged.actorId,total:d.staged.result.sale?.total}:null};
  }
  async archive(a:Authorization){this.data.grants[a.grant.grantId]=this.data.users[this.loginName()]!.signed;this.data.high=Math.max(this.data.high,Date.now());}
  ensureWritable(){if(this.data.outbox.some(o=>o.state==='reconciliation_required'))throw new Error('Concilia las operaciones pendientes antes de continuar.');}
@@ -292,15 +346,15 @@ export class BrowserEngine{
   await this.save();
   return {cashMovement:movement};
  }
- async recover(cancel=false){const s=this.data.staged;if(!s)return null;const signed=this.data.grants[s.entry.signedId];if(!signed)throw new Error('Falta autorización histórica.');if(cancel){const result=await this.remote<{committed:boolean}>('/pos/redemption/cancel',{operationId:s.entry.operation.operationId,deviceId:s.entry.operation.deviceId,signed},true);if(!result.committed){this.data.staged=null;await this.save();return null;}}
-  const result=await this.remote<{kind:'accepted';receipt:Operation}>('/pos/sync',{operation:s.entry.operation,payload:s.entry.payload,signed},true);if(result.kind!=='accepted'||transition('pending',s.entry.operation,result)!=='acknowledged')throw new Error('Acuse incorrecto. Conserva el intento.');this.apply(s);this.data.outbox=this.data.outbox.filter(o=>o.operation.operationId!==s.entry.operation.operationId);this.data.staged=null;await this.save();return s.result;
+ async recover(cancel=false){const s=this.data.staged;if(!s)return null;const signed=this.data.grants[s.entry.signedId];if(!signed)throw new Error('Falta autorización histórica.');if(cancel){const result=await this.signedRequest<{committed:boolean}>('/pos/redemption/cancel',{operationId:s.entry.operation.operationId,deviceId:s.entry.operation.deviceId,signed});if(!result.committed){this.data.staged=null;await this.save();return null;}}
+  const result=await this.signedRequest<{kind:'accepted';receipt:Operation}>('/pos/sync',{operation:s.entry.operation,payload:s.entry.payload,signed});if(result.kind!=='accepted'||transition('pending',s.entry.operation,result)!=='acknowledged')throw new Error('Acuse incorrecto. Conserva el intento.');this.apply(s);this.data.outbox=this.data.outbox.filter(o=>o.operation.operationId!==s.entry.operation.operationId);this.data.staged=null;await this.save();return s.result;
  }
- async refresh(){const login=this.loginName(),u=this.data.users[login];if(!u||!this.data.terminal)return;try{const r=await this.remote<{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache}>('/pos/authorize',{sellerSupport:true,deviceId:this.data.terminal.deviceId,previous:u.signed},true);await this.accept(login,u.passwordHash,r);}catch(e){if(e instanceof RemoteError&&e.status===403){u.revoked=true;await this.save();}throw e;}}
+ async refresh(){const login=this.loginName(),u=this.data.users[login];if(!u||!this.data.terminal)return;try{const r=await this.signedRequest<{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache}>('/pos/authorize',{sellerSupport:true,deviceId:this.data.terminal.deviceId,previous:u.signed});await this.accept(login,u.passwordHash,r);}catch(e){if(e instanceof RemoteError&&e.status===403){u.revoked=true;await this.save();}throw e;}}
  async reauthorize(){const login=this.loginName(),u=this.data.users[login],terminal=this.data.terminal;if(!u||!terminal)throw new Error('Inicia sesión en esta caja.');const result=await this.remote<{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache}>('/pos/authorize',{sellerSupport:true,deviceId:terminal.deviceId,previous:null});await this.accept(login,u.passwordHash,result);message='';return this.state();}
- async reconcileSequence(){const conflict=this.data.outbox.find(isSequenceConflict);if(!conflict)throw new Error('No hay un conflicto de secuencia recuperable.');if(this.data.staged)throw new Error('Resuelve primero el canje pendiente.');const login=this.loginName(),u=this.data.users[login]!,result=await this.remote<{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache}>('/pos/authorize',{sellerSupport:true,deviceId:this.data.terminal!.deviceId,previous:u.signed},true);await this.accept(login,u.passwordHash,result);const cursor={sequence:result.snapshot.serverSequence,operationId:result.snapshot.serverOperationId??null};if(cursor.sequence>0&&!cursor.operationId)throw new Error('El servidor no entregó un cursor de Caja completo.');if(cursor.sequence<conflict.operation.sequence)throw new Error('El cursor central no confirma la colisión. Sincroniza nuevamente.');const old=this.data.outbox.map(o=>o.operation),rebased=rebaseOperations(old,cursor),sequences=new Map(old.map((o,i)=>[o.sequence,rebased[i]!.sequence]));this.data.stock=this.data.stock.map(row=>sequences.has(row.sequence)?{...row,sequence:sequences.get(row.sequence)!}:row);for(let i=0;i<this.data.outbox.length;i++){const entry=this.data.outbox[i]!,operation=rebased[i]!,receiptNumber=`${operation.branchId}-${operation.deviceId}-${this.data.installationId}-${operation.sequence}`;entry.operation=operation;entry.state='pending';entry.error=null;entry.errorCode=null;const sale=this.data.sales.find(s=>s.id===operation.operationId);if(sale)sale.receiptNumber=receiptNumber;const event=this.data.events.find(e=>e.id===operation.operationId);if(event?.result.sale)event.result.sale.receiptNumber=receiptNumber;const response=this.data.commands[operation.operationId]?.response as Result|undefined;if(response?.sale)response.sale.receiptNumber=receiptNumber;}const last=rebased.at(-1)!;this.data.sequence=last.sequence;this.data.previous=last.operationId;message='';await this.save();await this.sync(false);if(!this.data.outbox.length)await this.refresh();return this.state();}
+ async reconcileSequence(){const conflict=this.data.outbox.find(isSequenceConflict);if(!conflict)throw new Error('No hay un conflicto de secuencia recuperable.');if(this.data.staged)throw new Error('Resuelve primero el canje pendiente.');const login=this.loginName(),u=this.data.users[login]!,result=await this.signedRequest<{signed:Signed;snapshot:Snapshot;customers:Customer[];loyalty:LoyaltyCache}>('/pos/authorize',{sellerSupport:true,deviceId:this.data.terminal!.deviceId,previous:u.signed});await this.accept(login,u.passwordHash,result);const cursor={sequence:result.snapshot.serverSequence,operationId:result.snapshot.serverOperationId??null};if(cursor.sequence>0&&!cursor.operationId)throw new Error('El servidor no entregó un cursor de Caja completo.');if(cursor.sequence<conflict.operation.sequence)throw new Error('El cursor central no confirma la colisión. Sincroniza nuevamente.');const old=this.data.outbox.map(o=>o.operation),rebased=rebaseOperations(old,cursor),sequences=new Map(old.map((o,i)=>[o.sequence,rebased[i]!.sequence]));this.data.stock=this.data.stock.map(row=>sequences.has(row.sequence)?{...row,sequence:sequences.get(row.sequence)!}:row);for(let i=0;i<this.data.outbox.length;i++){const entry=this.data.outbox[i]!,operation=rebased[i]!,receiptNumber=`${operation.branchId}-${operation.deviceId}-${this.data.installationId}-${operation.sequence}`;entry.operation=operation;entry.state='pending';entry.error=null;entry.errorCode=null;const sale=this.data.sales.find(s=>s.id===operation.operationId);if(sale)sale.receiptNumber=receiptNumber;const event=this.data.events.find(e=>e.id===operation.operationId);if(event?.result.sale)event.result.sale.receiptNumber=receiptNumber;const response=this.data.commands[operation.operationId]?.response as Result|undefined;if(response?.sale)response.sale.receiptNumber=receiptNumber;}const last=rebased.at(-1)!;this.data.sequence=last.sequence;this.data.previous=last.operationId;message='';await this.save();await this.sync(false);if(!this.data.outbox.length)await this.refresh();return this.state();}
  async retryInventoryRejection(){const rejection=this.data.outbox.find(isRetryableInventoryRejection);if(!rejection)throw new Error('No hay un rechazo de inventario recuperable.');if(this.data.staged)throw new Error('Resuelve primero el canje pendiente.');rejection.state='retry';rejection.error=null;rejection.errorCode=null;message='';await this.save();await this.sync(false);if(!this.data.outbox.length)await this.refresh();return this.state();}
  async retryAuthorizationRejection(){const rejection=this.data.outbox.find(isRetryableClockAuthorizationRejection);if(!rejection)throw new Error('No hay un rechazo de autorización recuperable.');if(this.data.staged)throw new Error('Resuelve primero el canje pendiente.');rejection.state='retry';rejection.error=null;rejection.errorCode=null;message='';await this.save();await this.sync(false);if(!this.data.outbox.length)await this.refresh();return this.state();}
- async sync(refresh=true){if(!this.data.terminal)return;message='';for(const o of [...this.data.outbox]){if(o.state==='reconciliation_required'){const issue=o.error??'Pendiente de conciliación.';try{await this.remote('/me');}catch(e){if(e instanceof RemoteError&&e.status===0){message=e.message;return;}}message=issue;return;}try{const signed=this.data.grants[o.signedId];if(!signed)throw new Error('Falta autorización histórica.');const r=await this.remote<{kind:'accepted';receipt:Operation}>('/pos/sync',{operation:o.operation,payload:o.payload,signed},true);if(r.kind!=='accepted'||transition(o.state,o.operation,r)!=='acknowledged')throw new Error('Acuse incorrecto.');this.data.outbox=this.data.outbox.filter(p=>p.operation.operationId!==o.operation.operationId);await this.save();}catch(e){message=(e as Error).message;o.state=e instanceof RemoteError&&(e.status===0||e.status>=500||e.status===429||e.code==='predecessor_required')?'retry':'reconciliation_required';o.error=message;o.errorCode=e instanceof RemoteError?e.code:null;if(e instanceof RemoteError&&e.code==='device_revoked')for(const u of Object.values(this.data.users))u.revoked=true;await this.save();return;}}
+ async sync(refresh=true){if(!this.data.terminal)return;message='';for(const o of [...this.data.outbox]){if(o.state==='reconciliation_required'){const issue=o.error??'Pendiente de conciliación.';try{await this.remote('/me');}catch(e){if(e instanceof RemoteError&&e.status===0){message=e.message;return;}}message=issue;return;}try{const signed=this.data.grants[o.signedId];if(!signed)throw new Error('Falta autorización histórica.');const r=await this.signedRequest<{kind:'accepted';receipt:Operation}>('/pos/sync',{operation:o.operation,payload:o.payload,signed});if(r.kind!=='accepted'||transition(o.state,o.operation,r)!=='acknowledged')throw new Error('Acuse incorrecto.');this.data.outbox=this.data.outbox.filter(p=>p.operation.operationId!==o.operation.operationId);await this.save();}catch(e){message=(e as Error).message;o.state=e instanceof RemoteError&&(e.status===0||e.status>=500||e.status===429||e.code==='predecessor_required')?'retry':'reconciliation_required';o.error=message;o.errorCode=e instanceof RemoteError?e.code:null;if(e instanceof RemoteError&&e.code==='device_revoked')for(const u of Object.values(this.data.users))u.revoked=true;await this.save();return;}}
   if(this.data.staged){try{await this.recover();}catch(e){message=(e as Error).message;return;}}if(refresh){try{await this.refresh();}catch(e){message=(e as Error).message;}}
  }
 }
@@ -310,6 +364,7 @@ export async function browserCall<T>(path:string,body:Record<string,unknown>={})
  if(path==='/login')result=await e.login(String(body.login),String(body.password));
  else if(path==='/session')result=await e.session();
  else if(path==='/import-legacy')result=await e.importLegacy(String(body.password??''));
+ else if(path==='/prepare-offline-password'){await e.auth();await e.preparePassword(String(body.password??''));result=await e.state();}
  else if(path==='/enroll'){await e.preparePassword(String(body.password??''));result=await e.enroll(String(body.deviceId));}
  else if(path==='/terminals')result=await e.terminals();
  else if(path==='/terminal/switch')result=await e.switchTerminal(String(body.deviceId));

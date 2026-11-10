@@ -276,7 +276,9 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
     return { items, nextCursor: result.rows.length > limit ? items.at(-1)?.id ?? null : null };
   });
   if (staticRoot) {
-    await app.register(serveStatic, { root: staticRoot });
+    await app.register(serveStatic, { root: staticRoot, setHeaders: (response, path) => {
+      if (path.endsWith('.html') || path.endsWith('sw.js')) response.header('Cache-Control', 'no-store');
+    } });
     app.get('/caja', (_req,reply)=>reply.sendFile('pos.html'));
     app.setNotFoundHandler((req, reply) => req.url.startsWith('/api/') ? reply.code(404).send({ code: 'not_found', message: 'Ruta no disponible.' }) : reply.sendFile('index.html'));
   }

@@ -6,8 +6,12 @@ export async function exerciseCajaAccess(parent:Page,password:string){
   const second=await browser.newContext({baseURL:'http://127.0.0.1:4320'});
   async function activate(page:Page){
     await page.goto('/caja');await page.getByLabel('Usuario',{exact:true}).fill('e2e-owner');
-    await page.getByLabel('Contraseña',{exact:true}).fill(password);await page.getByRole('button',{name:'Entrar a caja'}).click();
-    await page.getByLabel('Equipo').selectOption('centro-caja');await page.getByRole('button',{name:'Activar caja',exact:true}).click();
+    await page.getByLabel('Contraseña',{exact:true}).fill(password);
+    const [authorization]=await Promise.all([
+      page.waitForResponse(r=>new URL(r.url()).pathname==='/api/pos/authorize'),
+      page.getByRole('button',{name:'Entrar a caja'}).click()
+    ]);
+    expect(authorization.status()).toBe(200);
     await expect(page.getByLabel('Sucursal',{exact:true})).toHaveValue('centro-caja');
   }
   async function open(page:Page,amount:string){
