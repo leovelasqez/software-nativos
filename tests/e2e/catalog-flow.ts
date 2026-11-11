@@ -12,6 +12,10 @@ export async function exerciseCatalog(page: Page, password: string) {
     await navigation.getByRole('button', { name, exact: true }).click();
   };
   const dialog = page.getByRole('dialog');
+  const findRecipe = async () => {
+    await page.getByRole('searchbox', { name: 'Buscar receta' }).fill('E2E-BATIDO');
+    await page.getByRole('button', { name: 'Ver recetas de Batido de prueba · 12 onzas', exact: true }).click();
+  };
   const reason = async () => dialog.getByLabel('Motivo del cambio').fill('Verificación sintética del incremento 2');
   const save = async (name: string) => { await dialog.getByRole('button', { name, exact: true }).click(); await expect(dialog).not.toBeVisible(); };
   await nav('Productos'); await page.getByRole('button', { name: '+ Nuevo producto', exact: true }).click();
@@ -30,7 +34,7 @@ export async function exerciseCatalog(page: Page, password: string) {
   await expect(page.getByText('2.000 ml', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Mínimo · Leche de prueba', exact: true }).click(); await dialog.getByLabel('Mínimo en unidad base').fill('2500'); await reason(); await save('Guardar registro');
   await expect(page.getByText('En mínimo o por debajo', { exact: true })).toBeVisible();
-  await nav('Recetas'); await page.getByLabel('Producto preparado', { exact: true }).selectOption({ label: 'Batido de prueba · 12 onzas' }); await page.getByRole('button', { name: '+ Nueva receta' }).click();
+  await nav('Recetas'); await findRecipe(); await page.getByRole('button', { name: 'Nueva receta de Batido de prueba · 12 onzas', exact: true }).click();
   await dialog.getByLabel('Línea 1 · Artículo', { exact: true }).selectOption({ label: 'Leche de prueba (ml)' }); await reason(); await save('Guardar receta');
   await expect(page.getByText(/VERSIÓN 1 · BORRADOR/)).toBeVisible(); await page.getByRole('button', { name: 'Crear versión desde v1', exact: true }).click();
   await dialog.getByLabel('Estado', { exact: true }).selectOption('active'); await reason(); await dialog.getByRole('button', { name: 'Guardar receta' }).click(); await expect(dialog.getByRole('alert')).toContainText('Línea 1');
@@ -47,7 +51,7 @@ export async function exerciseCatalog(page: Page, password: string) {
       const toggle = page.getByRole('switch', { name: 'Modo oscuro' }); if ((await toggle.getAttribute('aria-checked') === 'true') !== dark) await toggle.click();
       for (const name of ['Productos', 'Recetas', 'Inventario']) {
         await nav(name);
-        if (name === 'Recetas') await page.getByLabel('Producto preparado', { exact: true }).selectOption({ label: 'Batido de prueba · 12 onzas' });
+        if (name === 'Recetas') await findRecipe();
         await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
         const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(report.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -58,7 +62,7 @@ export async function exerciseCatalog(page: Page, password: string) {
   await nav('Productos'); await page.getByRole('button', { name: '+ Nuevo producto', exact: true }).click();
   const report = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(report.violations.map(v => v.id)).toEqual([]);
   await page.screenshot({ path: 'test-results/unified-web/regression/regression/mobile-product-form.png', fullPage: true }); await page.keyboard.press('Escape');
-  await nav('Recetas'); await page.getByLabel('Producto preparado', { exact: true }).selectOption({ label: 'Batido de prueba · 12 onzas' });
+  await nav('Recetas'); await findRecipe();
   await page.getByRole('button', { name: 'Crear versión desde v2', exact: true }).click();
   await expect(dialog.getByLabel('Nombre de receta')).toBeFocused();
   const recipeReport = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); expect(recipeReport.violations.map(v => v.id)).toEqual([]);
