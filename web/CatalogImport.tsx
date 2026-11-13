@@ -65,7 +65,11 @@ export function CatalogImport({ branchId, close, saved }: { branchId: string; cl
         <button type="button" className="primary" disabled={busy} onClick={close}>Cerrar</button></div></section> : <>
         <fieldset disabled={busy}>
           <button type="button" className="secondary" onClick={() => void template()}>Descargar plantilla</button>
-          <label>Archivo Excel (.xlsx, máximo 5 MB)<input type="file" accept=".xlsx" onChange={e => { setFile(e.target.files?.[0] ?? null); dispatch({ kind: 'edit' }); reset(); }} /></label>
+          <div className="catalog-file-field">
+            <label htmlFor="catalog-file">Archivo Excel (.xlsx, máximo 5 MB)</label>
+            <input id="catalog-file" type="file" accept=".xlsx" aria-describedby="catalog-file-status" onChange={e => { setFile(e.target.files?.[0] ?? null); dispatch({ kind: 'edit' }); reset(); }} />
+            <small id="catalog-file-status" role="status">{file?.name ?? 'Ningún archivo seleccionado'}</small>
+          </div>
           <label>Motivo de la importación<textarea minLength={3} maxLength={500} value={reason} onChange={e => { setReason(e.target.value); dispatch({ kind: 'edit' }); reset(); }} rows={2} /></label>
           <button type="button" className="secondary" disabled={!file || reason.trim().length < 3} onClick={() => void validate()}>Validar archivo</button>
         </fieldset>

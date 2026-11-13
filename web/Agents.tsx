@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, date } from './api.ts';
 import type { Me } from './api.ts';
-import { Dialog, Heading, Notice, Reason, SaveForm } from './components.tsx';
+import { AdminTable, Dialog, Heading, Notice, Reason, SaveForm } from './components.tsx';
+import { Icon } from './Icon.tsx';
 
 type Agent = { id: string; name: string; active: boolean; branchIds: string[]; actions: string[]; createdAt: string; rotatedAt: string };
 type Change = { agent: Agent; kind: 'rotate' | 'revoke' };
@@ -27,10 +28,17 @@ export function Agents({ me }: { me: Me }) {
     <Heading eyebrow="CONEXIONES" title="Agentes de IA" action={<button className="primary" onClick={() => setCreating(true)}>+ Nueva conexión</button>}>Conecta Codex o Claude Code para consultar productos, recetas, inventario y ventas de las sucursales que elijas.</Heading>
     {error && <Notice error>{error}</Notice>}{notice && <Notice>{notice}</Notice>}
     <section className="panel"><div className="panel-toolbar"><div><h2>Conexiones autorizadas</h2><p>Las nuevas conexiones tienen permiso de solo lectura. Puedes retirar su acceso en cualquier momento.</p></div><button className="secondary" onClick={() => void load()}>Actualizar conexiones</button></div>
-      <div className="table-wrap admin-table-region" role="region" aria-label="Conexiones de agentes" tabIndex={0}><table className="admin-data-table"><thead><tr><th>Nombre</th><th>Sucursales</th><th>Acceso</th><th>Estado</th><th>Última credencial</th><th>Acciones</th></tr></thead><tbody>{items.map(agent => <tr key={agent.id}>
-        <td>{agent.name}</td><td>{agent.branchIds.map(id => me.branches.find(branch => branch.id === id)?.name ?? id).join(', ')}</td><td>{agent.actions.length === 1 && agent.actions[0] === 'data.read' ? 'Solo lectura' : 'Permisos personalizados'}</td><td>{agent.active ? 'Activa' : 'Revocada'}</td><td>{date(agent.rotatedAt)}</td>
-        <td><div className="admin-table-actions"><button className="secondary" disabled={!agent.active} onClick={() => setChange({ agent, kind: 'rotate' })} aria-label={`Renovar ${agent.name}`}>Renovar credencial</button><button className="secondary" disabled={!agent.active} onClick={() => setChange({ agent, kind: 'revoke' })} aria-label={`Revocar ${agent.name}`}>Revocar acceso</button></div></td>
-      </tr>)}</tbody></table>{!items.length && <p className="empty" role="status">{loaded ? 'Todavía no tienes conexiones de agentes.' : 'Cargando conexiones…'}</p>}</div>
+      <AdminTable label="Conexiones de agentes" rows={items} empty={loaded ? 'Todavía no tienes conexiones de agentes.' : 'Cargando conexiones…'} columns={[
+        { heading: 'Nombre', cell: agent => agent.name },
+        { heading: 'Sucursales', cell: agent => agent.branchIds.map(id => me.branches.find(branch => branch.id === id)?.name ?? id).join(', ') },
+        { heading: 'Acceso', cell: agent => agent.actions.length === 1 && agent.actions[0] === 'data.read' ? 'Solo lectura' : 'Permisos personalizados' },
+        { heading: 'Estado', cell: agent => agent.active ? 'Activa' : 'Revocada' },
+        { heading: 'Última credencial', cell: agent => date(agent.rotatedAt) },
+        { heading: 'Acciones', cell: agent => <div className="admin-table-actions">
+          <button className="secondary" disabled={!agent.active} onClick={() => setChange({ agent, kind: 'rotate' })} aria-label={`Renovar ${agent.name}`}>Renovar credencial</button>
+          <button className="secondary caution-action" disabled={!agent.active} onClick={() => setChange({ agent, kind: 'revoke' })} aria-label={`Revocar ${agent.name}`}><Icon name="warning"/>Revocar acceso</button>
+        </div> },
+      ]}/>
     </section>
     <section className="panel agent-connection-guide"><h2>Conectar tu asistente</h2><p>Crea una conexión por asistente. Guarda su credencial en la variable de entorno <code>NATIVOS_AGENT_TOKEN</code> del equipo desde el que abrirás el asistente. La credencial sólo se muestra al crearla o renovarla.</p>
       <label>Dirección de conexión<input readOnly value={endpoint} onFocus={e => e.currentTarget.select()} /></label>

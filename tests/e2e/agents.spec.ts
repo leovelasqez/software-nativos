@@ -34,6 +34,11 @@ test('AC-010-07 — dueño administra conexiones, temas/móvil y cajero sin acce
     const storage = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
     expect(storage.includes(original)).toBe(false);
     expect((await page.request.get(origin + '/api/agent/v1/me', { headers: { Authorization: `Bearer ${original}` } })).status()).toBe(200);
+    // AC-017-08: both actions fit in the mobile record before it is revoked.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const connections = page.getByRole('region', { name: 'Conexiones de agentes' });
+    expect(await connections.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await expect(page.getByRole('button', { name: 'Revocar Codex consulta sintética' }).locator('svg')).toBeVisible();
     await page.getByRole('button', { name: 'Renovar Codex consulta sintética', exact: true }).click();
     dialog = page.getByRole('dialog'); await dialog.getByLabel('Motivo del cambio').fill('Renovación sintética'); await dialog.getByRole('button', { name: 'Confirmar renovación' }).click();
     await expect(page.getByRole('heading', { name: 'Guarda tu credencial' })).toBeVisible();

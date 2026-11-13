@@ -54,7 +54,10 @@ test('AC-021-02/03 — formulario único, importación confirmada y recuperació
 
     await page.getByRole('navigation').getByRole('button', { name: 'Productos', exact: true }).click();
     await page.getByRole('button', { name: 'Importar Excel', exact: true }).click();
-    await dialog.getByLabel('Archivo Excel (.xlsx, máximo 5 MB)').setInputFiles({ name: 'sintetico.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: await excelFixture() });
+    await expect(dialog.getByRole('status')).toHaveText('Ningún archivo seleccionado');
+    const fileName = 'productos_y_recetas_de_la_sucursal_para_la_importacion_sintetica.xlsx';
+    await dialog.getByLabel('Archivo Excel (.xlsx, máximo 5 MB)').setInputFiles({ name: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: await excelFixture() });
+    await expect(dialog.getByRole('status')).toHaveText(fileName);
     await dialog.getByLabel('Motivo de la importación').fill('Importación sintética de estados');
     await dialog.getByRole('button', { name: 'Validar archivo', exact: true }).click();
     await expect(dialog.getByRole('button', { name: 'Confirmar importación', exact: true })).toBeVisible();

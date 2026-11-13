@@ -62,6 +62,38 @@
   min-height: 44px;
 }
 
+.catalog-file-field {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+}
+.catalog-file-field input[type="file"] {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  cursor: pointer;
+}
+.catalog-file-field input::file-selector-button {
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 17px;
+  border: 1px solid var(--field-border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: inherit;
+}
+.catalog-file-field input:hover::file-selector-button { background: var(--bg); }
+.catalog-file-field small { max-width: 100%; overflow-wrap: anywhere; }
+
 @media (min-width: 1100px) {
   .product-catalog-row {
     grid-template-columns: minmax(0, 1fr) 10rem 13rem;

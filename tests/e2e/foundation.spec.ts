@@ -60,13 +60,38 @@ test('AC-001-04/05/07/08/10 — configuración, usuarios, organización, auditor
   await page.getByRole('navigation').getByRole('button', { name: 'Auditoría', exact: true }).click();
   await expect(page.getByText('Bodega sintética de verificación', { exact: true })).toBeVisible();
   await expect(page.getByText('Cambio sintético de nombre', { exact: true })).toBeVisible();
+  // AC-017-08: the unconfigured destination can be checked again without creating a backup.
+  await page.route('**/api/backups', route => route.fulfill({
+    status: 503, json: { code: 'backup_unavailable', message: 'El respaldo local no está configurado.' },
+  }), { times: 1 });
   await page.getByRole('navigation').getByRole('button', { name: 'Respaldo y recuperación', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Respaldo y recuperación' })).toBeVisible();
-  await page.getByRole('button', { name: 'Crear respaldo', exact: true }).click();
+  const createBackup = page.getByRole('button', { name: 'Crear respaldo', exact: true });
+  await expect(createBackup).toHaveAccessibleDescription('El respaldo local no está configurado.');
+  await expect(createBackup).toBeDisabled();
+  await page.getByRole('button', { name: 'Volver a comprobar' }).click();
+  await expect(page.getByText('Aún no hay respaldos locales.')).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await createBackup.click();
   await expect(page.getByText('Respaldo lógico local creado.', { exact: false })).toBeVisible();
-  await page.getByRole('navigation').getByRole('button', { name: 'WhatsApp', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'WhatsApp', exact: true })).toBeVisible();
+  // AC-017-07: reproduce keyboard navigation from the bottom of the mobile menu.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const menu = page.getByRole('button', { name: 'Mostrar navegación' });
+  await menu.click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Traslados', exact: true }).click();
+  const transferBrandHeight = await page.locator('.sidebar').evaluate(el => el.clientHeight);
+  await menu.click();
+  const whatsapp = page.getByRole('navigation').getByRole('button', { name: 'WhatsApp', exact: true });
+  await whatsapp.focus();
+  await whatsapp.press('Enter');
+  await expect(menu).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('heading', { name: 'WhatsApp', exact: true })).toBeFocused();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  expect(await page.locator('.sidebar').evaluate(el => el.clientHeight)).toBe(transferBrandHeight);
   await expect(page.getByText('Envío desactivado', { exact: true })).toBeVisible();
+  await expect(page.getByText(/No hay reportes para este filtro/)).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('navigation').getByRole('button', { name: 'Resumen', exact: true }).click();
 
   await mkdir('test-results/unified-web/regression/regression/foundation-regression', { recursive: true });

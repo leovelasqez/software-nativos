@@ -1097,7 +1097,7 @@
         ]
       ],
       "guards": [
-        "Online; importes de compra accesibles al encargado de su local; conteo guarda esperado/contado/diferencia; consumo no es venta ni desperdicio."
+        "Online; para registrar una compra se requiere un proveedor de la sucursal. Si la consulta está vacía, el formulario disponible es el de proveedor. Los importes de compra son accesibles al encargado de su local; conteo guarda esperado/contado/diferencia; consumo no es venta ni desperdicio."
       ],
       "persistence": "Compras/conteos/consumos y movimientos confirmados; no hay cuentas por pagar ni borrador persistente de compra.",
       "sources": [
@@ -1618,7 +1618,7 @@
         ]
       ],
       "guards": [
-        "Dueño; destino diferente e inexistente; cobertura sólo servidor; no reemplazar base activa. Manifest y ensayo son regiones separadas."
+        "Dueño; crear sólo después de consultar el destino local con éxito. Si la consulta falla, se puede volver a comprobar. Para el ensayo, destino diferente e inexistente; cobertura sólo servidor; no reemplazar base activa. Manifest y ensayo son regiones separadas."
       ],
       "persistence": "Manifiesto/archivo local y base aislada de ensayo; no cubre IndexedDB.",
       "sources": [
@@ -2058,7 +2058,7 @@
         ]
       ],
       "guards": [
-        "Regiones independientes; tema persiste entre Administración/Caja; enlaces de notificación requieren dueño; navegación conserva datos durables de Caja."
+        "Cambiar de módulo cierra el menú y lleva el foco al título al inicio del contenido. Regiones independientes; tema persiste entre Administración/Caja; enlaces de notificación requieren dueño; navegación conserva datos durables de Caja."
       ],
       "persistence": "Página/menú en memoria, tema en localStorage, enlace en URL.",
       "sources": [

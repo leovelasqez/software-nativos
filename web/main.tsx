@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api, roles } from './api.ts';
 import type { Me } from './api.ts';
-import { Logo, ThemeToggle, SaveForm, Notice } from './components.tsx';
+import { Logo, ThemeToggle, SaveForm, Notice, usePageStart } from './components.tsx';
 import { Dashboard } from './Dashboard.tsx';
 import { Icon } from './Icon.tsx';
 import type { IconName } from './Icon.tsx';
@@ -42,6 +42,7 @@ function App() {
   const [ready, setReady] = useState(false); const [error, setError] = useState('');
   const [page, setPage] = useState<Page>(()=>linkedNotification()?'notifications':'summary'); const [branchId, setBranchId] = useState(''); const [menuOpen, setMenuOpen] = useState(false);
   const [overviewBranch, setOverviewBranch] = useState('all'); const [inventoryWarehouse, setInventoryWarehouse] = useState('');
+  const main = usePageStart(page);
   function navigate(next: Page, targetBranch?: string, warehouse = '') { if(next!=='notifications'&&new URLSearchParams(location.search).has('notification'))history.replaceState(null,'','/'); setInventoryWarehouse(next === 'inventory' ? warehouse : ''); if (targetBranch) { setBranchId(targetBranch); setOverviewBranch(targetBranch); } setPage(next); setMenuOpen(false); }
   async function refresh() {
     const value = await api<Me>('/me'); setMe(value); setBranchId(old => value.branches.some(b => b.id === old) ? old : value.branches[0]?.id ?? '');
@@ -80,7 +81,7 @@ function App() {
     <div className="sidebar-account"><span className="avatar">{me.user.name.slice(0, 1).toUpperCase()}</span><div><strong>{me.user.name}</strong><small>{roles[me.user.role]}</small></div><button className="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={async () => { try { await api('/logout', 'POST', {}); setMe(null); setPage('summary'); } catch (e) { setError((e as Error).message); } }}><Icon name="logout"/></button></div></aside>
     <div className="workspace"><header className="topbar"><span className="page-breadcrumb"><Icon name={pageIcons[page]}/>{pages.find(p => p.id === page)?.name}</span><div className="topbar-actions"><label>Sucursal<select aria-label="Sucursal" value={activeBranch} onChange={e => { setOverviewBranch(e.target.value); if (e.target.value !== 'all') setBranchId(e.target.value); }}>{allowAll && <option value="all">Todas las sucursales</option>}{me.branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label><ThemeToggle /></div></header>
       <nav className="mobile-consultations" aria-label="Consultas rápidas"><button aria-pressed={page === 'summary'} onClick={() => navigate('summary')}><Icon name="reports"/>Ventas</button><button aria-pressed={page === 'inventory'} onClick={() => navigate('inventory')}><Icon name="boxes"/>Inventario</button></nav>
-      <main id="main" tabIndex={-1} className="content">{error && <Notice error>{error}</Notice>}
+      <main id="main" ref={main} tabIndex={-1} className="content">{error && <Notice error>{error}</Notice>}
         {page === 'summary' && <Dashboard key={activeBranch} branchId={activeBranch} branches={me.branches} firstName={me.user.name.split(' ')[0]!} inventory={(id, warehouse) => navigate('inventory', id, warehouse)} />}
         {page === 'loyalty' && <Loyalty key={branchId} branchId={branchId} me={me} />}
         {page === 'customers' && <Customers key={branchId} branchId={branchId} />}

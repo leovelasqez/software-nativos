@@ -42,7 +42,7 @@ export async function exerciseCajaUi(page: Page) {
   for (let i=0;i<30;i++) {
     const response = await page.request.post('/api/products', { headers:{origin:'http://127.0.0.1:4320','X-Nativos-Request':'1'}, data:{
       branchId:'centro',operationId:randomUUID(),reason:'AC-016 catálogo sintético',
-      name:`Café de revisión ${String(i+1).padStart(2,'0')}`,reference:`UI-CAFE-${i+1}`,type:'finished',
+      name:i === 29 ? 'Café de revisión 30 con semillas de chía, banano y fresa' : `Café de revisión ${String(i+1).padStart(2,'0')}`,reference:`UI-CAFE-${i+1}`,type:'finished',
       category:i<15?'Cafetería':'Bebidas',presentation:'Unidad de prueba',unit:'unit',price:'5000',tax:null,description:''
     }});
     expect(response.ok(), await response.text()).toBeTruthy();
@@ -50,6 +50,13 @@ export async function exerciseCajaUi(page: Page) {
   await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
   await page.getByRole('button',{name:'+ Nuevo pedido',exact:true}).click();
   const search=page.getByRole('searchbox',{name:'Buscar producto'});
+  // AC-017-09: multi-line names leave the full bottom inset under the price.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const longTile = page.locator('.pos-product').filter({ hasText: 'semillas de chía' });
+  expect(await longTile.evaluate(tile => {
+    const footer = tile.querySelector('.pos-product-price')!;
+    return tile.getBoundingClientRect().bottom - footer.getBoundingClientRect().bottom >= parseFloat(getComputedStyle(tile).paddingBottom);
+  })).toBe(true);
   await search.fill('  CAFE   revisión ');
   await expect(page.locator('.pos-product')).toHaveCount(30);
   await page.getByRole('button',{name:'Cafetería',exact:true}).click();
@@ -106,6 +113,13 @@ export async function exerciseCajaUi(page: Page) {
         await charge.scrollIntoViewIfNeeded();
         await expect(charge).toBeInViewport();
       } else {
+        const searchBox = (await search.boundingBox())!;
+        const clearBox = (await page.getByRole('button', { name: 'Limpiar', exact: true }).boundingBox())!;
+        expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(clearBox.y);
+        expect(searchBox.width).toBeGreaterThan(300);
+        await page.getByRole('combobox', { name: 'Categoría', exact: true }).selectOption('Cafetería');
+        await expect(page.locator('.pos-product')).toHaveCount(15);
+        await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
         await expect(search).toBeInViewport();await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeInViewport();
         const tabs=await page.locator('.pos-order-tabs').boundingBox();
         const charge=await page.getByRole('button',{name:'Cobrar',exact:true}).boundingBox();
@@ -127,6 +141,7 @@ export async function exerciseCajaUi(page: Page) {
   }
   await page.getByRole('button',{name:'Cobrar',exact:true}).click();
   const dialog=page.getByRole('dialog');
+  expect((await dialog.locator('.form-footer').boundingBox())!.height).toBeLessThan((await dialog.boundingBox())!.height / 3);
   await expect(dialog.getByLabel('Vendedor', {exact:true})).toBeFocused();
   await expect(dialog.getByLabel(/Cantidad a cobrar/)).toHaveCount(0);
   await expect(dialog.getByRole('button',{name:'Confirmar cobro'})).toBeInViewport();

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, date } from './api.ts';
-import { Heading, Notice } from './components.tsx';
+import { AdminTable, Heading, Notice } from './components.tsx';
 import { branchStatus, money, paymentLabels, templateSummary } from '../src/notification-report.ts';
 import type { NotificationReport } from '../src/notification-report.ts';
 import { isNotificationState, notificationLabels as labels } from '../src/notification-state.ts';
@@ -38,15 +38,21 @@ export function Notifications({branchId}:{branchId:string}) {
   }
   return <><Heading eyebrow="REPORTES PARA EL DUEÑO" title="WhatsApp" action={<button className="secondary" disabled={busy} onClick={()=>{void load();setRevision(r=>r+1);}}>Actualizar</button>}>Cierres y ventas consolidadas de Centro y Milán. Los avisos van del WhatsApp del negocio a tu celular personal.</Heading>
     {error&&<Notice error>{error}</Notice>}{notice&&<Notice>{notice}</Notice>}
-    <section className="panel"><h2>Conexión y horarios</h2><p><strong>{config?.enabled?'Envío habilitado':'Envío desactivado'}</strong>{config?.recipient?` · Dueño ${config.recipient}`:' · Destinatario personal pendiente de configurar'}</p><p>Cada cierre confirmado y sincronizado prepara un resumen del turno y el consolidado del día. Los mínimos de ambos locales se agrupan a las 8:00 a. m., hora de Colombia.</p>
+    <section className="panel"><div className="notification-settings"><h2>Conexión y horarios</h2><p><strong>{config?.enabled?'Envío habilitado':'Envío desactivado'}</strong>{config?.recipient?` · Dueño ${config.recipient}`:' · Destinatario personal pendiente de configurar'}</p><p>Cada cierre confirmado y sincronizado prepara un resumen del turno y el consolidado del día. Los mínimos de ambos locales se agrupan a las 8:00 a. m., hora de Colombia.</p>
       {!config?.enabled&&<Notice>Ya puedes consultar y probar los reportes aquí. Para recibirlos en tu celular falta completar la conexión con Meta, el emisor, el destinatario y las plantillas. Los reportes de prueba nunca se enviarán al activar la conexión.</Notice>}
       {config?.schedulerError&&<Notice error>No se pudo completar la última evaluación automática. Se volverá a intentar; tus ventas y cierres se conservan.</Notice>}
       <p className="small">Sólo se incluyen operaciones sincronizadas. Puede haber información pendiente en los navegadores de Caja.</p>
       <button className="secondary" disabled={busy} onClick={async()=>{setBusy(true);setError('');try{const r=await api<{lowStockRows:number}>('/notifications/low-stock/run','POST',{operationId:crypto.randomUUID(),branchId,reason:'Consulta del dueño de mínimos consolidados'});setNotice(`${r.lowStockRows} artículos/bodegas bajo mínimo. Se conserva una muestra manual por día; el corte automático es independiente.`);await load();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}}>Evaluar mínimos ahora</button>
-    </section>
+    </div></section>
     <section className="panel"><div className="panel-toolbar"><label>Estado<select value={state} onChange={e=>setState(e.target.value)}><option value="">Todos</option>{Object.entries(labels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><span className="muted">Destinatario único: dueño</span></div>
-      <div className="table-wrap admin-table-region" role="region" aria-label="Reportes de WhatsApp" tabIndex={0}><table className="admin-data-table"><thead><tr><th>Preparado</th><th>Reporte</th><th>Modo</th><th>Estado</th><th>Consulta</th></tr></thead><tbody>{items.map(intent=><tr key={intent.id}><td>{date(intent.createdAt)}</td><td>{intent.type==='shift_closed'?'Cierre y consolidado':'Resumen de mínimos'}</td><td>{modeLabel(intent.mode)}</td><td>{labels[intent.state]??intent.state}</td><td><button className="secondary" onClick={()=>select(intent.id)}>Ver reporte</button></td></tr>)}</tbody></table></div>
-      {!items.length&&<p className="empty" role="status">{busy?'Cargando reportes…':'No hay reportes para este filtro. Se preparan al sincronizar un cierre o evaluar mínimos.'}</p>}{cursor&&<button className="secondary" disabled={busy} onClick={()=>void load(cursor)}>Cargar más reportes</button>}
+      <AdminTable label="Reportes de WhatsApp" rows={items} empty={busy ? 'Cargando reportes…' : 'No hay reportes para este filtro. Se preparan al sincronizar un cierre o evaluar mínimos.'} columns={[
+        { heading: 'Preparado', cell: intent => date(intent.createdAt) },
+        { heading: 'Reporte', cell: intent => intent.type === 'shift_closed' ? 'Cierre y consolidado' : 'Resumen de mínimos' },
+        { heading: 'Modo', cell: intent => modeLabel(intent.mode) },
+        { heading: 'Estado', cell: intent => labels[intent.state] ?? intent.state },
+        { heading: 'Consulta', cell: intent => <button className="secondary" onClick={() => select(intent.id)}>Ver reporte</button> },
+      ]}/>
+      {cursor&&<button className="secondary" disabled={busy} onClick={()=>void load(cursor)}>Cargar más reportes</button>}
     </section>
     {detail&&<section className="panel whatsapp-report" aria-label="Detalle del reporte"><header className="section-heading"><div><h2>Reporte del {detail.data.date??date(detail.createdAt)}</h2><p>{modeLabel(detail.mode)} · {labels[detail.state]??detail.state}</p></div>{detail.data.version===2&&<button className="secondary" disabled={busy} onClick={()=>void exportReport()}>Descargar Excel del reporte</button>}</header>
       {detail.data.version===2&&<><h3>Vista previa de WhatsApp</h3><p className="whatsapp-message">{templateSummary(detail.data)}</p><p className="small">El mensaje incluye un enlace a este informe que requiere iniciar sesión como dueño.</p>

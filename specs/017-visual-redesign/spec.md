@@ -28,6 +28,12 @@ El usuario reportó 31 hojas en la vista previa de una impresora POS de 80 mm y 
 
 Tras corregir Productos, el usuario solicita revisar y corregir las demás pantallas. Aplicar REQ-017-03/04/05 y AC-017-01/04/05 a nombres largos, cantidades, importes, acciones, tablas y formularios de Administración/Caja. Sin cambios de reglas comerciales. [Evidencia de la revisión transversal](../../docs/evidence/layout-review-2026-09-26.md).
 
+## Recorrido visual del 12-11-2026
+
+- AC-017-07 → REQ-017-01/03/05. A 390 × 844, abrir WhatsApp desde el menú de Traslados cierra el menú, muestra el inicio y enfoca el título. La franja del logotipo conserva la altura de su contenido en Administración y Caja. En ambos temas, el borde de los campos de entrada alcanza 3:1 sobre las superficies adyacentes y el foco se distingue.
+- AC-017-08 → REQ-017-01/03/05. Archivar y Revocar se distinguen por icono y color. Crear respaldo requiere un destino disponible. En Compras, si faltan proveedores se ofrece crear el primero y, al guardarlo, se habilita el registro de compras. WhatsApp alinea el estado y el horario con el título. En móvil se puede operar una conexión sin desplazamiento lateral. Los listados vacíos de Agentes, WhatsApp y Respaldo muestran su mensaje sin cabecera de tabla. El selector Excel muestra el nombre completo del archivo y admite teclado.
+- AC-017-09 → REQ-017-04/05. El buscador de Caja tiene fila propia en móvil y permite combinar su texto con cualquier categoría del selector. A 1440 × 900 las tarjetas acomodan el nombre más largo con margen debajo del precio. Al editar medios de pago en móvil siguen visibles total y confirmación. En Comandas se muestran separadores sólo entre fragmentos presentes y el salto de línea requiere una nota.
+
 ## Dependencias
 
 001/003/004/005/006/008/012/015/016. Contrato: ../../contracts/dashboard-v1.md. Sin migraciones ni cambios al protocolo. La pantalla de 14 pulgadas no fija resolución: las dimensiones comprobadas son referencias técnicas. No publicar ni modificar Alegra en este alcance.

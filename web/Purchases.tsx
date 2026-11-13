@@ -22,7 +22,7 @@ function useOperation(branchId: string) {
 const newLine = (): Line => ({ id: crypto.randomUUID(), itemId: '', quantity: '', unit: '', unitPrice: '' });
 
 export function Purchases({ me, branchId }: { me: Me; branchId: string }) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]); const [items, setItems] = useState<Item[]>([]); const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[] | null>(null); const [items, setItems] = useState<Item[]>([]); const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]); const [error, setError] = useState(''); const [dialog, setDialog] = useState<'supplier' | 'purchase' | null>(null);
   const refreshId = useRef(0);
   const canWrite = me.user.actions.includes('purchase.write');
@@ -37,11 +37,18 @@ export function Purchases({ me, branchId }: { me: Me; branchId: string }) {
     } catch (e) { if (generation === refreshId.current) setError((e as Error).message); }
   }
   useEffect(() => { void refresh(); return () => { refreshId.current++; }; }, [branchId]);
-  return <><Heading eyebrow="ABASTECIMIENTO" title="Compras y proveedores" action={canWrite && <div className="row-actions"><button className="secondary" onClick={() => setDialog('supplier')}>+ Proveedor</button><button className="primary" onClick={() => setDialog('purchase')}>+ Registrar compra</button></div>}>Compras pagadas de esta sucursal y sus entradas de inventario.</Heading>
-    {error && <Notice error>{error}</Notice>}<section className="panel"><header className="section-heading"><h2>Compras registradas</h2><span className="muted">{purchases.length} {purchases.length === 1 ? 'compra' : 'compras'}</span></header>
+  const needsSupplier = suppliers?.length === 0;
+  return <><Heading eyebrow="ABASTECIMIENTO" title="Compras y proveedores" action={canWrite && <div className="prerequisite-actions">
+    <div className="row-actions">
+      <button className={needsSupplier ? 'primary' : 'secondary'} onClick={() => setDialog('supplier')}>{needsSupplier ? 'Crear proveedor' : '+ Proveedor'}</button>
+      <button className={needsSupplier ? 'secondary' : 'primary'} disabled={!suppliers?.length} aria-describedby={needsSupplier ? 'purchase-prerequisite' : undefined} onClick={() => setDialog('purchase')}>+ Registrar compra</button>
+    </div>
+    {needsSupplier && <small id="purchase-prerequisite">Crea un proveedor antes de registrar una compra.</small>}
+  </div>}>Compras pagadas de esta sucursal y sus entradas de inventario.</Heading>
+    {error && <Notice error>{error} <button className="text-button" onClick={() => void refresh()}>Reintentar consulta</button></Notice>}<section className="panel"><header className="section-heading"><h2>Compras registradas</h2><span className="muted">{purchases.length} {purchases.length === 1 ? 'compra' : 'compras'}</span></header>
       {!purchases.length && <p className="empty">Aún no hay compras registradas en esta sucursal.</p>}
       {[...purchases].reverse().map(p => <article className="catalog-row operation-value-row" key={p.id}><div><span className="eyebrow">{p.paymentMethod.toUpperCase()}</span><h2>{p.supplierName}</h2><p>{date(p.purchasedOn + 'T12:00:00-05:00')} · {warehouses.find(w => w.id === p.warehouseId)?.name ?? 'Bodega'}</p><details><summary>{p.lines.length} {p.lines.length === 1 ? 'artículo' : 'artículos'}</summary>{p.lines.map(l => <p key={l.itemId}>{items.find(i => i.id === l.itemId)?.name ?? 'Artículo'}: {l.quantity} {l.unit} · entrada {l.baseQuantity} base · {money(l.lineTotal)}</p>)}</details></div><strong className="operation-value">{money(p.paidAmount)}</strong></article>)}
-    </section>{dialog === 'supplier' && <SupplierForm branchId={branchId} close={() => setDialog(null)} saved={async () => { setDialog(null); await refresh(); }} />}{dialog === 'purchase' && <PurchaseForm branchId={branchId} suppliers={suppliers} items={items} warehouses={warehouses} close={() => setDialog(null)} saved={async () => { setDialog(null); await refresh(); }} />}</>;
+    </section>{dialog === 'supplier' && <SupplierForm branchId={branchId} close={() => setDialog(null)} saved={async () => { setDialog(null); await refresh(); }} />}{dialog === 'purchase' && suppliers && suppliers.length > 0 && <PurchaseForm branchId={branchId} suppliers={suppliers} items={items} warehouses={warehouses} close={() => setDialog(null)} saved={async () => { setDialog(null); await refresh(); }} />}</>;
 }
 function SupplierForm({ branchId, close, saved }: { branchId: string; close: () => void; saved: () => Promise<void> }) {
   const send = useOperation(branchId);
@@ -55,7 +62,7 @@ function PurchaseForm({ branchId, suppliers, items, warehouses, close, saved }: 
   return <Dialog className="operation-dialog" title="Registrar compra pagada" onClose={close}><SaveForm label="Registrar compra" onSave={async d => {
     await send('/purchases', { supplierId: text(d, 'supplierId'), warehouseId: text(d, 'warehouseId'), purchasedOn: text(d, 'purchasedOn'), paymentMethod: text(d, 'paymentMethod'), paidAmount: text(d, 'paidAmount'), reason: text(d, 'reason'), lines: lines.map(l => ({ itemId: l.itemId, quantity: l.quantity, unit: l.unit, conversion: null, unitPrice: l.unitPrice })) }); await saved();
   }}>
-    {!suppliers.length ? <Notice error>Crea un proveedor antes de registrar una compra.</Notice> : <div className="fields"><label>Proveedor<select name="supplierId" required><option value="">Selecciona un proveedor</option>{suppliers.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label><label>Bodega de entrada<select name="warehouseId" defaultValue={defaultWarehouse} required>{warehouses.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label><label>Fecha de compra<input name="purchasedOn" type="date" defaultValue={dashboardDates(new Date()).today} required /></label><label>Medio registrado<select name="paymentMethod" defaultValue="efectivo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label></div>}
+    <div className="fields"><label>Proveedor<select name="supplierId" required><option value="">Selecciona un proveedor</option>{suppliers.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label><label>Bodega de entrada<select name="warehouseId" defaultValue={defaultWarehouse} required>{warehouses.map(w => <option value={w.id} key={w.id}>{w.name}</option>)}</select></label><label>Fecha de compra<input name="purchasedOn" type="date" defaultValue={dashboardDates(new Date()).today} required /></label><label>Medio registrado<select name="paymentMethod" defaultValue="efectivo"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label></div>
     {lines.map((line, index) => {
       const item = items.find(i => i.id === line.itemId);
       const set = (next: Partial<Line>) => setLines(lines.map(l => l.id === line.id ? { ...l, ...next } : l));

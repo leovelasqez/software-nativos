@@ -42,6 +42,8 @@ REQ-006-05 y AC-006-07/08/09: comprobante automático al cerrar, movimientos com
 
 ## Rediseño 017 — implementado y verificado localmente
 
+El recorrido del 12-11-2026 incorpora AC-017-07/08/09 para navegación, contraste, acciones de Administración y uso móvil de Caja. [Correcciones y mediciones](../docs/evidence/recorrido-visual-2026-11-12.md).
+
 Propuesta visual aprobada el 19-09-2026 para todo el sitio, con Resumen operativo por sucursal. [Spec](017-visual-redesign/spec.md), [plan](017-visual-redesign/plan.md), [tareas](017-visual-redesign/tasks.md), [contrato](../contracts/dashboard-v1.md) y [evidencia](../docs/evidence/visual-redesign.md). Sitio real verificado con datos sintéticos, 45 pruebas unitarias, 58 de integración, regresión E2E y revisión visual de los 15 módulos. Sin publicación.
 
 **Dirección vigente: sitio web único (DEC-021, 15-09-2026).** Administración y Caja comparten origen; Caja conserva siete días offline en navegador. La transición se traza en [012](012-unified-web/spec.md). Las tablas 0–5 son evidencia histórica y no deben interpretarse como decisión de continuar Electron.

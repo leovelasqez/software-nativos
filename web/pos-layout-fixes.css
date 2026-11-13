@@ -55,8 +55,23 @@
 }
 
 @media screen and (max-width: 800px) {
-  .checkout-dialog .checkout-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
-  .checkout-dialog .checkout-summary > div { display: grid; gap: 3px; }
+  .checkout-dialog .form-footer { padding-top: 8px; gap: 6px; }
+  .checkout-dialog .checkout-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: baseline;
+    padding: 8px 10px;
+    gap: 4px 16px;
+  }
+  .checkout-dialog .checkout-summary > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 4px;
+  }
+  .checkout-dialog .checkout-summary b { font-size: 14px; }
+  .checkout-dialog .checkout-summary strong { font-size: 18px; }
+  .checkout-dialog .checkout-summary .checkout-seller-feedback { margin: 0; }
   .pos-shell .pos-sync { flex-wrap: wrap; }
   .pos-shell .pos-status-details { min-width: 0; }
 }

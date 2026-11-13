@@ -9,13 +9,18 @@ export async function exercisePurchases(page: Page) {
   await nav.getByRole('button', { name: 'Compras y proveedores', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Compras y proveedores', exact: true })).toBeVisible();
   const dialog = page.getByRole('dialog');
-  await page.getByRole('button', { name: '+ Proveedor', exact: true }).click();
+  // AC-017-08: the first purchase starts with a supplier in this branch.
+  const register = page.getByRole('button', { name: '+ Registrar compra', exact: true });
+  await expect(register).toBeDisabled();
+  await expect(register).toHaveAccessibleDescription('Crea un proveedor antes de registrar una compra.');
+  await page.getByRole('button', { name: 'Crear proveedor', exact: true }).click();
   await dialog.getByLabel('Nombre').fill('Proveedor E2E');
   await dialog.getByLabel('Documento / NIT (opcional)').fill('900000001');
   await dialog.getByLabel('Motivo del cambio').fill('Proveedor sintético de compra');
   await dialog.getByRole('button', { name: 'Guardar proveedor', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await page.getByRole('button', { name: '+ Registrar compra', exact: true }).click();
+  await expect(register).toBeEnabled();
+  await register.click();
   await dialog.getByLabel('Proveedor').selectOption({ label: 'Proveedor E2E' });
   await dialog.getByLabel('Artículo 1').selectOption({ label: 'Leche de prueba (ml)' });
   await dialog.getByLabel('Cantidad 1').fill('2');

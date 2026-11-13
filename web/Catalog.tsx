@@ -4,6 +4,7 @@ import { api, date } from './api.ts';
 import type { Me, BranchDetail, Warehouse } from './api.ts';
 import type { Item, Product, Recipe, RecipeLine, RecipeOption } from '../src/catalog.ts';
 import { Dialog, Heading, Notice, Reason, SaveForm } from './components.tsx';
+import { Icon } from './Icon.tsx';
 
 type Page<T> = { items: T[]; nextCursor: string | null };
 export async function allPages<T>(url: string, pageSize: number | null = 100): Promise<T[]> {
@@ -41,7 +42,7 @@ export function Catalog({ me, branchId }: { me: Me; branchId: string }) {
       {products.filter(p => (p.name + ' ' + p.reference).toLowerCase().includes(search.toLowerCase())).map(p => <article className="catalog-row product-catalog-row" key={p.id}>
         <div className="product-catalog-info"><span className="eyebrow">{p.type === 'finished' ? 'PRODUCTO TERMINADO' : 'PRODUCTO PREPARADO'}</span><h2>{p.name}</h2><p>{p.reference} · {p.presentation} · {p.category}</p><p>{p.tax ? `${p.tax.label} · ${p.tax.exempt ? 'Exento' : p.tax.rate + '%'}` : 'Sin impuesto asignado'}</p></div>
         <div className="product-catalog-price"><strong>{money(p.price)}</strong><p className="status-text">{p.sellable ? 'Habilitado' : 'Requiere receta activa'} · v{p.version}</p></div>
-        {me.user.actions.includes('product.create') && <div className="product-catalog-actions"><button className="secondary" aria-label={`Editar ${p.name}`} onClick={() => setEdit(p)}>Editar</button><button className="secondary" aria-label={`Archivar ${p.name}`} onClick={() => void send(`/products/${p.id}/archive`, 'POST', { expectedVersion: p.version, reason: 'Archivado desde catálogo' }).then(refresh)}>Archivar</button></div>}
+        {me.user.actions.includes('product.create') && <div className="product-catalog-actions"><button className="secondary" aria-label={`Editar ${p.name}`} onClick={() => setEdit(p)}>Editar</button><button className="secondary caution-action" aria-label={`Archivar ${p.name}`} onClick={() => void send(`/products/${p.id}/archive`, 'POST', { expectedVersion: p.version, reason: 'Archivado desde catálogo' }).then(refresh)}><Icon name="warning"/>Archivar</button></div>}
       </article>)}
     </section>{archived.length > 0 && <section className="panel"><header className="section-heading"><div><span className="eyebrow">HISTORIAL CONSERVADO</span><h2>Productos archivados</h2></div></header>{archived.map(p => <article className="catalog-row operation-action-row" key={p.id}><div><h3>{p.name}</h3><p>{p.reference} · Archivado {date(p.archivedAt)}</p></div>{me.user.actions.includes('product.create') && <button className="secondary" aria-label={`Restaurar ${p.name}`} onClick={() => void send(`/products/${p.id}/restore`, 'POST', { expectedVersion: p.version, reason: 'Restaurado desde catálogo' }).then(refresh)}>Restaurar</button>}</article>)}</section>}{edit && <ProductForm product={edit === 'new' ? null : edit} branchId={branchId} close={() => setEdit(null)} saved={async () => { setEdit(null); await refresh(); }} />}</>;
 }

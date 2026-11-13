@@ -1,5 +1,9 @@
 # Plan técnico de 017
 
+## Correcciones del recorrido visual del 12-11-2026
+
+Para AC-017-07 a 09, corregir la navegación y los estilos compartidos en los dos puntos de entrada. Usar los resultados de las consultas existentes de respaldos y proveedores para presentar acciones disponibles. Conservar un único estado de categoría en Caja y el mismo cálculo de cobro al compactar su resumen. Comprobar teclado, medidas del navegador y estados con y sin datos en los tamaños auditados y ambos temas. Ejecutar la regresión sobre datos locales de prueba.
+
 ## Revisión responsiva transversal — 26-09-2026
 
 Continuación solicitada tras corregir Productos (14a6c2a): revisar el resto de las pantallas y corregir distribución de nombres, importes, cantidades y acciones (REQ-017-03/04/05; AC-017-01/04/05). Separar acciones de contenido en filas operativas, mantener etiquetas accesibles específicas y conservar cifras completas en columnas estables. Verificar componentes reales con datos sintéticos largos en 320/390/686/1440 px, temas claro/oscuro y formularios/teclado; consultar producción sin escribir datos comerciales. Sin cambios de contratos, cálculos, permisos, almacenamiento ni impresión. Publicar el cambio verificado en el servicio existente y documentar el alcance observado.

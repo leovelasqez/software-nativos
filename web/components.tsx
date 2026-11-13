@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode, FormEvent } from 'react';
 import { Icon } from './Icon.tsx';
 import { useAsyncOperation } from './useAsyncOperation.ts';
@@ -40,5 +40,36 @@ export function SaveForm({ children, onSave, label = 'Guardar cambios', footer, 
 }
 export function Reason() { return <label>Motivo del cambio<textarea name="reason" minLength={3} maxLength={500} required placeholder="Describe por qué realizas este cambio" rows={2} /></label>; }
 export function Heading({ eyebrow, title, children, action }: { eyebrow: string; title: string; children: ReactNode; action?: ReactNode }) {
-  return <div className="heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{children}</p></div>{action}</div>;
+  return <div className="heading"><div><span className="eyebrow">{eyebrow}</span><h1 tabIndex={-1}>{title}</h1><p>{children}</p></div>{action}</div>;
+}
+
+export function usePageStart(page: string) {
+  const main = useRef<HTMLElement>(null);
+  const previous = useRef(page);
+  useLayoutEffect(() => {
+    if (previous.current === page) return;
+    previous.current = page;
+    const content = main.current;
+    if (!content) return;
+    content.scrollTop = 0;
+    window.scrollTo(0, 0);
+    (content.querySelector('h1') ?? content).focus({ preventScroll: true });
+  }, [page]);
+  return main;
+}
+
+export function AdminTable<Row extends { id: string }>({ label, rows, columns, empty }: {
+  label: string; rows: Row[]; empty: string;
+  columns: { heading: string; cell: (row: Row) => ReactNode }[];
+}) {
+  if (!rows.length) return <p className="empty" role="status">{empty}</p>;
+  return <div className="table-wrap admin-table-region" role="region" aria-label={label} tabIndex={0}>
+    <table className="admin-data-table"><thead><tr>
+      {columns.map(column => <th key={column.heading} scope="col">{column.heading}</th>)}
+    </tr></thead><tbody>{rows.map(row => <tr key={row.id}>
+      {columns.map(column => <td key={column.heading}>
+        <span className="admin-cell-label" aria-hidden="true">{column.heading}</span>{column.cell(row)}
+      </td>)}
+    </tr>)}</tbody></table>
+  </div>;
 }

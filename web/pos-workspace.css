@@ -26,6 +26,7 @@
 .pos-shell .pos-pay{padding:0 12px 10px;gap:6px}
 .pos-shell .pos-pay>.primary{min-height:42px}
 .pos-shell .pos-secondary-actions .secondary{min-height:32px;padding:6px 8px}
+.pos-catalog > .pos-category-select { display: none; margin: 0; }
 
 @media(min-width:801px){
   .pos-shell{grid-template-columns:160px minmax(0,1fr)}
@@ -38,11 +39,13 @@
   .pos-shell .pos-grid{grid-template-columns:minmax(0,1fr) minmax(370px,400px);gap:14px;align-items:start;flex:1 0 auto;min-height:100cqh}
   .pos-shell .pos-catalog{position:sticky;top:0;height:100cqh;min-height:300px}
   .pos-shell .pos-order{min-height:100cqh}
-  .pos-shell .pos-product{min-height:154px;padding:12px;gap:4px}
+  .pos-shell .pos-product{display:flex;flex-direction:column;align-items:stretch;min-height:154px;padding:12px;gap:4px}
   .pos-shell .pos-product .product-symbol{display:none}
-  .pos-shell .pos-product{grid-template-rows:auto 1fr auto auto}
+  .pos-shell .pos-product > * { flex-shrink: 0; }
+  .pos-shell .pos-product-price { margin-top: auto; }
   .pos-shell .pos-product b{padding-right:28px}
-  .pos-shell .pos-products{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  /* The catalog scrolls vertically. Size each row to its tallest wrapped card. */
+  .pos-shell .pos-products{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));grid-auto-rows:max-content}
   .pos-shell .pos-catalog .panel-toolbar{padding-bottom:8px}
   .pos-shell .pos-categories>button{min-height:32px;padding:6px 10px}
   .pos-shell .pos-result-count{padding-bottom:6px}
@@ -56,6 +59,20 @@
   .pos-stock-warning{display:block}
 }
 @media(max-width:800px){
+  .pos-shell .pos-catalog .panel-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+  }
+  .pos-shell .pos-catalog .search { grid-column: 1 / -1; min-width: 0; }
+  .pos-catalog .panel-toolbar > .text-button { justify-self: start; }
+  .pos-catalog .pos-categories { display: none; }
+  .pos-catalog > .pos-category-select {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
   .pos-shell .topbar{gap:4px 10px;padding:6px 12px}
   .pos-shell .pos-shift-status{order:0;width:auto;margin-right:auto;font-size:11px}
   .pos-shell .pos-sync{order:3;width:100%;margin:0;justify-content:space-between}

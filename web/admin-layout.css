@@ -72,10 +72,31 @@
 .admin-data-table td {
   overflow-wrap: normal;
 }
-.admin-data-table td:first-child,
-.backup-table td:nth-child(3) {
+.admin-data-table td:first-child {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+.admin-cell-label { display: none; }
+.notification-settings {
+  display: grid;
+  gap: 12px;
+  padding: 20px 24px;
+}
+.notification-settings > .notice { margin: 0; }
+.notification-settings > button { justify-self: start; }
+.prerequisite-actions {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.prerequisite-actions small { overflow-wrap: anywhere; }
+.prerequisite-actions .primary:disabled {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--muted);
+  opacity: 1;
 }
 .admin-table-actions {
   display: flex;
@@ -85,6 +106,40 @@
 }
 .admin-table-actions > button {
   white-space: nowrap;
+}
+@media (max-width: 800px) {
+  .prerequisite-actions { justify-items: start; }
+  .notification-settings { padding: 18px 16px; }
+  .admin-data-table,
+  .admin-data-table tbody { display: block; min-width: 0; }
+  .admin-data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .admin-data-table tr {
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .admin-data-table tbody tr:last-child { border-bottom: 0; }
+  .admin-data-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+  .admin-data-table td:first-child { white-space: normal; font-size: 15px; font-weight: 600; }
+  .admin-data-table td:last-child { margin-top: 6px; }
+  .admin-data-table td:not(:first-child, :last-child) .admin-cell-label {
+    display: inline;
+    margin-inline-end: 8px;
+    font-weight: 600;
+  }
+  .admin-table-actions { min-width: 0; }
 }
 @media (max-width: 1100px) {
   .user-list .user-row {
