@@ -41,7 +41,7 @@ test('AC-007-08 — recuperación de cola después del corte', {timeout:120_000}, as
         digest('cursor',client.deviceId,client.installationId,op.sequence,op.operationId),
       ];
       const previous = process.env.NATIVOS_ARCHIVED_SYNC;
-      process.env.NATIVOS_ARCHIVED_SYNC = manifest.join(' ');
+      process.env.NATIVOS_ARCHIVED_SYNC = manifest.map(value => Buffer.from(value,'hex').toString('base64url')).join(' ');
       let restored;
       try { restored = await createApp({pool:db.pool,origin:'http://127.0.0.1:4363'}); }
       finally { if (previous === undefined) delete process.env.NATIVOS_ARCHIVED_SYNC; else process.env.NATIVOS_ARCHIVED_SYNC=previous; }

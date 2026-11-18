@@ -70,7 +70,8 @@ async function snapshot(c: PoolClient, device: { device_id: string; branch_id: s
 }
 export function registerPos(app: FastifyInstance, pool: Pool, notificationConfig = whatsappConfig()) {
   // The cutover manifest contains only SHA-256 digests derived from verified receipts.
-  const archived = new Set((process.env.NATIVOS_ARCHIVED_SYNC ?? '').trim().split(/\s+/).filter(Boolean));
+  const archived = new Set((process.env.NATIVOS_ARCHIVED_SYNC ?? '').trim().split(/\s+/)
+    .filter(Boolean).map(value => Buffer.from(value, 'base64url').toString('hex')));
   async function tx<T>(run: (c: PoolClient) => Promise<T>) {
     try { return await transaction(pool, async c => { await c.query('SELECT pg_advisory_xact_lock(7301)'); return run(c); }); }
     catch (e) { if (e instanceof CatalogError) throw new ApiError(422, 'invalid_payload', e.message); throw e; }
