@@ -66,6 +66,8 @@ export async function createApp({ pool, origin, setupToken, staticRoot, backupDi
   });
   app.setErrorHandler((error, _req, reply) => {
     const e = error as { validation?: unknown; code?: string; statusCode?: number; message?: string };
+    if (_req.url === '/api/pos/sync' && error instanceof ApiError)
+      console.warn(JSON.stringify({ event: 'pos.sync.rejected', code: error.code, status: error.statusCode }));
     if (e.validation) return reply.code(400).send({ code: 'invalid_input', message: 'Revisa los campos y sus formatos.' });
     if (error instanceof ApiError) return reply.code(error.statusCode).send({ code: error.code, message: error.message });
     if (e.code === '23505') return reply.code(409).send({ code: 'conflict', message: 'El registro ya existe o el local ya tiene una caja activa.' });

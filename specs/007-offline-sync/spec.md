@@ -57,3 +57,5 @@ Alcance implementado y verificado localmente. Consultar [plan](plan-increment-4.
 ## Dirección vigente — DEC-021
 
 Aplicar REQ-012-01 a 05 y AC-012-01 a 05 para el adaptador navegador. AC-007-07 y evidencias SQLite/DPAPI describen el adaptador anterior; no acreditan IndexedDB. Mantener protocolo, reglas y siete días offline. Agregar pruebas de cierre real del navegador, varias pestañas, cuota/aborto de transacción y caché de shell sin API.
+
+AC-007-08 (REQ-007-02/03). Tras un corte con historial archivado, una instalación puede continuar desde su último acuse verificado. Una retransmisión idéntica ya archivada devuelve el acuse sin repetir efectos. Un hueco desconocido conserva el pendiente.

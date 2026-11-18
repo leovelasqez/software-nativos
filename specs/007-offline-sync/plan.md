@@ -28,3 +28,5 @@ Fixtures sintéticas: plazo exacto, usuario/equipo/local diferentes, permisos re
 ## Riesgos abiertos
 
 DPAPI/firma, reloj tras reinicio, revocación real y reconexión serán pruebas de adaptadores en 1/3. Canje central queda fuera hasta DEC-007. Cálculo de ventas, reparto y tasas DEC-002/014 no bloquean envoltura, sí payload futuro.
+
+AC-007-08. Cargar huellas verificadas del respaldo del corte en la configuración privada del servidor. Comparar instalación, dispositivo y predecesor exacto antes de continuar una cadena central vacía. Mantener todas las validaciones comerciales y el commit transaccional.

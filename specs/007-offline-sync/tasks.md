@@ -9,3 +9,5 @@
 Persistencia, transporte, impresión, restauración, canje y aceptación integral quedan pendientes.
 
 Evidencia: [incremento 0](../../docs/evidence/increment-0.md). Pruebas y diseño únicamente donde se indica alcance parcial.
+
+AC-007-08. Verificar reenvío archivado, apertura con predecesor conocido, repetición, autorización inválida, instalación ajena y hueco desconocido en PostgreSQL aislado.

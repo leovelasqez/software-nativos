@@ -781,7 +781,7 @@
         ]
       ],
       "guards": [
-        "Acuse repite envoltura completa; conservar payload/grant; no limpiar cola por respuesta incorrecta. Recuperación requiere guardas específicas, no reintento ciego."
+        "Acuse repite envoltura completa; conservar payload/grant; no limpiar cola por respuesta incorrecta. Un acuse archivado exige huella idéntica. Un cursor vacío solo continúa desde el último predecesor archivado verificado de la misma instalación."
       ],
       "persistence": "Outbox cifrada y secuencia/operaciones centrales; acknowledged se retira del outbox.",
       "sources": [

@@ -69,6 +69,8 @@ async function snapshot(c: PoolClient, device: { device_id: string; branch_id: s
   await c.query('INSERT INTO pos_snapshots(id,device_id,data) VALUES($1,$2,$3)', [data.id, device.device_id, JSON.stringify(data)]); return data;
 }
 export function registerPos(app: FastifyInstance, pool: Pool, notificationConfig = whatsappConfig()) {
+  // The cutover manifest contains only SHA-256 digests derived from verified receipts.
+  const archived = new Set((process.env.NATIVOS_ARCHIVED_SYNC ?? '').trim().split(/\s+/).filter(Boolean));
   async function tx<T>(run: (c: PoolClient) => Promise<T>) {
     try { return await transaction(pool, async c => { await c.query('SELECT pg_advisory_xact_lock(7301)'); return run(c); }); }
     catch (e) { if (e instanceof CatalogError) throw new ApiError(422, 'invalid_payload', e.message); throw e; }
@@ -132,8 +134,24 @@ export function registerPos(app: FastifyInstance, pool: Pool, notificationConfig
     const fingerprint = payloadHash(JSON.stringify(o) + b.payload + b.signed.document + b.signed.signature);
     const old = (await c.query('SELECT * FROM pos_receipts WHERE operation_id=$1', [o.operationId])).rows[0];
     if (old) { if (old.device_id !== o.deviceId || old.installation_id !== device.installation_id) throw new ApiError(403, 'scope_denied', 'Operación de otro navegador.'); if (old.fingerprint !== fingerprint) throw new ApiError(409, 'operation_conflict', 'La operación ya existe con otro contenido.'); return old.response; }
+    const archiveDigest = (kind: string, ...fields: (number | string | null)[]) =>
+      payloadHash(JSON.stringify([kind, o.deviceId, device.installation_id, ...fields]));
+    if (archived.has(payloadHash(JSON.stringify(['id', o.operationId])))) {
+      for (const reviewRequired of [false, true]) {
+        if (archived.has(archiveDigest('receipt', o.operationId, fingerprint, Number(reviewRequired))))
+          return { kind: 'accepted', receipt: o, reviewRequired };
+      }
+      throw new ApiError(409, 'operation_conflict', 'La operación archivada tiene otro contenido.');
+    }
     if (o.sequence <= Number(device.last_sequence)) throw new ApiError(409, 'sequence_conflict', 'La secuencia ya fue utilizada por otra operación.');
-    if (o.sequence !== Number(device.last_sequence) + 1 || o.previousOperationId !== device.last_operation_id) throw new ApiError(409, 'predecessor_required', 'Se requiere la operación previa de esta caja.');
+    const followsActive = o.sequence === Number(device.last_sequence) + 1 && o.previousOperationId === device.last_operation_id;
+    const followsArchive = Number(device.last_sequence) === 0 && device.last_operation_id === null
+      && archived.has(archiveDigest('cursor', o.sequence - 1, o.previousOperationId));
+    if (!followsActive && !followsArchive) {
+      console.warn(JSON.stringify({ event: 'pos.predecessor_required', branch: device.branch_id,
+        receivedSequence: o.sequence, centralSequence: Number(device.last_sequence) }));
+      throw new ApiError(409, 'predecessor_required', 'Se requiere la operación previa de esta caja.');
+    }
     let authorization: Authorization;
     try { authorization = verifyAuthorization(b.signed, (await key(c)).public_key); } catch { throw new ApiError(403, 'invalid_grant', 'Firma de autorización inválida.'); }
     const grant = authorization.grant;
