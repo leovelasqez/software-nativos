@@ -27,3 +27,7 @@ REQ/AC-016-01/03/06/07/09. Estado, pendientes y aviso de inventario se agrupan e
 Publicar desde un checkout limpio del commit para excluir el trabajo de importación Excel pendiente. Ejecutar typecheck, pruebas, integración, build y el recorrido E2E. Desplegar directamente al servicio nativos-web en production, verificar estado SUCCESS, /health y hashes de los recursos públicos. Conservar IndexedDB y pedidos del navegador.
 
 AC-016-10: centralizar Quitar en un manejador que revise los bloqueos existentes; para sentQuantity=0 enviar order.cancel de toda la línea con razón descriptiva automática y cero preparado. Para líneas enviadas abrir CancelForm. Verificar ausencia de modal, total, recarga offline y conservación del resto del pedido en E2E. Sin cambios de dominio ni migraciones.
+
+AC-016-11. Reutilizar los comandos versionados de guardado, cancelación y cobro. Ambos recorridos de pago usan el vendedor vigente de la sucursal y el redondeo del dominio. Conservar la revisión del pedido, el identificador de reintento y el comprobante posterior a la escritura durable.
+
+AC-016-12. Aplicar el formato al detalle del comprobante de Caja, compartido por la venta recién cobrada, la copia y la impresión. El número interno sigue en el registro de la operación.

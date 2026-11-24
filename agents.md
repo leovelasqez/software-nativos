@@ -140,7 +140,7 @@ No asumir que este archivo en minúsculas será descubierto automáticamente por
 
 ## Aclaración de entorno y catálogo
 
-Impuestos es opcional: permitir guardar y vender con el campo vacío, mostrando «Sin impuesto asignado», sin calcular impuesto ni inventar tasas. Conservar vacío distinto de tasa 0% o exención fiscal; los cambios no recalculan ventas anteriores. Se descarta el bloqueo propuesto por falta de impuesto. Milán usa T80A y Centro NP / New Print T82E, ambas USB de 80 mm, cada una compartida entre comprobantes y comandas. Validar controladores, impresión y cajones con hardware real. Solo hay un computador por local: no presentar copias en su mismo disco como protección ante pérdida total, ni respaldos centrales como cobertura de ventas sin sincronizar. El volumen real aún se desconoce; distinguir mediciones de cargas sintéticas.
+Impuestos es opcional: permitir guardar y vender con el campo vacío, mostrando «Sin impuesto asignado» en el catálogo, sin calcular impuesto ni inventar tasas. Conservar vacío distinto de tasa 0% o exención fiscal; los cambios no recalculan ventas anteriores. Se descarta el bloqueo propuesto por falta de impuesto. Milán usa T80A y Centro NP / New Print T82E, ambas USB de 80 mm, cada una compartida entre comprobantes y comandas. Validar controladores, impresión y cajones con hardware real. Solo hay un computador por local: no presentar copias en su mismo disco como protección ante pérdida total, ni respaldos centrales como cobertura de ventas sin sincronizar. El volumen real aún se desconoce; distinguir mediciones de cargas sintéticas.
 
 ## Dirección web vigente — 15-09-2026
 

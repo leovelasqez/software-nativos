@@ -64,7 +64,7 @@ async function add(name: string, quantity = '1') {
   await dialog().getByLabel('Cantidad', { exact: true }).fill(quantity);
 }
 async function charge(amount: string, method = 'cash') {
-  await page.getByRole('button', { name: 'Cobrar pedido', exact: true }).click();
+  await page.getByRole('button', { name: 'Opciones de cobro', exact: true }).click();
   await dialog().getByLabel('Medio de pago 1').selectOption(method);
   await dialog().getByLabel('Importe 1 (COP)').fill(amount);
   await dialog().getByRole('button', { name: 'Confirmar cobro', exact: true }).click();
@@ -123,8 +123,8 @@ try {
   await page.getByRole('button', { name: 'Abrir turno', exact: true }).click(); await dialog().getByLabel('Base de efectivo (COP)').fill('150000'); await save('Confirmar apertura');
 
   await run('B02', 'Terminado, cambio, consulta de copia y consumo único', async () => {
-    await add('PRUEBA T', '2'); await save('Guardar en pedido'); await charge('20000');
-    await expect(dialog()).toContainText('10.000'); await expect(dialog()).toContainText('Sin impuesto asignado');
+    await page.locator('.pos-product').filter({ hasText: 'PRUEBA T' }).click(); await page.getByRole('button', { name: 'Aumentar cantidad de PRUEBA T', exact: true }).click(); await charge('20000');
+    await expect(dialog()).toContainText('10.000'); await expect(dialog()).not.toContainText('Sin impuesto asignado');
     await page.keyboard.press('Escape'); await sync(); assert.equal(await stock(finished.id), 8); assert.equal(await saleCount(), 1);
     const sale = (await db.pool.query('SELECT data FROM pos_sales')).rows[0].data; assert.equal(sale.cashApplied, '10000'); assert.equal(sale.change, '10000');
     await nav('Comprobantes'); await page.getByRole('button', { name: 'Ver copia', exact: true }).click(); await expect(dialog()).toContainText('10.000'); assert.equal(await saleCount(), 1);
@@ -144,7 +144,7 @@ try {
     await expect(page.getByRole('region', { name: 'Pedido' })).toContainText('2 × PRUEBA B');
     await page.getByRole('button', { name: 'Datos del pedido', exact: true }).click(); await dialog().getByLabel('Atención').selectOption('delivery'); await dialog().getByLabel('Dirección del domicilio').fill('Dirección ficticia de ensayo'); await dialog().getByLabel('Envío pendiente (COP)').fill('3000'); await save('Guardar pedido');
     await admin('Fidelización'); await page.getByRole('button', { name: 'Inscribir · PRUEBA Cliente UAT', exact: true }).click(); await page.getByRole('button', { name: 'Ajustar puntos · PRUEBA Cliente UAT', exact: true }).click(); await dialog().getByLabel('Puntos a sumar o restar').fill('500'); await dialog().getByLabel('Motivo del cambio').fill('Saldo sintético UAT'); await save('Registrar ajuste');
-    await pos(); await sync(); await page.getByRole('button', { name: 'Cobrar pedido', exact: true }).click(); await dialog().getByLabel('Tipo de propina').selectOption('percent'); await dialog().getByLabel('Propina voluntaria').fill('10'); await dialog().locator('summary').filter({ hasText: 'Puntos de este cliente' }).click(); await dialog().getByLabel('Puntos a canjear').fill('100');
+    await pos(); await sync(); await page.getByRole('button', { name: 'Opciones de cobro', exact: true }).click(); await dialog().getByLabel('Tipo de propina').selectOption('percent'); await dialog().getByLabel('Propina voluntaria').fill('10'); await dialog().locator('summary').filter({ hasText: 'Puntos de este cliente' }).click(); await dialog().getByLabel('Puntos a canjear').fill('100');
     await dialog().getByLabel('Importe 1 (COP)').fill('21800'); await expect(dialog()).toContainText('21.800'); await expect(dialog()).toContainText('Puntos de esta compra: 17');
     await dialog().getByRole('button', { name: 'Confirmar cobro', exact: true }).click(); await expect(dialog().getByRole('heading', { name: 'Comprobante interno' })).toBeVisible(); await page.screenshot({ path: join(root, 'B06-receipt.png'), fullPage: true }); await page.keyboard.press('Escape'); await sync();
     const row = (await db.pool.query("SELECT data FROM pos_sales WHERE data->>'total'='21800'")).rows[0]; assert.ok(row); assert.equal(row.data.tipPaid,'1800'); assert.equal(row.data.shippingPaid,'3000'); assert.equal(row.data.loyalty.earnedPoints,'17');
@@ -152,7 +152,7 @@ try {
   });
   await run('B08', 'Cancelar tres preparados: dos desperdiciados y uno sin consumo', async () => {
     const before = await stock(items.P!); const count = await saleCount(); await newOrder(); await add('PRUEBA B','3'); await save('Guardar en pedido'); await page.getByRole('button',{name:'Enviar a preparación',exact:true}).click();
-    await page.getByRole('button',{name:'Quitar PRUEBA B',exact:true}).click(); await dialog().getByLabel('Unidades a cancelar').fill('3'); await dialog().getByLabel('De estas, ya preparadas').fill('2'); await dialog().getByLabel('Motivo',{exact:true}).fill('PRUEBA dos preparadas, una pendiente'); await save('Confirmar cancelación'); await sync();
+    await page.getByRole('button',{name:'Quitar PRUEBA B',exact:true}).click(); await dialog().getByLabel('Unidades a cancelar').fill('3'); await dialog().getByLabel('De estas, ya preparadas').fill('2'); await expect(dialog().getByLabel('Motivo',{exact:true})).toHaveCount(0); await save('Quitar unidades'); await sync();
     assert.equal(await stock(items.P!),before-200); assert.equal(await saleCount(),count); await sync(); assert.equal(await stock(items.P!),before-200); return 'Consumo por desperdicio200g, sin venta; reintento de sync no duplica.';
   });
   await run('B17', 'Archivar/restaurar conserva ventas y existencias', async () => {

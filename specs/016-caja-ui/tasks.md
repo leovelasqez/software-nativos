@@ -24,3 +24,7 @@ Evidencia: [comprobaciones, escenarios y capturas](../../docs/evidence/caja-ui.m
 Evidencia de la extensión y publicación: [Caja, 24-09-2026](../../docs/evidence/caja-space-2026-09-24.md).
 
 | TASK-016-12 | Quitar líneas no enviadas sin confirmación, manteniendo auditoría y persistencia | 10 | Verificada y publicada en Railway |
+
+| TASK-016-13 | Simplificar alta de productos, retiro y cobro del pedido. Emitir y comprobar un comprobante sintético en navegador | REQ-016-11 / AC-016-11 | Verificada localmente |
+
+| TASK-016-14 | Ajustar el detalle del recibo y verificar emisión, copia e impresión | REQ-016-12 / AC-016-12 | Verificada localmente |

@@ -1,6 +1,7 @@
 import { decimal, formatted } from '../src/catalog.ts';
 import { paymentTotals } from '../src/orders-domain.ts';
-import type { Payment } from '../src/pos-domain.ts';
+import type { OrderV2 } from '../src/orders-domain.ts';
+import type { Payment, Snapshot } from '../src/pos-domain.ts';
 
 export const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
 export function matchesSearch(value: string, query: string) {
@@ -26,4 +27,14 @@ export function exactPayment(total: string, payments: Payment[], index: number):
   const remaining = decimal(total) - other;
   if (remaining < 0n) throw new Error('Los otros pagos ya superan el total. Corrígelos antes de completar este medio.');
   return payments.map((p, i) => i === index ? { ...p, received: formatted(remaining) } : p);
+}
+
+export function checkoutSellers(snapshot: Snapshot | null, lastSellerId: string | null) {
+  const sellers = snapshot?.sellers?.filter(seller => seller.active && seller.branchIds.includes(snapshot.branchId)) ?? [];
+  const preferred = sellers.find(seller => seller.id === lastSellerId) ?? (sellers.length === 1 ? sellers[0] : undefined);
+  return { sellers, preferred };
+}
+
+export function fullOrderSelection(order: OrderV2) {
+  return order.lines.map(line => ({ lineId: line.id, quantity: line.quantity }));
 }

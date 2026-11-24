@@ -50,7 +50,7 @@ Ampliación solicitada y aclarada el 14-10-2026: varias personas venden desde un
 
 - Atender mostrador, mesas, pedidos abiertos y domicilios registrados manualmente.
 - Conservar pedidos antes de cobrar y permitir dividir cuentas por productos.
-- Mostrar los pedidos abiertos en pestañas inferiores como la referencia de Alegra del 19-09-2026, con + para agregar, acción para renombrar y × para cerrar. Los pedidos vacíos se cierran inmediatamente, sin aviso; solo los que tienen productos solicitan confirmación y motivo. Cerrar la última pestaña deja cero ventas abiertas hasta pulsar +, incluso tras recargar offline; no crea ventas ni avanza la numeración al cerrar. Conservar el resto del diseño Nativos aprobado y la auditoría de cancelación.
+- Mostrar los pedidos abiertos en pestañas inferiores como la referencia de Alegra del 19-09-2026, con + para agregar, acción para renombrar y × para cerrar. Los pedidos vacíos se cierran inmediatamente, sin aviso; solo los que tienen productos solicitan una confirmación de cancelación. Cerrar la última pestaña deja cero ventas abiertas hasta pulsar +, incluso tras recargar offline; no crea ventas ni avanza la numeración al cerrar. Conservar el resto del diseño Nativos aprobado y la auditoría de cancelación.
 - Cada cobro de una cuenta dividida tendrá su cliente, comprobante y acumulación de puntos por los productos pagados en ese cobro.
 - Imprimir comandas con presentación, cantidades, adicionales, sustituciones y notas.
 - El envío a preparación no descuenta inventario: el descuento se realiza al cobrar.
@@ -68,7 +68,7 @@ Ampliación solicitada y aclarada el 14-10-2026: varias personas venden desde un
   - **Producto Terminado:** llega del proveedor listo para vender y descuenta unidades del artículo.
   - **Producto Preparado:** se elabora en el local y descuenta los ingredientes de su receta al cobrar.
 - Campos: nombre, referencia, categoría, unidad, presentación, precio final, impuestos y descripción; costo unitario accesible únicamente al dueño.
-- Los impuestos se asignarán a cada producto después de crearlo. El campo es opcional y puede quedar en blanco al guardar y vender. Mostrar «Sin impuesto asignado», sin tasa por defecto ni cálculo de impuesto para ese producto. Conservar el valor vacío, distinto de una tasa explícita del 0% o de una clasificación fiscal de exento. Asignaciones posteriores aplican a ventas nuevas y no recalculan ventas anteriores.
+- Los impuestos se asignarán a cada producto después de crearlo. El campo es opcional y puede quedar en blanco al guardar y vender. Mostrar «Sin impuesto asignado» en el catálogo, sin tasa por defecto ni cálculo de impuesto para ese producto. Conservar el valor vacío, distinto de una tasa explícita del 0% o de una clasificación fiscal de exento. Asignaciones posteriores aplican a ventas nuevas y no recalculan ventas anteriores.
 - Para preparados, incluir receta, ingredientes, cantidades, unidades, empaques, adicionales y sustituciones.
 - Habilitar preparados para vender solo cuando la receta y sus conversiones estén completas.
 - Crear el producto no debe borrar, cobrar ni reiniciar el pedido actual. Las existencias iniciales se registran por bodega mediante movimientos de inventario.
@@ -96,7 +96,7 @@ Ampliación solicitada y aclarada el 14-10-2026: varias personas venden desde un
 
 - Incluir el botón **Cancelar venta** para todos los usuarios, sin aprobación de otro usuario.
 - Pedir confirmación para evitar cancelaciones accidentales. Confirmar la acción no equivale a exigir autorización de un encargado.
-- Si el pedido ya se envió a preparación, registrar motivo y qué productos se prepararon para contabilizar el desperdicio correspondiente.
+- Si el pedido ya se envió a preparación, registrar automáticamente la acción y preguntar qué unidades se prepararon para contabilizar el desperdicio correspondiente.
 - Al cancelar o quitar unidades enviadas, el cajero indicará cuántas ya se prepararon: esas unidades generan desperdicio; las restantes se cancelan sin consumo. No requiere aprobación de otro usuario.
 - Registrar eliminaciones y cancelaciones en auditoría.
 - Después de facturar, utilizar el flujo de devolución autorizado; no borrar la venta original.

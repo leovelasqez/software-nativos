@@ -66,7 +66,6 @@ export async function exerciseCajaUi(page: Page) {
   for(let i=1;i<=12;i++){
     await search.fill(`UI-CAFE-${i} `);
     await page.locator('.pos-product').filter({hasText:`Café de revisión ${String(i).padStart(2,'0')}`}).click();
-    await page.getByRole('button',{name:'Guardar en pedido',exact:true}).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
   }
   await page.getByRole('button',{name:'Limpiar',exact:true}).click();
@@ -91,7 +90,6 @@ export async function exerciseCajaUi(page: Page) {
   await page.getByRole('button',{name:'Sincronizar',exact:true}).click();
   await search.fill('UI-CAFE-12');
   await page.locator('.pos-product').filter({hasText:'Café de revisión 12'}).click();
-  await page.getByRole('button',{name:'Guardar en pedido',exact:true}).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(page.locator('.pos-order-line')).toHaveCount(12);
   await page.getByRole('button',{name:'Limpiar',exact:true}).click();
@@ -106,7 +104,7 @@ export async function exerciseCajaUi(page: Page) {
       if((await toggle.getAttribute('aria-checked')==='true')!==dark)await toggle.click();
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
       if(viewport.width>800){
-        const charge=page.getByRole('button',{name:'Cobrar pedido',exact:true});
+        const charge=page.getByRole('button',{name:'Opciones de cobro',exact:true});
         // Long orders grow naturally; no lines are trapped in an internal scroller.
         expect(await page.locator('.pos-order-lines').evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBeTruthy();
         await page.locator('.pos-products').evaluate(el=>el.scrollTop=el.scrollHeight);
@@ -120,9 +118,9 @@ export async function exerciseCajaUi(page: Page) {
         await page.getByRole('combobox', { name: 'Categoría', exact: true }).selectOption('Cafetería');
         await expect(page.locator('.pos-product')).toHaveCount(15);
         await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
-        await expect(search).toBeInViewport();await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeInViewport();
+        await expect(search).toBeInViewport();await expect(page.getByRole('button',{name:'Opciones de cobro',exact:true})).toBeInViewport();
         const tabs=await page.locator('.pos-order-tabs').boundingBox();
-        const charge=await page.getByRole('button',{name:'Cobrar',exact:true}).boundingBox();
+        const charge=await page.getByRole('button',{name:'Opciones de cobro',exact:true}).boundingBox();
         expect(charge!.y+charge!.height).toBeLessThanOrEqual(tabs!.y);
         await expect(page.getByRole('tab',{selected:true}).locator('..').getByRole('button',{name:/Cerrar/})).toBeInViewport();
         await expect(page.getByRole('button',{name:'+ Nuevo pedido',exact:true})).toBeInViewport();
@@ -139,7 +137,7 @@ export async function exerciseCajaUi(page: Page) {
       }
     }
   }
-  await page.getByRole('button',{name:'Cobrar',exact:true}).click();
+  await page.getByRole('button',{name:'Opciones de cobro',exact:true}).click();
   const dialog=page.getByRole('dialog');
   expect((await dialog.locator('.form-footer').boundingBox())!.height).toBeLessThan((await dialog.boundingBox())!.height / 3);
   await expect(dialog.getByLabel('Vendedor', {exact:true})).toBeFocused();
@@ -162,11 +160,11 @@ export async function exerciseCajaUi(page: Page) {
   await page.setViewportSize({width:390,height:844});
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole('button',{name:'Cobrar',exact:true})).toBeFocused();
+  await expect(page.getByRole('button',{name:'Opciones de cobro',exact:true})).toBeFocused();
   await page.setViewportSize({width:1366,height:768});
   // Restore original order; unprepared cancellation leaves shift totals unchanged.
   await page.getByRole('tab',{selected:true}).locator('..').getByRole('button',{name:/Cerrar/}).click();
-  await dialog.getByLabel('Motivo',{exact:true}).fill('Fin de revisión UI sintética');
+  await expect(dialog.getByLabel('Motivo',{exact:true})).toHaveCount(0);
   await dialog.getByRole('button',{name:'Confirmar cancelación'}).click();
   await expect(dialog).not.toBeVisible();
   await page.locator(`[role="tab"][data-order-id="${initialOrder}"]`).click();

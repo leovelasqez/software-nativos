@@ -94,3 +94,19 @@
 }
 .checkout-dialog .checkout-seller-feedback { grid-column: 1 / -1; margin: 0 0 4px; font-size: 13px; overflow-wrap: anywhere; }
 .checkout-dialog .checkout-seller-feedback b { font-size: 13px; }
+
+.pos-charge-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.pos-charge-actions button { flex: 1; min-width: 0; }
+.pos-charge-actions .pos-exact-cash { flex: 2; flex-direction: column; justify-content: center; gap: 2px; }
+.pos-charge-actions .pos-exact-cash small { display: block; color: inherit; font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+@media screen and (max-width: 800px) {
+  .pos-pay > .pos-charge-actions { display: none; }
+  .pos-shell .pos-mobile-summary { grid-template-columns: 1fr auto; }
+  .pos-shell .pos-mobile-summary > strong { grid-column: 2; grid-row: 1; justify-content: end; }
+  .pos-mobile-summary > .pos-charge-actions { grid-column: 1 / -1; grid-row: 2; }
+  .pos-shell .content.is-sale { padding-bottom: calc(210px + env(safe-area-inset-bottom)); }
+}

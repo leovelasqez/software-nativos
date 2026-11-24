@@ -50,7 +50,7 @@ export async function exerciseCajaAccess(parent:Page,password:string){
     await page.getByRole('button').filter({hasText:'Batido de prueba'}).click();
     await page.getByRole('button',{name:'Guardar en pedido',exact:true}).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    await page.getByRole('button',{name:'Cobrar pedido',exact:true}).click();
+    await page.getByRole('button',{name:'Opciones de cobro',exact:true}).click();
     await page.getByLabel('Propina voluntaria').fill('1000');
     await page.getByLabel('Envío a cobrar (COP)').fill('2000');
     await page.getByLabel('Importe 1 (COP)').fill('16000');

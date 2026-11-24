@@ -32,3 +32,12 @@ Verificada localmente el 18-09-2026 en `develop`. Autorización: implementar tod
 - [Exceso digital](caja-ui/manual-digital-excess.png) y [rechazo de confirmación](caja-ui/manual-payment-error.png).
 
 No se alteraron datos comerciales, reglas de inventario/puntos, contratos ni persistencia. No se desplegó ni se validó hardware físico. Las capturas y los tiempos corresponden a pruebas sintéticas, no a una medición de operación comercial.
+
+## Cobro de pedidos del 23 de noviembre de 2026
+
+AC-016-11. Recorrido manual en Edge con PostgreSQL e IndexedDB locales y un turno sintético de Centro. Con vendedor identificado, agregar un producto sin opciones y cobrarlo en efectivo exacto pasó de cuatro pulsaciones (producto, guardar, cobrar y confirmar) a dos (producto y cobro por el importe mostrado).
+
+En el recorrido de mostrador se agregaron dos bebidas, se enviaron a preparación y se retiró una. El formulario aceptó la cantidad preparada sin pedir texto. El jugo restante generó un comprobante por $7.500. En móvil se cobró otro pedido a un cliente identificado por $9.700, con $2.200 de domicilio. El informe central de la base de prueba registró exactamente una venta por cada recorrido, incluida la medición inicial.
+
+AC-016-12. En Edge se abrió la copia de la venta anterior y se emitió un nuevo recibo de $7.500. Se comprobó en pantalla y en el PDF de impresión que el producto y el total permanecen visibles y se omiten el identificador técnico, el descuento cero y el aviso de impuesto sin asignar.
+Las pruebas de navegador verificaron también un descuento aplicado de $1.400, una línea con IVA del 19 % y la numeración de la venta sincronizada.

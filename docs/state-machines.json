@@ -475,7 +475,7 @@
         ],
         [
           "sent",
-          "quitar parte y declarar preparadas",
+          "retirar parte con registro automático y declarar preparadas",
           "partially_cancelled"
         ],
         [
@@ -552,7 +552,7 @@
         ]
       ],
       "guards": [
-        "Cerrar última pestaña no crea otro pedido; números históricos estables; pedir motivo/desperdicio si tiene líneas."
+        "Cerrar última pestaña no crea otro pedido; números históricos estables; confirmar el cierre con productos y declarar las unidades ya preparadas."
       ],
       "persistence": "Selección por actor y pedidos locales; edición de diálogo en memoria.",
       "sources": [
@@ -596,7 +596,7 @@
         ],
         [
           "ready",
-          "confirmar",
+          "cobrar efectivo exacto desde el pedido o confirmar el formulario",
           "submitting"
         ],
         [
@@ -621,12 +621,14 @@
       "persistence": "Formulario en memoria; venta/pagos/inventario/caja/cola atómicos.",
       "sources": [
         "web/OrderForms.tsx",
+        "web/Pos.tsx",
         "src/orders-domain.ts",
         "web/offline/engine.ts"
       ],
       "tests": [
         "tests/orders.test.ts",
         "tests/sellers.test.ts",
+        "tests/e2e/state-machines.spec.ts",
         "tests/e2e/sellers-flow.ts",
         "tests/e2e/loyalty-flow.ts"
       ]

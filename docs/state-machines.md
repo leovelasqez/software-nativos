@@ -30,7 +30,7 @@ El detalle está en [state-machines.json](state-machines.json). Cada familia inc
 | `orders` | Ciclo del pedido y cobro dividido | Implícita | [src/orders-domain.ts](../src/orders-domain.ts) |
 | `preparation` | Preparación y cancelación de líneas | Implícita | [src/orders-domain.ts](../src/orders-domain.ts) |
 | `order-tabs` | Selección, cierre y numeración de ventas abiertas | Explícita | [web/order-navigation.ts](../web/order-navigation.ts) |
-| `checkout` | Preparación y confirmación de cobro | Implícita | [web/OrderForms.tsx](../web/OrderForms.tsx) |
+| `checkout` | Cobro en efectivo exacto desde el pedido o confirmación del formulario | Implícita | [web/OrderForms.tsx](../web/OrderForms.tsx) |
 | `refunds` | Saldo y aplicación de devoluciones | Implícita | [src/orders-domain.ts](../src/orders-domain.ts) |
 | `command-idempotency` | Comando idempotente y conflicto de revisión | Implícita | [web/Catalog.tsx](../web/Catalog.tsx) |
 | `outbox` | Sincronización, acuse y conciliación | Explícita | [src/sync.ts](../src/sync.ts) |

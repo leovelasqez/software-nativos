@@ -6,7 +6,7 @@ Estado: Borrador. Implementación local: autorizada el 13-09-2026; pendiente seg
 
 - REQ-004-01: atender mostrador, mesas, pedidos abiertos y domicilios manuales; conservar pedido al crear producto o cliente y permitir seleccionar Consumidor final o cliente registrado.
 - REQ-004-02: editar/eliminar líneas, cantidad, presentación, adicionales, sustituciones y notas. Todos pueden descontar por porcentaje/valor sin aprobación; limitar el descuento al valor de la línea y no alterar catálogo ni impuesto configurado.
-- REQ-004-03: cancelar antes de facturar con confirmación, sin aprobación de otro usuario; registrar motivo de pedidos enviados y consumo desperdiciado de unidades preparadas.
+- REQ-004-03: cancelar antes de facturar con confirmación, sin aprobación de otro usuario; registrar automáticamente el retiro o cancelación de pedidos enviados y consumo desperdiciado de unidades preparadas.
 - REQ-004-04: dividir cuenta por productos y combinar efectivo, tarjeta, transferencia, Bre-B, Daviplata y Nequi. Registrar pagos manualmente; separar propina voluntaria y envío.
 - REQ-004-05: confirmar cobro, consumo y caja atómicamente en la caja; descontar solo líneas cobradas, conservar versiones y emitir comprobante interno único. Comanda no descuenta; reimpresión no cobra.
 - REQ-004-06: asociar puntos de cliente inscrito y reflejarlos en comprobante; gestionar devoluciones posteriores con permisos y movimientos relacionados, sin borrar venta original.
@@ -23,7 +23,7 @@ Reglas confirmadas en aclaración SDD: cada cobro dividido tiene su cliente, com
 
 - AC-004-01 → REQ-004-01/02. Dado un pedido con dos líneas, cuando se crea un cliente y se cambia un adicional en una línea, entonces se conserva el pedido, se selecciona el cliente y solo cambia esa línea.
 - AC-004-02 → REQ-004-02/04. Dada una línea sintética de $10.000 y descuento de 10%, cuando se agrega una propina de $1.000, entonces productos netos son $9.000, propina $1.000 y total $10.000. El descuento no exige aprobación ni modifica el precio del catálogo.
-- AC-004-03 → REQ-004-03. Dada una comanda con unidades ya preparadas, cuando el cajero cancela lo no facturado con motivo y cantidades, entonces se cancela sin aprobación y se registra el desperdicio correspondiente una sola vez.
+- AC-004-03 → REQ-004-03. Dada una comanda con unidades ya preparadas, cuando el cajero cancela lo no facturado indicando las cantidades preparadas, entonces se cancela sin aprobación y se registra el desperdicio correspondiente una sola vez.
 - AC-004-04 → REQ-004-04/05. Dado un pedido dividido, cuando se cobran solo unas líneas mediante dos medios, entonces pagos suman el importe debido, solo esas líneas consumen inventario y las demás permanecen pendientes.
 - AC-004-05 → REQ-004-05/06. Dado un cobro persistido cuyo envío se repite, cuando el servidor vuelve a recibirlo y luego se reimprime, entonces existe una sola venta, consumo y acumulación de puntos y el comprobante conserva su identidad.
 

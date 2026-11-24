@@ -109,8 +109,9 @@ test('AC-021-02/03 — formulario único, importación confirmada y recuperació
     await dialog.getByLabel('Base de efectivo (COP)').fill('10000'); await dialog.getByRole('button', { name: 'Confirmar apertura', exact: true }).click();
     await expect(dialog).not.toBeVisible();
     await page.getByRole('button').filter({ hasText: 'Botella sintética' }).click();
-    await dialog.getByRole('button', { name: 'Guardar en pedido', exact: true }).click(); await expect(dialog).not.toBeVisible();
-    await page.getByRole('button', { name: 'Cobrar pedido', exact: true }).click();
+    await expect(page.getByRole('region', { name: 'Pedido' })).toContainText('1 × Botella sintética');
+    await expect(dialog).not.toBeVisible();
+    await page.getByRole('button', { name: 'Opciones de cobro', exact: true }).click();
     await expect(dialog.getByRole('button', { name: 'Confirmar cobro', exact: true })).toBeDisabled();
     const busyChanges = await dialog.locator('form').evaluate(async element => {
       const changes: (string | null)[] = [];
@@ -123,6 +124,42 @@ test('AC-021-02/03 — formulario único, importación confirmada y recuperació
     expect(busyChanges).toEqual([]);
     await expect(dialog.locator('form')).toHaveAttribute('aria-busy', 'false');
     expect((await db.pool.query('SELECT count(*) FROM pos_sales')).rows[0].count).toBe('0');
+    // AC-016-11: only offer exact cash once the cashier can see the attributed seller.
+    await page.keyboard.press('Escape');
+    const exactCash = page.getByRole('button', { name: /Cobrar .* en efectivo exacto/ });
+    await expect(exactCash).toHaveCount(0);
+    const seller = await page.request.post(origin + '/api/sellers', {
+      headers: { origin, 'X-Nativos-Request': '1' },
+      data: { operationId: randomUUID(), name: 'Vendedora de prueba', active: true, branchIds: ['centro'], reason: 'Prueba de cobro exacto' }
+    });
+    expect(seller.ok()).toBe(true);
+    await page.getByRole('button', { name: 'Sincronizar', exact: true }).click();
+    await expect(exactCash).toContainText('Vendedora de prueba');
+    await page.getByRole('button', { name: 'Datos del pedido', exact: true }).click();
+    await dialog.getByLabel('Atención').selectOption('delivery');
+    await dialog.getByLabel('Dirección del domicilio').fill('Dirección de prueba');
+    await dialog.getByLabel('Envío pendiente (COP)').fill('2200');
+    await dialog.getByRole('button', { name: 'Guardar pedido', exact: true }).click();
+    await expect(exactCash).toContainText('5.200');
+    await page.context().setOffline(true);
+    await exactCash.click();
+    await expect(dialog.getByRole('heading', { name: 'Comprobante interno' })).toBeVisible();
+    await expect(dialog).toContainText('Vendedora de prueba');
+    await expect(dialog).toContainText('Efectivo');
+    // AC-016-12: el recibo conserva el impuesto asignado y omite los campos internos.
+    await expect(dialog).toContainText('IVA · 19%');
+    await expect(dialog).not.toContainText('Descuento:');
+    const receiptText = await dialog.locator('.thermal-receipt').innerText();
+    await page.keyboard.press('Escape');
+    await page.context().setOffline(false);
+    await page.getByRole('button', { name: 'Sincronizar', exact: true }).click();
+    await expect(page.locator('.pos-sync')).toContainText('0 pendientes');
+    const sales = await db.pool.query('SELECT receipt_number, data FROM pos_sales');
+    expect(sales.rows).toHaveLength(1);
+    expect(sales.rows[0].receipt_number).toMatch(/^centro-centro-caja-/);
+    expect(sales.rows[0].data.receiptNumber).toBe(sales.rows[0].receipt_number);
+    expect(receiptText).not.toContain(sales.rows[0].receipt_number);
+    expect(sales.rows[0].data.payments).toEqual([{ method: 'cash', received: sales.rows[0].data.total, applied: sales.rows[0].data.total }]);
     expect(errors).toEqual([]);
   } finally {
     release(); await app.close(); await db.stop();

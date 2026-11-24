@@ -60,7 +60,7 @@ export async function exerciseSellers(parent: Page, password: string) {
     await dialog.getByLabel('Tipo de descuento', { exact: true }).selectOption('percent');
     await dialog.getByLabel('Descuento', { exact: true }).fill('10');
     await dialog.getByRole('button', { name: 'Guardar en pedido' }).click(); await expect(dialog).not.toBeVisible();
-    await page.getByRole('button', { name: 'Cobrar pedido', exact: true }).click();
+    await page.getByRole('button', { name: 'Opciones de cobro', exact: true }).click();
   };
   await add(); await expect(dialog.getByRole('button', { name: 'Confirmar cobro' })).toBeDisabled();
   await dialog.getByLabel('Vendedor', { exact: true }).selectOption(ana);
